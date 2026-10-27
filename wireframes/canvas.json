@@ -1,0 +1,570 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "AddTest.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Classes – Add Test (blank)",
+      "w": 1512,
+      "x": 7960,
+      "y": 0
+    },
+    "AdminAddTest.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Class – Add Test (blank)",
+      "w": 1512,
+      "x": 7960,
+      "y": 0
+    },
+    "AdminAdmissions.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Admissions (list)",
+      "w": 1512,
+      "x": 1592,
+      "y": 4862
+    },
+    "AdminAllClasses.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – All Classes – Class Detail (editable)",
+      "w": 1512,
+      "x": 1592,
+      "y": 1402
+    },
+    "AdminAllClassesResults.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – All Classes – Search + Results (combined)",
+      "w": 1512,
+      "x": 7960,
+      "y": 1402
+    },
+    "AdminAllClassesStart.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – All Classes – Start (no search yet)",
+      "w": 1512,
+      "x": 0,
+      "y": 1402
+    },
+    "AdminApplication.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Application Detail + Enroll",
+      "w": 1512,
+      "x": 3184,
+      "y": 4862
+    },
+    "AdminAttendance.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Class Attendance (editable)",
+      "w": 1512,
+      "x": 4776,
+      "y": 0
+    },
+    "AdminDashboard.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Dashboard (school-wide)",
+      "w": 1512,
+      "x": 0,
+      "y": 0
+    },
+    "AdminEnrollment.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Student Enrollment (in-progress dashboard)",
+      "w": 1512,
+      "x": 0,
+      "y": 4862
+    },
+    "AdminFormerStudents.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Former Students",
+      "w": 1512,
+      "x": 1592,
+      "y": 6264
+    },
+    "AdminMain.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Class – Gradebook",
+      "w": 1512,
+      "x": 1592,
+      "y": 0
+    },
+    "AdminMarks.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Class – Add / Edit Marks",
+      "w": 1512,
+      "x": 6368,
+      "y": 0
+    },
+    "AdminMyAccount.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – My Account",
+      "w": 1512,
+      "x": 4776,
+      "y": 9068
+    },
+    "AdminNewApplication.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – New Application",
+      "w": 1512,
+      "x": 4776,
+      "y": 4862
+    },
+    "AdminNewTest.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Class – New Test Saved (no marks yet)",
+      "w": 1512,
+      "x": 9552,
+      "y": 0
+    },
+    "AdminNewTransfer.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – New Transfer (step 2 of 4)",
+      "w": 1512,
+      "x": 7960,
+      "y": 4862
+    },
+    "AdminPastYears.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Past Academic Years",
+      "w": 1512,
+      "x": 0,
+      "y": 6264
+    },
+    "AdminReports.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Reports",
+      "w": 1512,
+      "x": 3184,
+      "y": 6264
+    },
+    "AdminRoles.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Roles and Permissions",
+      "w": 1512,
+      "x": 1592,
+      "y": 9068
+    },
+    "AdminRooms.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Rooms",
+      "w": 1512,
+      "x": 3184,
+      "y": 7666
+    },
+    "AdminSearch.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Student Search – Results",
+      "w": 1512,
+      "x": 4776,
+      "y": 1402
+    },
+    "AdminSearchStart.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Student Search – Start (no search yet)",
+      "w": 1512,
+      "x": 3184,
+      "y": 1402
+    },
+    "AdminSettings.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – School Settings",
+      "w": 1512,
+      "x": 3184,
+      "y": 9068
+    },
+    "AdminStaff.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Staff Directory",
+      "w": 1512,
+      "x": 0,
+      "y": 9068
+    },
+    "AdminStudent.dc.html": {
+      "h": 3040,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Student Profile",
+      "w": 1512,
+      "x": 6368,
+      "y": 1402
+    },
+    "AdminTerms.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Terms and Periods",
+      "w": 1512,
+      "x": 1592,
+      "y": 7666
+    },
+    "AdminTestDetail.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Class – Test Details",
+      "w": 1512,
+      "x": 3184,
+      "y": 0
+    },
+    "AdminTimetable.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Timetable Builder",
+      "w": 1512,
+      "x": 0,
+      "y": 7666
+    },
+    "AdminTransfers.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Transfers (list)",
+      "w": 1512,
+      "x": 6368,
+      "y": 4862
+    },
+    "AdminWithdrawals.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Withdrawals",
+      "w": 1512,
+      "x": 9552,
+      "y": 4862
+    },
+    "AllClasses.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "All Classes – Class Detail (read-only)",
+      "w": 1512,
+      "x": 1592,
+      "y": 1402
+    },
+    "AllClassesResults.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "All Classes – Search + Results (combined)",
+      "w": 1512,
+      "x": 7960,
+      "y": 1402
+    },
+    "AllClassesStart.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "All Classes – Start (no search yet)",
+      "w": 1512,
+      "x": 0,
+      "y": 1402
+    },
+    "Attendance.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "★ Class Teacher – Take Attendance",
+      "w": 1512,
+      "x": 4776,
+      "y": 0
+    },
+    "AttendanceView.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Classes – Attendance (view only, subject)",
+      "w": 1512,
+      "x": 11144,
+      "y": 0
+    },
+    "Dashboard.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "Dashboard (home)",
+      "w": 1512,
+      "x": 0,
+      "y": 0
+    },
+    "ForgotPassword.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "Forgot Password",
+      "w": 1512,
+      "x": 1592,
+      "y": 4862
+    },
+    "Login.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "Sign In (both roles)",
+      "w": 1512,
+      "x": 0,
+      "y": 4862
+    },
+    "Main.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Classes – Gradebook",
+      "w": 1512,
+      "x": 1592,
+      "y": 0
+    },
+    "Marks.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Classes – Add / Edit Marks",
+      "w": 1512,
+      "x": 6368,
+      "y": 0
+    },
+    "MyAccount.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Account",
+      "w": 1512,
+      "x": 4776,
+      "y": 4862
+    },
+    "MySchedule.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Schedule (view only)",
+      "w": 1512,
+      "x": 3184,
+      "y": 4862
+    },
+    "NewTest.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Classes – New Test Saved (no marks yet)",
+      "w": 1512,
+      "x": 9552,
+      "y": 0
+    },
+    "Search.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "Student Search – Results",
+      "w": 1512,
+      "x": 4776,
+      "y": 1402
+    },
+    "SearchStart.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "Student Search – Start (no search yet)",
+      "w": 1512,
+      "x": 3184,
+      "y": 1402
+    },
+    "Student.dc.html": {
+      "h": 3040,
+      "is_interactive": true,
+      "title": "Student Profile",
+      "w": 1512,
+      "x": 6368,
+      "y": 1402
+    },
+    "TestDetail.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Classes – Test Details",
+      "w": 1512,
+      "x": 3184,
+      "y": 0
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-05T12:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "file": "Login.dc.html",
+    "view": "focused"
+  },
+  "notes": {
+    "adminrow1": {
+      "kind": "title1",
+      "maxW": 8000,
+      "page": "page-m94h8k",
+      "text": "Admin View – Dashboard & Class Screens",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "adminrow2": {
+      "kind": "title1",
+      "maxW": 8000,
+      "page": "page-m94h8k",
+      "text": "Admin View – All Classes, Student Search & Student Profile",
+      "w": 240,
+      "x": 0,
+      "y": 1102
+    },
+    "adminrow3": {
+      "kind": "title1",
+      "maxW": 8000,
+      "page": "page-m94h8k",
+      "text": "Admin View – Student Enrollment",
+      "w": 240,
+      "x": 0,
+      "y": 4562
+    },
+    "adminrow4": {
+      "kind": "title1",
+      "maxW": 4696,
+      "page": "page-m94h8k",
+      "text": "Admin View – Past Records",
+      "w": 240,
+      "x": 0,
+      "y": 5964
+    },
+    "adminrow5": {
+      "kind": "title1",
+      "maxW": 4696,
+      "page": "page-m94h8k",
+      "text": "Admin View – Scheduling",
+      "w": 240,
+      "x": 0,
+      "y": 7366
+    },
+    "adminrow6": {
+      "kind": "title1",
+      "maxW": 6288,
+      "page": "page-m94h8k",
+      "text": "Admin View – Permissions & Account",
+      "w": 240,
+      "x": 0,
+      "y": 8768
+    },
+    "row1": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "Dashboard & My Classes",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "row2": {
+      "kind": "title1",
+      "maxW": 8000,
+      "text": "All Classes, Student Search & Student Profile",
+      "w": 240,
+      "x": 0,
+      "y": 1102
+    },
+    "row3": {
+      "kind": "title1",
+      "maxW": 6288,
+      "text": "Sign-in, My Schedule & My Account",
+      "w": 240,
+      "x": 0,
+      "y": 4562
+    }
+  },
+  "order": [
+    "Dashboard.dc.html",
+    "Main.dc.html",
+    "TestDetail.dc.html",
+    "Attendance.dc.html",
+    "Marks.dc.html",
+    "AddTest.dc.html",
+    "NewTest.dc.html",
+    "AttendanceView.dc.html",
+    "AllClassesStart.dc.html",
+    "AllClasses.dc.html",
+    "SearchStart.dc.html",
+    "Search.dc.html",
+    "Student.dc.html",
+    "AllClassesResults.dc.html",
+    "AdminDashboard.dc.html",
+    "AdminMain.dc.html",
+    "AdminTestDetail.dc.html",
+    "AdminAttendance.dc.html",
+    "AdminMarks.dc.html",
+    "AdminAddTest.dc.html",
+    "AdminNewTest.dc.html",
+    "AdminAllClassesStart.dc.html",
+    "AdminAllClasses.dc.html",
+    "AdminSearchStart.dc.html",
+    "AdminSearch.dc.html",
+    "AdminStudent.dc.html",
+    "AdminAllClassesResults.dc.html",
+    "Login.dc.html",
+    "ForgotPassword.dc.html",
+    "MySchedule.dc.html",
+    "MyAccount.dc.html",
+    "AdminEnrollment.dc.html",
+    "AdminAdmissions.dc.html",
+    "AdminApplication.dc.html",
+    "AdminNewApplication.dc.html",
+    "AdminTransfers.dc.html",
+    "AdminNewTransfer.dc.html",
+    "AdminWithdrawals.dc.html",
+    "AdminPastYears.dc.html",
+    "AdminFormerStudents.dc.html",
+    "AdminReports.dc.html",
+    "AdminTimetable.dc.html",
+    "AdminTerms.dc.html",
+    "AdminRooms.dc.html",
+    "AdminStaff.dc.html",
+    "AdminRoles.dc.html",
+    "AdminSettings.dc.html",
+    "AdminMyAccount.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "page-1",
+      "name": "Teacher View"
+    },
+    {
+      "id": "page-m94h8k",
+      "name": "Admin View"
+    }
+  ],
+  "title": "Ledger – Teacher View"
+}

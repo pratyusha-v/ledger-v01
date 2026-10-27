@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger – Gradebook</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#333}a:hover{color:#000}
+.tbl{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:14px;color:#1f1f1f}
+.tbl th,.tbl td{border-bottom:1px solid #d6d6d6;border-right:1px solid #e6e6e6;padding:0 12px;background:#ffffff;white-space:nowrap}
+.tbl thead th{background:#f4f4f4;border-bottom:2px solid #9a9a9a;vertical-align:top;padding:10px 12px;text-align:right;font-weight:600}
+.tbl td{height:48px;text-align:right}
+.tbl .name{position:sticky;left:0;z-index:2;text-align:left;width:200px;min-width:200px;border-right:2px solid #9a9a9a;font-weight:500}
+.tbl thead .name{z-index:4;vertical-align:bottom}
+.tbl .ev{min-width:96px}
+.tbl .gap{background:#ffffff;border:none;min-width:12px;width:12px;padding:0}
+.tbl thead .gap{background:#ffffff;border-bottom:none}
+.tbl .sum{background:#ededed;min-width:132px;border-right:1px solid #cfcfcf}
+.tbl thead .sum{background:#e2e2e2}
+.tbl .sum.first{border-left:2px solid #555555}
+.hrow{display:flex;justify-content:flex-end;align-items:center;gap:6px;font-size:13px;color:#1a1a1a}
+.evl{color:#111111;font-weight:600;text-decoration:underline;text-underline-offset:3px;text-decoration-color:#9a9a9a}
+.evl:hover{text-decoration-color:#111111}
+.sub{font-size:11.5px;font-weight:400;color:#5c5c5c;margin-top:3px}
+.dt{font-size:11.5px;font-weight:500;color:#333333;margin-top:4px}
+.info{position:relative;display:inline-flex}
+.info button{width:18px;height:18px;border-radius:50%;border:1.5px solid #6a6a6a;background:#ffffff;color:#3d3d3d;font:600 11px/1 'IBM Plex Sans',sans-serif;font-style:italic;padding:0;cursor:help;display:inline-flex;align-items:center;justify-content:center}
+.info button:hover,.info button:focus{background:#333333;color:#ffffff;border-color:#333333;outline:none}
+.tip{display:none;position:absolute;top:26px;left:auto;right:-8px;background:#2b2b2b;color:#ffffff;font-size:12px;font-weight:400;font-style:normal;line-height:1.45;padding:7px 10px;border-radius:4px;white-space:normal;width:270px;z-index:10;text-align:left}
+.info:hover .tip,.info:focus-within .tip{display:block}
+.ab{display:inline-block;font-style:italic;color:#6b6b6b;background:#f0f0f0;border:1px dashed #b5b5b5;border-radius:3px;padding:1px 6px;font-size:12.5px}
+.pct{display:block;font-size:12px;color:#5c5c5c;margin-top:1px}
+.big{font-weight:600}
+.nm{color:#111111;text-decoration:underline;text-underline-offset:3px}
+.stat{flex:1;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid #d6d6d6;border-radius:4px;background:#ffffff}
+.stat b{font-size:26px;font-weight:600;color:#111111;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:#5c5c5c}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#222222;text-decoration:none;border-radius:3px}
+.dd a:hover{background:#efefef}
+.dd a small{font-size:11.5px;color:#767676}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #e3e3e3;margin-bottom:4px;font-size:12.5px;color:#555555}
+.dd .who b{display:block;font-size:13.5px;color:#111111}
+</style>
+</helmet>
+<div style="width: 1512px; height: 982px; box-sizing: border-box; display: flex; flex-direction: column; background: #fafafa; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1f1f1f; overflow: hidden">
+
+  <!-- Top bar -->
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 55">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <div style="width: 36px; height: 36px; border: 1.5px dashed #8a8a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #5c5c5c; background: #f2f2f2">LOGO</div>
+      <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.01em">Ledger</span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – Ms. Vineetha" aria-haspopup="true" style="width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #8a8a8a; background: #e2e2e2; color: #333333; font: 600 14px 'IBM Plex Sans', sans-serif; cursor: pointer; padding: 0">V</button><div class="dd" role="menu" style="left: auto; right: 0; top: 44px"><div class="who"><b>Ms. Vineetha</b>Teacher</div><a href="MyAccount.dc.html">My Account</a><a href="Login.dc.html">Log out</a></div></div>
+  </header>
+
+  <!-- Nav bar -->
+  <nav aria-label="Primary" style="height: 46px; flex-shrink: 0; display: flex; align-items: stretch; gap: 8px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 50">
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Dashboard</a>
+    <div class="nv"><a href="Main.dc.html" aria-current="page" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none; border-bottom: 3px solid #222222">Classes<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="Main.dc.html">My Classes <small>Editable</small></a><a href="AllClassesStart.dc.html">All Classes <small>View only</small></a></div></div>
+    <a href="SearchStart.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Students</a>
+    <a href="MySchedule.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">My Schedule</a>
+  </nav>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Sidebar -->
+    <aside aria-label="My classes" style="width: 232px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #d6d6d6; padding: 20px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5c5c5c; padding: 0 10px 10px">My Classes</div>
+      <a href="Attendance.dc.html" style="display: flex; align-items: flex-start; gap: 8px; padding: 10px 10px; border-radius: 4px; border-left: 3px solid transparent; color: #222222; text-decoration: none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0; margin-top: 2px" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"></path></svg><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 500">Grade 6</span><span style="font-size: 11.5px; color: #555555">Class teacher</span></span></a>
+      <div style="height: 1px; background: #e3e3e3; margin: 8px 10px"></div>
+      <a href="Main.dc.html" aria-current="true" style="display: block; padding: 11px 10px; border-radius: 4px; background: #e4e4e4; border-left: 3px solid #222222; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none">Grade 6 - Mathematics</a>
+      <div style="padding: 13px 10px; display: flex; flex-direction: column; gap: 22px">
+        <div style="height: 10px; width: 150px; background: #e3e3e3; border-radius: 2px"></div>
+        <div style="height: 10px; width: 170px; background: #e3e3e3; border-radius: 2px"></div>
+        <div style="height: 10px; width: 140px; background: #e3e3e3; border-radius: 2px"></div>
+        <div style="height: 10px; width: 160px; background: #e3e3e3; border-radius: 2px"></div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main style="flex: 1; min-width: 0; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111111">Mathematics&nbsp;</h1>
+          <p style="margin: 0; font-size: 14px; color: #555555">Teacher: Ms. Vineetha · 5 students · 10 evaluations</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-shrink: 0">
+          <a href="TestDetail.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; box-sizing: border-box; border: 1.5px solid #555555; border-radius: 4px; background: #ffffff; color: #1f1f1f; font-size: 14px; font-weight: 500; text-decoration: none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>Edit Tests</a>
+          <a href="AddTest.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; box-sizing: border-box; border: 1.5px solid #222222; border-radius: 4px; background: #222222; color: #ffffff; font-size: 14px; font-weight: 500; text-decoration: none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg><span>Add Test</span></a>
+        </div>
+      </div>
+
+      <nav aria-label="Class sections" style="display: flex; gap: 24px; border-bottom: 1px solid #d6d6d6">
+        <a href="Main.dc.html" aria-current="page" style="display: flex; align-items: center; padding: 0 4px; height: 38px; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none; border-bottom: 3px solid #222222">Gradebook</a>
+        <a href="AttendanceView.dc.html" style="display: flex; align-items: center; padding: 0 4px; height: 38px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Attendance</a>
+      </nav>
+
+      <section aria-label="Class stats" style="display: flex; gap: 12px">
+        <div class="stat"><b>78.3</b><span>Class average · adjusted marks (out of 100)</span></div>
+        <div class="stat"><b>94.1</b><span>Highest · Mahima C.</span></div>
+        <div class="stat"><b>63.6</b><span>Lowest · Sneha Varma</span></div>
+        <div class="stat"><b>100%</b><span>Pass percentage · 5 of 5 passed (pass mark 35)</span></div>
+      </section>
+
+      <div style="display: flex; align-items: center; gap: 18px; font-size: 12.5px; color: #4a4a4a">
+        <span style="display: inline-flex; align-items: center; gap: 6px"><span class="ab">Ab</span> = Absent</span>
+        <span style="color: #a0a0a0">·</span>
+        <span>Click a test name to enter marks and see its details</span>
+      </div>
+
+      <div style="overflow-x: auto; border: 1px solid #c8c8c8; background: #ffffff">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th class="name" scope="col" style="text-align: left">Student</th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Test 01</a></div><div class="dt">10 Jul 2025</div><div class="sub">Max 25 · Wt. 5%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Test 02</a></div><div class="dt">07 Aug 2025</div><div class="sub">Max 25 · Wt. 5%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Test 03</a></div><div class="dt">28 Aug 2025</div><div class="sub">Max 15 · Wt. 5%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Test 04</a></div><div class="dt">11 Sep 2025</div><div class="sub">Max 15 · Wt. 5%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Term 1 Exam</a></div><div class="dt">22 Sep 2025</div><div class="sub">Max 80 · Wt. 20%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Project</a></div><div class="dt">14 Nov 2025</div><div class="sub">Max 20 · Wt. 10%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Test 05</a></div><div class="dt">04 Dec 2025</div><div class="sub">Max 15 · Wt. 5%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Test 06</a></div><div class="dt">08 Jan 2026</div><div class="sub">Max 15 · Wt. 5%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Term 2 Exam</a></div><div class="dt">02 Feb 2026</div><div class="sub">Max 80 · Wt. 20%</div></th>
+              <th class="ev" scope="col"><div class="hrow"><a class="evl" href="TestDetail.dc.html">Final Exam</a></div><div class="dt">09 Mar 2026</div><div class="sub">Max 100 · Wt. 20%</div></th>
+              <th class="gap" aria-hidden="true"></th>
+              <th class="sum first" scope="col"><div class="hrow">Total Marks Acquired</div><div class="sub">Out of 390</div><div class="sub">Raw %</div></th>
+              <th class="sum" scope="col"><div class="hrow">Adjusted Marks (Weighted)<span class="info"><button aria-label="How adjusted marks are calculated">i</button><span class="tip" role="tooltip">Each evaluation is scaled to its weightage: (marks ÷ max marks) × weight, summed across all evaluations. Absent counts as 0.</span></span></div><div class="sub">Out of 100</div><div class="sub">Sum of weights = 100%</div></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="name" scope="row"><a class="nm" href="Student.dc.html">Lakshmi Hansika K.</a></th>
+              <td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>11.5</td><td>9.5</td><td>62</td><td>17</td><td>12</td><td>14</td><td>66</td><td>81</td>
+              <td class="gap"></td>
+              <td class="sum first"><span class="big">273</span><span class="pct">70.0%</span></td>
+              <td class="sum"><span class="big">72.4</span></td>
+            </tr>
+            <tr>
+              <th class="name" scope="row"><a class="nm" href="Student.dc.html">Bhavya S.</a></th>
+              <td>21</td><td>19</td><td>13</td><td>12</td><td>71</td><td>18</td><td>13.5</td><td>12</td><td>74</td><td>88</td>
+              <td class="gap"></td>
+              <td class="sum first"><span class="big">341.5</span><span class="pct">87.6%</span></td>
+              <td class="sum"><span class="big">87.7</span></td>
+            </tr>
+            <tr>
+              <th class="name" scope="row"><a class="nm" href="Student.dc.html">Divya Sri P.</a></th>
+              <td>18</td><td>20</td><td>10</td><td>11.5</td><td>58</td><td>15</td><td>11</td><td>10.5</td><td>61</td><td>72</td>
+              <td class="gap"></td>
+              <td class="sum first"><span class="big">287</span><span class="pct">73.6%</span></td>
+              <td class="sum"><span class="big">73.6</span></td>
+            </tr>
+            <tr>
+              <th class="name" scope="row"><a class="nm" href="Student.dc.html">Mahima C.</a></th>
+              <td>23</td><td>22</td><td>14</td><td>14.5</td><td>76</td><td>19</td><td>14</td><td>13.5</td><td>78</td><td>92</td>
+              <td class="gap"></td>
+              <td class="sum first"><span class="big">366</span><span class="pct">93.8%</span></td>
+              <td class="sum"><span class="big">94.1</span></td>
+            </tr>
+            <tr>
+              <th class="name" scope="row"><a class="nm" href="Student.dc.html">Sneha Varma</a></th>
+              <td>15</td><td>17</td><td>9</td><td>8.5</td><td>49</td><td>14</td><td>9.5</td><td>10</td><td>52</td><td>63</td>
+              <td class="gap"></td>
+              <td class="sum first"><span class="big">247</span><span class="pct">63.3%</span></td>
+              <td class="sum"><span class="big">63.6</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1512,"height":982}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

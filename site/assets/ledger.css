@@ -1,0 +1,273 @@
+/* Ledger mid-fi layer: Sai Seva Sangh palette, type and shape.
+   Loaded after each page's own styles, so these rules win ties. */
+
+:root {
+  --white: #FFFFFF;
+  --offwhite: #FAF7F4;
+  --ink: #2E2430;
+  --mauve: #6E5A70;
+  --mauve-light: #EFE9F0;
+  --saffron: #FF911E;
+  --saffron-hover: #F5850F;
+  --saffron-deep: #A85400;
+  --saffron-light: #FFF1E0;
+  --stone: #7C7C7A;
+  --muted: #666664;
+  --hairline: #E6E2DE;
+  --credit: #2E7353;
+  --debit: #B3261E;
+
+  /* Buttons are pills; the colour guide's 8px is the conservative option. */
+  --btn-radius: 999px;
+  --r-input: 4px;
+  --r-card: 8px;
+  --r-panel: 16px;
+}
+
+html, body { background: var(--offwhite); }
+body {
+  margin: 0;
+  font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Header + primary nav ---------- */
+header {
+  background: var(--white) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+}
+.brand-logo { display: block; object-fit: contain; border-radius: 8px; }
+.brand-sub {
+  display: block; font-size: 11px; font-weight: 400; letter-spacing: 0.06em;
+  text-transform: lowercase; color: var(--muted); margin-top: 1px;
+}
+
+nav[aria-label="Primary"] {
+  background: var(--ink) !important;
+  border-bottom: none !important;
+  gap: 4px !important;
+}
+nav[aria-label="Primary"] > a,
+nav[aria-label="Primary"] > .nv > a {
+  color: #E9E3EA !important;
+  border-bottom: 3px solid transparent !important;
+  border-top: 3px solid transparent;
+  transition: background .15s, color .15s;
+}
+nav[aria-label="Primary"] > a:hover,
+nav[aria-label="Primary"] > .nv > a:hover,
+nav[aria-label="Primary"] > .nv:focus-within > a {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--white) !important;
+}
+nav[aria-label="Primary"] a[aria-current] {
+  color: var(--white) !important;
+  font-weight: 700 !important;
+  border-bottom-color: var(--saffron) !important;
+}
+
+/* Dropdowns */
+.dd {
+  border: 1px solid var(--hairline) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 28px rgba(46, 36, 48, 0.14) !important;
+  padding: 8px !important;
+}
+.dd a { border-radius: 8px !important; color: var(--ink) !important; }
+.dd a:hover { background: var(--mauve-light) !important; }
+.dd a small { color: var(--muted) !important; }
+.dd .who b { color: var(--ink) !important; }
+
+/* ---------- Side column ---------- */
+aside {
+  background: var(--white) !important;
+  border-right: 1px solid var(--hairline) !important;
+}
+aside a { transition: background .15s; border-radius: 8px !important; }
+aside a:not([aria-current]):hover { background: var(--offwhite); }
+aside a[aria-current] {
+  background: var(--mauve-light) !important;
+  border-left-color: var(--mauve) !important;
+  color: var(--ink) !important;
+}
+
+/* ---------- Headings ---------- */
+main h1 { color: var(--ink) !important; font-weight: 700 !important; letter-spacing: -0.01em; }
+main h2, main h3 { color: var(--ink); }
+
+/* ---------- Buttons ---------- */
+.btn, .pill, main button:not([class*="tab"]):not([role="tab"]):not(.raw) {
+  border-radius: var(--btn-radius) !important;
+}
+.btn, .pill { transition: background .15s, border-color .15s, box-shadow .15s; }
+.btn {
+  border: 1px solid var(--stone) !important;
+  background: var(--white);
+  color: var(--ink) !important;
+  font-weight: 700 !important;
+  padding: 0 18px !important;
+}
+.btn:hover { background: var(--mauve-light) !important; border-color: var(--mauve) !important; }
+.btn.p, .pill.primary {
+  background: var(--saffron) !important;
+  border-color: var(--saffron) !important;
+  color: var(--ink) !important;
+}
+.btn.p:hover, .pill.primary:hover {
+  background: var(--saffron-hover) !important;
+  border-color: var(--saffron-hover) !important;
+  box-shadow: 0 2px 0 rgba(168, 84, 0, 0.25);
+}
+.btn.s { padding: 0 14px !important; }
+.btn.ghost { border-color: var(--hairline) !important; color: var(--stone) !important; background: var(--offwhite) !important; }
+.pill { font-weight: 700 !important; }
+.pill:not(.primary):hover { background: var(--mauve-light) !important; }
+
+/* ---------- Surfaces ---------- */
+.card {
+  background: var(--white) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--r-panel) !important;
+  padding: 20px 24px !important;
+}
+.sh { border-bottom-color: var(--hairline) !important; color: var(--ink) !important; font-size: 16px !important; font-weight: 700 !important; }
+.sh small { color: var(--muted) !important; }
+
+.stat {
+  background: var(--white) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: 12px !important;
+  padding: 16px 18px !important;
+}
+.stat:first-child { background: var(--saffron-light) !important; border-color: #FBDDB8 !important; }
+.stat b { color: var(--ink) !important; font-weight: 900 !important; }
+.stat span { color: var(--muted) !important; }
+
+.note {
+  background: var(--saffron-light) !important;
+  border: 1px solid #FBDDB8 !important;
+  border-radius: var(--r-card) !important;
+  color: var(--ink) !important;
+}
+
+.empty {
+  background: var(--white) !important;
+  border: 1.5px dashed #D3CBD4 !important;
+  border-radius: var(--r-panel) !important;
+}
+.empty > svg {
+  box-sizing: content-box;
+  padding: 16px;
+  border-radius: 50%;
+  background: var(--saffron-light);
+  stroke: var(--saffron-deep);
+}
+.empty h2 { color: var(--ink) !important; font-weight: 700 !important; }
+.empty p { color: var(--muted) !important; }
+
+/* ---------- Tables ---------- */
+.tbx, main div[style*="overflow-x: auto"] {
+  border: 1px solid var(--hairline) !important;
+  border-radius: 12px !important;
+  overflow: auto !important;
+  background: var(--white);
+}
+.tt thead th, .tbl thead th, .tg thead th {
+  background: var(--offwhite) !important;
+  color: var(--mauve) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  font-weight: 700 !important;
+}
+.tt th, .tt td, .tbl th, .tbl td { border-bottom-color: var(--hairline) !important; }
+.tbl th, .tbl td { border-right-color: var(--hairline) !important; }
+.tbl .name { border-right: 1px solid var(--hairline) !important; }
+.tt tbody tr:nth-child(even) > *,
+.tbl tbody tr:nth-child(even) > *:not(.sum):not(.gap) { background: var(--offwhite) !important; }
+.tt tbody tr:hover > *,
+.tbl tbody tr:hover > *:not(.gap) { background: var(--mauve-light) !important; }
+.tt tbody tr:last-child > *, .tbl tbody tr:last-child > * { border-bottom: none !important; }
+.tbl .sum { background: var(--mauve-light) !important; border-right-color: #DED3DF !important; }
+.tbl thead .sum { background: #E6DDE7 !important; color: var(--ink) !important; }
+.tbl .sum.first { border-left: 2px solid var(--mauve) !important; }
+.big { font-weight: 900 !important; }
+.tt .num, .tbl td, .num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Tabs, tags, badges ---------- */
+.tabs { border-bottom-color: var(--hairline) !important; }
+.tab { color: var(--muted) !important; }
+.tab:hover { color: var(--ink) !important; }
+.tab.on, nav[aria-label]:not([aria-label="Primary"]) a[aria-current] {
+  color: var(--ink) !important;
+  border-bottom-color: var(--saffron) !important;
+  font-weight: 700 !important;
+}
+.tab span, .count {
+  background: var(--mauve-light) !important;
+  color: var(--mauve) !important;
+  border-radius: 999px !important;
+  font-weight: 700 !important;
+}
+.tag {
+  background: var(--mauve-light) !important;
+  border: 1px solid transparent !important;
+  color: var(--mauve) !important;
+  border-radius: 4px !important;
+}
+.tag.dk { background: var(--ink) !important; color: var(--white) !important; }
+.tag.dash { background: var(--white) !important; border: 1px dashed var(--stone) !important; color: var(--muted) !important; }
+.ab { background: var(--offwhite) !important; border-color: #CFC7CF !important; color: var(--muted) !important; border-radius: 4px !important; }
+
+/* ---------- Forms ---------- */
+.in, .ta, select, main input[type="text"], main input[type="search"], main input:not([type]) {
+  border: 1px solid var(--stone) !important;
+  border-radius: var(--r-input) !important;
+  font-family: 'Lato', 'Helvetica Neue', Arial, sans-serif !important;
+}
+.in:focus, .ta:focus, select:focus, input:focus {
+  outline: 2px solid var(--mauve) !important;
+  outline-offset: -1px !important;
+  border-color: var(--mauve) !important;
+}
+.in:disabled { background: var(--offwhite) !important; color: var(--stone) !important; }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--mauve); }
+.fl, .kv dt, .lb { color: var(--muted) !important; }
+:focus-visible { outline: 2px solid var(--mauve); outline-offset: 2px; }
+
+/* ---------- Links ---------- */
+main a:not([class]):not([style*="color"]):not([aria-current]),
+.nm, .evl, .back {
+  color: var(--saffron-deep) !important;
+  text-decoration-color: rgba(168, 84, 0, 0.35) !important;
+}
+main a:not([class]):not([style*="color"]):hover, .nm:hover, .evl:hover { text-decoration-color: var(--saffron-deep) !important; }
+
+/* ---------- Tooltip ---------- */
+.tip { background: var(--ink) !important; border-radius: 8px !important; }
+
+/* ---------- Prototype helper: empty-state toggle ---------- */
+.ledger-proto {
+  position: fixed; right: 16px; bottom: 16px; z-index: 200;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 16px; border-radius: 999px;
+  border: 1px solid var(--hairline); background: var(--white); color: var(--ink);
+  font: 700 13px 'Lato', sans-serif; cursor: pointer;
+  box-shadow: 0 6px 18px rgba(46, 36, 48, 0.12);
+}
+.ledger-proto i {
+  width: 28px; height: 16px; border-radius: 999px; background: var(--hairline);
+  position: relative; transition: background .15s;
+}
+.ledger-proto i::after {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--white); transition: left .15s;
+}
+.ledger-proto[aria-pressed="true"] i { background: var(--saffron); }
+.ledger-proto[aria-pressed="true"] i::after { left: 14px; }
+
+/* ---------- Narrow screens ---------- */
+@media (max-width: 900px) {
+  header, nav[aria-label="Primary"] { padding-left: 16px !important; padding-right: 16px !important; }
+  nav[aria-label="Primary"] { overflow-x: auto; }
+  main { padding-left: 16px !important; padding-right: 16px !important; }
+}

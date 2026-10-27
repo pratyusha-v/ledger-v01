@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger – Student Profile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#333}a:hover{color:#000}
+.card{background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;padding:20px 22px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid #e0e0e0;padding-bottom:10px}
+.sh h2{margin:0;font-size:16px;font-weight:600;color:#111111}
+.sh .meta{font-size:12px;color:#5c5c5c}
+.kv{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 24px;margin:0}
+.kv.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.kv.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+.kv div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.kv dt{font-size:11.5px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:#5c5c5c}
+.kv dd{margin:0;font-size:14px;color:#1a1a1a}
+.na{color:#767676;font-style:italic}
+.mt{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;font-variant-numeric:tabular-nums}
+.mt th,.mt td{border-bottom:1px solid #e0e0e0;padding:9px 12px;text-align:right;white-space:nowrap}
+.mt thead th{background:#f4f4f4;border-bottom:2px solid #9a9a9a;font-size:12.5px;font-weight:600}
+.mt th[scope=row]{text-align:left;font-weight:500}
+.mt thead th:first-child{text-align:left}
+.mt tr.tot td,.mt tr.tot th{background:#ededed;font-weight:600}
+.mt.left td{text-align:left;white-space:normal}
+.ab{display:inline-block;font-style:italic;color:#6b6b6b;background:#f0f0f0;border:1px dashed #b5b5b5;border-radius:3px;padding:0 6px;font-size:12.5px}
+.g{display:inline-block;min-width:26px;text-align:center;font-weight:600;font-size:12.5px;border:1px solid #bdbdbd;border-radius:3px;padding:1px 4px;background:#f6f6f6}
+.g.top{background:#333333;color:#ffffff;border-color:#333333}
+.chip{display:inline-flex;align-items:center;height:24px;padding:0 10px;border:1px solid #9a9a9a;border-radius:12px;font-size:12.5px;color:#333333;background:#f6f6f6}
+.yn{display:inline-block;font-size:12.5px;font-weight:600;padding:1px 8px;border-radius:3px;border:1px solid #9a9a9a}
+.yn.y{background:#333333;color:#ffffff;border-color:#333333}
+.yn.n{background:#ffffff;color:#555555}
+.stat{display:flex;flex-direction:column;gap:2px;padding:0 20px;border-left:1px solid #d6d6d6}
+.stat b{font-size:20px;font-weight:600;color:#111111;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:#5c5c5c}
+.jump a{font-size:13px;color:#333333;text-decoration:none;padding:6px 12px;border:1px solid #c8c8c8;border-radius:16px;background:#ffffff}
+.jump a:hover{background:#ededed}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#222222;text-decoration:none;border-radius:3px}
+.dd a:hover{background:#efefef}
+.dd a small{font-size:11.5px;color:#767676}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #e3e3e3;margin-bottom:4px;font-size:12.5px;color:#555555}
+.dd .who b{display:block;font-size:13.5px;color:#111111}
+</style>
+</helmet>
+<div style="width: 1512px; height: 3040px; box-sizing: border-box; display: flex; flex-direction: column; background: #fafafa; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1f1f1f">
+
+  <!-- Top bar -->
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 55">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <div style="width: 36px; height: 36px; border: 1.5px dashed #8a8a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #5c5c5c; background: #f2f2f2">LOGO</div>
+      <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.01em">Ledger</span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – Ms. Vineetha" aria-haspopup="true" style="width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #8a8a8a; background: #e2e2e2; color: #333333; font: 600 14px 'IBM Plex Sans', sans-serif; cursor: pointer; padding: 0">V</button><div class="dd" role="menu" style="left: auto; right: 0; top: 44px"><div class="who"><b>Ms. Vineetha</b>Teacher</div><a href="MyAccount.dc.html">My Account</a><a href="Login.dc.html">Log out</a></div></div>
+  </header>
+
+  <!-- Nav bar -->
+  <nav aria-label="Primary" style="height: 46px; flex-shrink: 0; display: flex; align-items: stretch; gap: 8px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 50">
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Dashboard</a>
+    <div class="nv"><a href="Main.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Classes<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="Main.dc.html">My Classes <small>Editable</small></a><a href="AllClassesStart.dc.html">All Classes <small>View only</small></a></div></div>
+    <a href="SearchStart.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none; border-bottom: 3px solid #222222">Students</a>
+    <a href="MySchedule.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">My Schedule</a>
+  </nav>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <!-- Sidebar -->
+    <aside aria-label="My classes" style="width: 232px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #d6d6d6; padding: 20px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px">
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5c5c5c; padding: 0 10px 10px">My Classes</div>
+      <a href="Main.dc.html" aria-current="true" style="display: block; padding: 11px 10px; border-radius: 4px; background: #e4e4e4; border-left: 3px solid #222222; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none">Grade 6 - Mathematics</a>
+      <div style="padding: 13px 10px; display: flex; flex-direction: column; gap: 22px">
+        <div style="height: 10px; width: 150px; background: #e3e3e3; border-radius: 2px"></div>
+        <div style="height: 10px; width: 170px; background: #e3e3e3; border-radius: 2px"></div>
+        <div style="height: 10px; width: 140px; background: #e3e3e3; border-radius: 2px"></div>
+        <div style="height: 10px; width: 160px; background: #e3e3e3; border-radius: 2px"></div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <main style="flex: 1; min-width: 0; padding: 24px 32px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+      <a href="Main.dc.html" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #444444; text-decoration: none; align-self: flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Back to marks table</a>
+
+      <!-- Profile header -->
+      <section aria-label="Student summary" style="background: #ffffff; border: 1px solid #c8c8c8; border-radius: 4px; padding: 22px; display: flex; gap: 24px; align-items: stretch">
+        <div style="width: 128px; height: 156px; flex-shrink: 0; border: 1.5px dashed #8a8a8a; border-radius: 4px; background: #f0f0f0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #5c5c5c">
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"></path></svg>
+          <span style="font-size: 12px">Student photo</span>
+        </div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 14px">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px">
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <h1 style="margin: 0; font-size: 26px; font-weight: 600; color: #111111">Korrapati Lakshmi Hansika</h1>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <span class="chip">Grade 6</span>
+                <span class="chip">Adm. No 701</span>
+                <span class="chip">Hostler</span>
+                <span class="chip">Single parent</span>
+                <span class="chip">Academic Year 2025–26</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px; flex-shrink: 0">
+              <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border: 1.5px solid #555555; border-radius: 4px; background: #ffffff; color: #1f1f1f; font: 500 14px 'IBM Plex Sans', sans-serif; cursor: pointer">Download Record</button>
+              
+            </div>
+          </div>
+          <div style="display: flex; align-items: stretch">
+            <div class="stat" style="padding-left: 0; border-left: none"><b>15</b><span>Age · DOB 23-08-2010</span></div>
+            <div class="stat"><b>97.0%</b><span>Attendance · 192 / 198 days</span></div>
+            <div class="stat"><b>88.1%</b><span>Latest test (Test 09)</span></div>
+            <div class="stat"><b>O+</b><span>Blood group</span></div>
+            <div class="stat"><b>Promoted</b><span>Final assessment</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Jump links -->
+      <nav aria-label="Sections" class="jump" style="display: flex; flex-wrap: wrap; gap: 8px">
+        <a href="#personal">Personal</a>
+        <a href="#family">Family &amp; Contact</a>
+        <a href="#health">Health</a>
+        <a href="#attendance">Attendance</a>
+        <a href="#academics">Academics</a>
+        <a href="#conduct">Skills &amp; Conduct</a>
+        <a href="#feedback">Teacher Feedback</a>
+        <a href="#cocurricular">Co-Curricular</a>
+        <a href="#admin">Documents &amp; Admin</a>
+        <a href="#final">Final Assessment</a>
+      </nav>
+
+      <!-- Personal + Family -->
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+        <section id="personal" class="card">
+          <div class="sh"><h2>Personal &amp; Identity</h2></div>
+          <dl class="kv">
+            <div><dt>Admission No.</dt><dd>701</dd></div>
+            <div><dt>Class</dt><dd>Grade 6</dd></div>
+            <div><dt>Repeating class</dt><dd>No</dd></div>
+            <div><dt>Date of birth</dt><dd>23-08-2010</dd></div>
+            <div><dt>Age</dt><dd>15</dd></div>
+            <div><dt>Residential status</dt><dd>Hostler</dd></div>
+            <div><dt>Aadhaar No.</dt><dd>XXXX XXXX 6665</dd></div>
+            <div><dt>APAAR ID</dt><dd>720824479931</dd></div>
+            <div><dt>PEN No.</dt><dd>20000348940</dd></div>
+            <div><dt>Location</dt><dd>Ongole</dd></div>
+            <div><dt>State</dt><dd>Andhra Pradesh</dd></div>
+          </dl>
+        </section>
+
+        <section id="family" class="card">
+          <div class="sh"><h2>Family &amp; Contact</h2><span class="meta">Student status: Single parent</span></div>
+          <table class="mt left">
+            <thead><tr><th scope="col">Relation</th><th scope="col">Name</th><th scope="col">Occupation</th><th scope="col">Contact</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Father</th><td>Yedukondalu</td><td class="na">NA</td><td class="na">NA</td></tr>
+              <tr><th scope="row">Mother</th><td>Late Anjali</td><td class="na">NA</td><td class="na">NA</td></tr>
+              <tr><th scope="row">Guardian</th><td class="na">—</td><td>IT</td><td>96035 36699</td></tr>
+            </tbody>
+          </table>
+          <dl class="kv two">
+            <div><dt>Parents' health status</dt><dd>Not working</dd></div>
+            <div><dt>Siblings</dt><dd>1 younger sister, 1 younger brother</dd></div>
+            <div><dt>Sibling at SSSVM</dt><dd>Yes — Ahalya (Achievers)</dd></div>
+            <div><dt>Parent / guardian behaviour</dt><dd class="na">—</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <!-- Health + Attendance -->
+      <div style="display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 20px">
+        <section id="health" class="card">
+          <div class="sh"><h2>Health</h2></div>
+          <table class="mt">
+            <thead><tr><th scope="col">Details</th><th scope="col">Term 1</th><th scope="col">Term 2</th><th scope="col">Term 3</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Height (cm)</th><td>151</td><td class="na">—</td><td class="na">—</td></tr>
+              <tr><th scope="row">Weight (kg)</th><td>50</td><td class="na">—</td><td class="na">—</td></tr>
+              <tr><th scope="row">Remarks</th><td>Healthy weight</td><td class="na">—</td><td class="na">—</td></tr>
+            </tbody>
+          </table>
+          <dl class="kv two">
+            <div><dt>Blood group</dt><dd>O+</dd></div>
+            <div><dt>Eyesight</dt><dd>2.5</dd></div>
+            <div><dt>Other health issues</dt><dd>Migraine</dd></div>
+            <div><dt>Warden remarks</dt><dd>Good at hostel.</dd></div>
+          </dl>
+        </section>
+
+        <section id="attendance" class="card">
+          <div class="sh"><h2>Attendance</h2><span class="meta">Total: 192 of 198 working days · 6 absent · 97.0%</span></div>
+          <table class="mt">
+            <thead><tr><th scope="col">Month</th><th scope="col">Jun</th><th scope="col">Jul</th><th scope="col">Aug</th><th scope="col">Sep</th><th scope="col">Oct</th><th scope="col">Nov</th><th scope="col">Dec</th><th scope="col">Jan</th><th scope="col">Feb</th><th scope="col">Mar</th><th scope="col">Apr</th><th scope="col">Total</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Working days</th><td>16</td><td>25</td><td>22</td><td>16</td><td>24</td><td>24</td><td>26</td><td>20</td><td>25</td><td class="na">—</td><td class="na">—</td><td style="font-weight: 600">198</td></tr>
+              <tr><th scope="row">Present</th><td>16</td><td>25</td><td>21</td><td>16</td><td>24</td><td>24</td><td>26</td><td>18</td><td>22</td><td class="na">—</td><td class="na">—</td><td style="font-weight: 600">192</td></tr>
+              <tr><th scope="row">Absent</th><td>0</td><td>0</td><td style="font-weight: 600">1</td><td>0</td><td>0</td><td>0</td><td>0</td><td style="font-weight: 600">2</td><td style="font-weight: 600">3</td><td class="na">—</td><td class="na">—</td><td style="font-weight: 600">6</td></tr>
+            </tbody>
+          </table>
+          <dl class="kv two">
+            <div><dt>Attendance remarks</dt><dd class="na">—</dd></div>
+            <div><dt>PTM attendance (I · II · III · IV)</dt><dd style="display: flex; gap: 6px"><span class="yn y">Yes</span><span class="yn n">No</span><span class="yn n">No</span><span class="yn n">No</span></dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <!-- Academics -->
+      <section id="academics" class="card">
+        <div class="sh"><h2>Academics — Subject-wise Test Marks</h2><span class="meta">June &amp; July 2025 · Test 01–02 out of 25, Test 03–09 out of 15 · <span class="ab">Ab</span> = Absent</span></div>
+        <table class="mt">
+          <thead><tr><th scope="col">Subject</th><th scope="col">Test 01</th><th scope="col">Test 02</th><th scope="col">Test 03</th><th scope="col">Test 04</th><th scope="col">Test 05</th><th scope="col">Test 06</th><th scope="col">Test 07</th><th scope="col">Test 08</th><th scope="col">Test 09</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Telugu</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>13.5</td><td>13</td><td>12.5</td><td>8.5</td><td>11</td><td>9</td><td>14</td></tr>
+            <tr><th scope="row">Hindi</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>16.5</td><td>10.5</td><td>12.5</td><td>12</td><td>14</td><td>12.5</td><td>14.5</td></tr>
+            <tr><th scope="row">English</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>11</td><td>11.5</td><td>9.5</td><td>10</td><td>11</td><td>8</td><td>12</td></tr>
+            <tr><th scope="row">Mathematics</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>11.5</td><td>9.5</td><td>12</td><td>14</td><td>10</td><td>11</td><td>10.5</td></tr>
+            <tr><th scope="row">Physical Science</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>13.5</td><td>15</td><td>15</td><td>9</td><td>6</td><td>14.5</td><td>14</td></tr>
+            <tr><th scope="row">Biological Science</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>14</td><td>14.5</td><td>15</td><td>10</td><td>12</td><td>12.5</td><td>14</td></tr>
+            <tr><th scope="row">Social Studies</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>10</td><td>9.5</td><td>11.5</td><td>10.5</td><td>12</td><td>11</td><td>13.5</td></tr>
+            <tr class="tot"><th scope="row">Total</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>90</td><td>83.5</td><td>88</td><td>74</td><td>76</td><td>78.5</td><td>92.5</td></tr>
+            <tr class="tot"><th scope="row">Percentage</th><td><span class="ab">Ab</span></td><td><span class="ab">Ab</span></td><td>85.7%</td><td>79.5%</td><td>83.8%</td><td>70.5%</td><td>72.4%</td><td>74.8%</td><td>88.1%</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Conduct + Feedback -->
+      <div style="display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 20px">
+        <section id="conduct" class="card">
+          <div class="sh"><h2>Skills &amp; Conduct</h2><span class="meta">Grades by subject · <span class="g top">A+</span> <span class="g">A</span></span></div>
+          <table class="mt">
+            <thead><tr><th scope="col">Particulars</th><th scope="col">Tel</th><th scope="col">Hin</th><th scope="col">Eng</th><th scope="col">Math</th><th scope="col">Phy</th><th scope="col">Bio</th><th scope="col">Soc</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Behaviour in class</th><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Projects</th><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Reflection</th><td><span class="g top">A+</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Reading skills</th><td><span class="g top">A+</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Comprehension</th><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Handwriting</th><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Homework</th><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Classwork completion</th><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td></tr>
+              <tr><th scope="row">Books maintenance</th><td><span class="g top">A+</span></td><td><span class="g top">A+</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g">A</span></td><td><span class="g top">A+</span></td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="feedback" class="card">
+          <div class="sh"><h2>Teacher Feedback</h2></div>
+          <table class="mt left">
+            <thead><tr><th scope="col">Subject</th><th scope="col">Feedback on student</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Telugu</th><td>Not attending the classes</td></tr>
+              <tr><th scope="row">Hindi</th><td>60% — hard working girl</td></tr>
+              <tr><th scope="row">English</th><td>63% — can do better</td></tr>
+              <tr><th scope="row">Maths</th><td>Above 80% — can do even better</td></tr>
+              <tr><th scope="row">Science</th><td>40% — needs concentration</td></tr>
+              <tr><th scope="row">Biology</th><td>90% — good</td></tr>
+              <tr><th scope="row">Social</th><td>Above 80% — very sincere and hard working</td></tr>
+            </tbody>
+          </table>
+          <dl class="kv two">
+            <div><dt>Student feedback on teachers</dt><dd class="na">Not recorded</dd></div>
+          </dl>
+        </section>
+      </div>
+
+      <!-- Co-curricular -->
+      <section id="cocurricular" class="card">
+        <div class="sh"><h2>Co-Curricular Activities</h2></div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px">
+          <div style="display: flex; flex-direction: column; gap: 12px">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600; color: #333333">Sports &amp; Martial Arts</h3>
+            <dl class="kv two">
+              <div><dt>Karate</dt><dd>Black Belt (II Dan)</dd></div>
+              <div><dt>Weapons handling</dt><dd>Nunchaku, stick, gun shooting, sword</dd></div>
+            </dl>
+            <dl class="kv two">
+              <div style="grid-column: span 2"><dt>Awards &amp; certificates</dt><dd>II Dan, 4 medals in karate, medals in nunchaku</dd></div>
+              <div style="grid-column: span 2"><dt>Remarks by in-charge</dt><dd>Best student — she can pick up any game</dd></div>
+            </dl>
+            <dl class="kv two">
+              <div style="grid-column: span 2"><dt>Activeness · Flexibility · Games · Yoga · Skating · Malkhamb · Gymnastics</dt><dd class="na">Not recorded</dd></div>
+            </dl>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px; border-left: 1px solid #e0e0e0; padding-left: 28px">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600; color: #333333">Spiritual &amp; Cultural</h3>
+            <table class="mt left">
+              <thead><tr><th scope="col">Activity</th><th scope="col">Grade</th><th scope="col">Remarks</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Veda chanting</th><td><span class="g">O</span></td><td>Good</td></tr>
+                <tr><th scope="row">Bhagavad Gita</th><td><span class="g">O</span></td><td>Excellent</td></tr>
+                <tr><th scope="row">Bhajans &amp; slokas</th><td><span class="g">O</span></td><td>Good</td></tr>
+              </tbody>
+            </table>
+            <dl class="kv two">
+              <div style="grid-column: span 2"><dt>Dance (rhythm, focus, grasping)</dt><dd class="na">Not recorded</dd></div>
+            </dl>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px; border-left: 1px solid #e0e0e0; padding-left: 28px">
+            <h3 style="margin: 0; font-size: 13px; font-weight: 600; color: #333333">Competitions &amp; Service</h3>
+            <dl class="kv two">
+              <div><dt>Competitions</dt><dd><span class="yn y">Yes</span></dd></div>
+              <div><dt>Seva (I · II · III · IV)</dt><dd style="display: flex; gap: 6px"><span class="yn n">No</span><span class="yn n">No</span><span class="yn n">No</span><span class="yn n">No</span></dd></div>
+              <div style="grid-column: span 2"><dt>Participation details</dt><dd>Maths Olympiad, Adhira, FIITJEE and sports</dd></div>
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      <!-- Documents + Final -->
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px">
+        <section id="admin" class="card">
+          <div class="sh"><h2>Documents &amp; Admin</h2><span class="meta">Checked by admin in-charge: Checked</span></div>
+          <table class="mt left">
+            <thead><tr><th scope="col">Document</th><th scope="col">Submitted</th><th scope="col">Handled by</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">Birth certificate</th><td><span class="yn n">No</span></td><td>Ms. Vineetha</td></tr>
+              <tr><th scope="row">Caste certificate</th><td><span class="yn n">No</span></td><td>Ms. Vineetha</td></tr>
+              <tr><th scope="row">Income certificate</th><td><span class="yn n">No</span></td><td>Ms. Vineetha</td></tr>
+              <tr><th scope="row">TC / Bonafide</th><td><span class="yn y">Yes</span></td><td>Shakeera</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="final" class="card">
+          <div class="sh"><h2>Final Assessment</h2></div>
+          <dl class="kv two">
+            <div><dt>Promotion to next standard</dt><dd style="font-weight: 600">Promoted</dd></div>
+            <div><dt>Final decision by management</dt><dd class="na">—</dd></div>
+            <div style="grid-column: span 2"><dt>Overall remarks by management</dt><dd class="na">—</dd></div>
+            <div style="grid-column: span 2"><dt>Parents' willingness for open school (if needed)</dt><dd class="na">—</dd></div>
+            <div><dt>Checked by</dt><dd class="na">—</dd></div>
+            <div><dt>Designation</dt><dd class="na">—</dd></div>
+          </dl>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1512,"height":3040}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger – All Classes</title>
+<link rel="icon" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2E2430}a:hover{color:#2E2430}
+.tbl{width:100%;border-collapse:separate;border-spacing:0;font-size:14px;color:#2E2430}
+.tbl th,.tbl td{border-bottom:1px solid #E6E2DE;border-right:1px solid #E6E2DE;padding:0 12px;background:#FFFFFF;white-space:nowrap}
+.tbl thead th{background:#FAF7F4;border-bottom:2px solid #7C7C7A;padding:10px 12px;text-align:right;font-weight:600;font-size:13px;vertical-align:top}
+.tbl td{height:48px;text-align:right}
+.tbl .name{text-align:left;width:200px;min-width:200px;border-right:2px solid #7C7C7A;font-weight:500}
+.tbl .sum{background:#EFE9F0}
+.tbl thead .sum{background:#EFE9F0}
+.sub{font-size:11.5px;font-weight:400;color:#666664;margin-top:3px}
+.sk{display:inline-block;height:10px;width:28px;background:#EFE9F0;border-radius:4px}
+.grp{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#666664;padding:14px 10px 6px}
+.cl{display:flex;justify-content:space-between;align-items:center;padding:9px 10px;border-radius:8px;font-size:13.5px;color:#2E2430;text-decoration:none;border-left:3px solid transparent}
+.cl:hover{background:#FAF7F4}
+.cl.on{background:#EFE9F0;border-left-color:#6E5A70;font-weight:600;color:#2E2430}
+.cl small{font-size:11.5px;color:#666664;font-weight:400}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#FFFFFF;border:1px solid #E6E2DE;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#2E2430;text-decoration:none;border-radius:4px}
+.dd a:hover{background:#EFE9F0}
+.dd a small{font-size:11.5px;color:#666664}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #E6E2DE;margin-bottom:4px;font-size:12.5px;color:#666664}
+.dd .who b{display:block;font-size:13.5px;color:#2E2430}
+</style>
+<link rel="stylesheet" href="assets/ledger.css">
+</head>
+<body>
+<div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
+
+  <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
+    <div style="display: flex;align-items: center;gap: 12px">
+      <img class="brand-logo" src="assets/logo.svg" alt="Sai Seva Sangh" width="36" height="36">
+      <span style="display: flex;flex-direction: column;line-height: 1.1"><span style="font-size: 18px;font-weight: 700;letter-spacing: 0.01em">Ledger</span><span class="brand-sub">sai seva sangh</span></span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – Ms. Vineetha" aria-haspopup="true" style="width: 36px;height: 36px;border-radius: 50%;border: 1.5px solid #7C7C7A;background: #EFE9F0;color: #2E2430;font: 600 14px 'Lato', sans-serif;cursor: pointer;padding: 0">V</button><div class="dd" role="menu" style="left: auto;right: 0;top: 44px"><div class="who"><b>Ms. Vineetha</b>Teacher</div><a href="MyAccount.html">My Account</a><a href="Login.html">Log out</a></div></div>
+  </header>
+
+  <nav aria-label="Primary" style="height: 46px;flex-shrink: 0;display: flex;align-items: stretch;gap: 8px;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 50">
+    <a href="Dashboard.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Dashboard</a>
+    <div class="nv"><a href="Main.html" aria-current="page" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;font-weight: 600;color: #2E2430;text-decoration: none;border-bottom: 3px solid #6E5A70">Classes<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="Main.html">My Classes <small>Editable</small></a><a href="AllClassesStart.html">All Classes <small>View only</small></a></div></div>
+    <a href="SearchStart.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Students</a>
+    <a href="MySchedule.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">My Schedule</a>
+  </nav>
+
+  <div style="flex: 1;display: flex;min-height: 0">
+    <aside aria-label="All classes" style="width: 260px;flex-shrink: 0;background: #FFFFFF;border-right: 1px solid #E6E2DE;padding: 20px 12px;box-sizing: border-box;display: flex;flex-direction: column;gap: 2px;overflow: hidden">
+      <label style="display: flex;align-items: center;gap: 8px;height: 36px;padding: 0 10px;margin: 0 0 6px;border: 1px solid #7C7C7A;border-radius: 8px;font-size: 13px;color: #666664">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input aria-label="Filter classes" placeholder="Filter classes" style="border: none;outline: none;flex: 1;min-width: 0;font: 400 13px 'Lato', sans-serif;background: transparent">
+      </label>
+      <div class="grp">Grade 6</div>
+      <a class="cl" href="AllClasses.html">Telugu <small>View</small></a>
+      <a class="cl" href="AllClasses.html">Hindi <small>View</small></a>
+      <a class="cl" href="AllClasses.html">English <small>View</small></a>
+      <a class="cl" href="Main.html">Mathematics <small>Yours</small></a>
+      <a class="cl on" href="AllClasses.html" aria-current="true">Physical Science <small>View</small></a>
+      <a class="cl" href="AllClasses.html">Biological Science <small>View</small></a>
+      <a class="cl" href="AllClasses.html">Social Studies <small>View</small></a>
+      <div class="grp">Grade 7</div>
+      <div style="padding: 10px;display: flex;flex-direction: column;gap: 20px">
+        <div style="height: 10px;width: 120px;background: #EFE9F0;border-radius: 4px"></div>
+        <div style="height: 10px;width: 150px;background: #EFE9F0;border-radius: 4px"></div>
+        <div style="height: 10px;width: 100px;background: #EFE9F0;border-radius: 4px"></div>
+      </div>
+    </aside>
+
+    <main style="flex: 1;min-width: 0;padding: 28px 32px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
+      <div role="note" style="display: flex;align-items: center;gap: 10px;padding: 10px 14px;border: 1px dashed #7C7C7A;border-radius: 8px;background: #FAF7F4;font-size: 13px;color: #2E2430">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+        <span><b>View only.</b> You can see this class's marks but can't edit them.</span>
+      </div>
+
+      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
+        <div style="display: flex;flex-direction: column;gap: 6px">
+          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">Physical Science – Grade 6</h1>
+          <p style="margin: 0;font-size: 14px;color: #666664">Teacher: [Teacher name] · 5 students · [N] evaluations</p>
+        </div>
+        <span style="display: inline-flex;align-items: center;height: 28px;padding: 0 12px;border: 1px solid #7C7C7A;border-radius: 14px;font-size: 12.5px;color: #666664;background: #FFFFFF">Read-only</span>
+      </div>
+
+      <div style="overflow-x: auto;border: 1px solid #E6E2DE;background: #FFFFFF">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th class="name" scope="col" style="text-align: left;vertical-align: bottom">Student</th>
+              <th scope="col">Evaluation 1<div class="sub">Max [–]</div></th>
+              <th scope="col">Evaluation 2<div class="sub">Max [–]</div></th>
+              <th scope="col">Evaluation 3<div class="sub">Max [–]</div></th>
+              <th scope="col">Evaluation 4<div class="sub">Max [–]</div></th>
+              <th scope="col">Evaluation 5<div class="sub">Max [–]</div></th>
+              <th scope="col">Evaluation 6<div class="sub">Max [–]</div></th>
+              <th class="sum" scope="col" style="border-left: 2px solid #7C7C7A">Total<div class="sub">Raw %</div></th>
+              <th class="sum" scope="col">Adjusted<div class="sub">Out of 100</div></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th class="name" scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Lakshmi Hansika K.</a></th><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td class="sum" style="border-left: 2px solid #7C7C7A"><span class="sk"></span></td><td class="sum"><span class="sk"></span></td></tr>
+            <tr><th class="name" scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Bhavya S.</a></th><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td class="sum" style="border-left: 2px solid #7C7C7A"><span class="sk"></span></td><td class="sum"><span class="sk"></span></td></tr>
+            <tr><th class="name" scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Divya Sri P.</a></th><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td class="sum" style="border-left: 2px solid #7C7C7A"><span class="sk"></span></td><td class="sum"><span class="sk"></span></td></tr>
+            <tr><th class="name" scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Mahima C.</a></th><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td class="sum" style="border-left: 2px solid #7C7C7A"><span class="sk"></span></td><td class="sum"><span class="sk"></span></td></tr>
+            <tr><th class="name" scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Sneha Varma</a></th><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td><span class="sk"></span></td><td class="sum" style="border-left: 2px solid #7C7C7A"><span class="sk"></span></td><td class="sum"><span class="sk"></span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      
+    </main>
+  </div>
+</div>
+<script src="assets/ledger.js"></script>
+
+</body>
+</html>

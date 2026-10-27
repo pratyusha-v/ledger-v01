@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger Admin – Student Search</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#333}a:hover{color:#000}
+.tt{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:14px;color:#1f1f1f}
+.tt th,.tt td{border-bottom:1px solid #d6d6d6;padding:0 14px;background:#ffffff;text-align:left;white-space:nowrap}
+.tt thead th{background:#f4f4f4;border-bottom:2px solid #9a9a9a;height:42px;font-size:13px;font-weight:600}
+.tt td,.tt tbody th{height:58px}
+.tt tbody th{font-weight:500}
+.tt .num{text-align:right}
+.na{color:#767676}
+.fl{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:#5c5c5c}
+.in{box-sizing:border-box;width:100%;height:36px;border:1px solid #9a9a9a;border-radius:3px;padding:0 10px;font:400 13.5px 'IBM Plex Sans',sans-serif;background:#ffffff;color:#1f1f1f;text-transform:none;letter-spacing:0}
+.ck{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#1f1f1f;text-transform:none;letter-spacing:0;font-weight:400}
+.ck input{width:16px;height:16px;margin:0}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 6px 0 12px;border:1px solid #9a9a9a;border-radius:14px;font-size:12.5px;background:#ffffff;color:#333333}
+.chip button{width:22px;height:22px;border:none;background:transparent;border-radius:50%;cursor:pointer;color:#555555;padding:0;font:600 13px 'IBM Plex Sans',sans-serif}
+.ph{width:36px;height:36px;border-radius:50%;border:1.5px dashed #8a8a8a;background:#f0f0f0;flex-shrink:0;box-sizing:border-box}
+.go{display:inline-flex;align-items:center;height:32px;padding:0 12px;border:1.5px solid #555555;border-radius:4px;font-size:13px;font-weight:500;color:#1f1f1f;text-decoration:none;background:#ffffff}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#222222;text-decoration:none;border-radius:3px}
+.dd a:hover{background:#efefef}
+.dd a small{font-size:11.5px;color:#767676}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #e3e3e3;margin-bottom:4px;font-size:12.5px;color:#555555}
+.dd .who b{display:block;font-size:13.5px;color:#111111}
+</style>
+</helmet>
+<div style="width: 1512px; height: 982px; box-sizing: border-box; display: flex; flex-direction: column; background: #fafafa; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1f1f1f; overflow: hidden">
+
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 55">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <div style="width: 36px; height: 36px; border: 1.5px dashed #8a8a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #5c5c5c; background: #f2f2f2">LOGO</div>
+      <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.01em">Ledger</span><span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #ffffff; background: #333333; border-radius: 3px; padding: 2px 6px">Admin</span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – [Admin name]" aria-haspopup="true" style="width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #8a8a8a; background: #333333; color: #ffffff; font: 600 14px 'IBM Plex Sans', sans-serif; cursor: pointer; padding: 0">A</button><div class="dd" role="menu" style="left: auto; right: 0; top: 44px"><div class="who"><b>[Admin name]</b>School admin</div><a href="AdminMyAccount.dc.html">My Account</a><a href="Login.dc.html">Log out</a></div></div>
+  </header>
+
+  <nav aria-label="Primary" style="height: 46px; flex-shrink: 0; display: flex; align-items: stretch; gap: 8px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 50">
+    <a href="AdminDashboard.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Dashboard</a>
+    <a href="AdminEnrollment.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Student Enrollment</a>
+    <a href="AdminSearchStart.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none; border-bottom: 3px solid #222222">Student Search</a>
+    <a href="AdminAllClassesStart.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">All Classes</a>
+    <div class="nv"><a href="AdminPastYears.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Past Records<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminPastYears.dc.html">Past Academic Years</a><a href="AdminFormerStudents.dc.html">Former Students</a><a href="AdminReports.dc.html">Reports</a></div></div>
+    <div class="nv"><a href="AdminTimetable.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Scheduling<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminTimetable.dc.html">Timetable</a><a href="AdminTerms.dc.html">Terms and Periods</a><a href="AdminRooms.dc.html">Rooms</a></div></div>
+    <div class="nv"><a href="AdminStaff.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Permissions<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.dc.html">Staff Directory</a><a href="AdminRoles.dc.html">Roles and Permissions</a><a href="AdminSettings.dc.html">School Settings</a></div></div>
+  </nav>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+    <!-- Filters -->
+    <aside aria-label="Filters" style="width: 272px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #d6d6d6; padding: 22px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 style="margin: 0; font-size: 15px; font-weight: 600">Filters</h2><button type="button" style="border: none; background: none; padding: 0; font: 400 13px 'IBM Plex Sans', sans-serif; color: #333333; text-decoration: underline; cursor: pointer">Clear all</button></div>
+      <label class="fl">Class<select class="in"><option>Grade 6</option><option>All classes</option><option>Grade 7</option></select></label>
+      <fieldset class="fl" style="border: none; margin: 0; padding: 0"><legend style="padding: 0 0 6px">Residential status</legend>
+        <label class="ck"><input type="checkbox"> Hostler</label>
+        <label class="ck"><input type="checkbox"> Day scholar</label>
+      </fieldset>
+      <label class="fl">Attendance<select class="in"><option>Any</option><option>Below 90%</option><option>Below 75%</option></select></label>
+      <label class="fl">Promotion status<select class="in"><option>Any</option><option>Promoted</option><option>Not decided</option></select></label>
+      <fieldset class="fl" style="border: none; margin: 0; padding: 0"><legend style="padding: 0 0 6px">Flags</legend>
+        <label class="ck"><input type="checkbox"> Pending documents</label>
+        <label class="ck"><input type="checkbox"> Health notes</label>
+      </fieldset>
+      <button type="button" style="height: 40px; border: 1.5px solid #222222; border-radius: 4px; background: #222222; color: #ffffff; font: 500 14px 'IBM Plex Sans', sans-serif; cursor: pointer">Apply Filters</button>
+    </aside>
+
+    <main style="flex: 1; min-width: 0; padding: 28px 32px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px"><h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111111">Student Search</h1><div style="display: flex; gap: 10px"><button type="button" class="btn s" style="display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border: 1.5px solid #555555; border-radius: 4px; background: #ffffff; font: 500 13.5px 'IBM Plex Sans', sans-serif; cursor: pointer">Export</button><a href="AdminNewApplication.dc.html" style="display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; box-sizing: border-box; border: 1.5px solid #222222; border-radius: 4px; background: #222222; color: #ffffff; font-size: 13.5px; font-weight: 500; text-decoration: none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add Student</a></div></div>
+      <label style="display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 14px; border: 1.5px solid #555555; border-radius: 4px; background: #ffffff; color: #5c5c5c">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+        <input aria-label="Search students" placeholder="Search by name, admission no., APAAR ID or PEN" style="border: none; outline: none; flex: 1; min-width: 0; font: 400 15px 'IBM Plex Sans', sans-serif; background: transparent">
+      </label>
+
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+          <span style="font-size: 14px; font-weight: 600; margin-right: 6px">5 results</span>
+          <span class="chip">Class: Grade 6<button type="button" aria-label="Remove Class filter">×</button></span>
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #444444">Sort by<select class="in" style="width: 150px"><option>Name (A–Z)</option><option>Adm. No.</option><option>Attendance</option></select></label>
+      </div>
+
+      <div style="border: 1px solid #c8c8c8; background: #ffffff; overflow: hidden">
+        <table class="tt">
+          <thead>
+            <tr><th scope="col">Student</th><th scope="col">Adm. No.</th><th scope="col">Class</th><th scope="col">Residential</th><th scope="col" class="num">Attendance</th><th scope="col"><span style="position: absolute; left: -9999px">Action</span></th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row"><a href="AdminStudent.dc.html" style="display: flex; align-items: center; gap: 12px; color: #111111; text-underline-offset: 3px"><span class="ph" aria-hidden="true"></span>Korrapati Lakshmi Hansika</a></th><td>701</td><td>Grade 6</td><td>Hostler</td><td class="num">97.0%</td><td style="text-align: right"><a class="go" href="AdminStudent.dc.html">View profile</a></td></tr>
+            <tr><th scope="row"><a href="AdminStudent.dc.html" style="display: flex; align-items: center; gap: 12px; color: rgb(17, 17, 17); text-underline-offset: 3px"><span class="ph" aria-hidden="true"></span>Bhavya S.</a></th><td class="na">—</td><td>Grade 6</td><td class="na">—</td><td class="num na">—</td><td style="text-align: right"><a class="go" href="AdminStudent.dc.html">View profile</a></td></tr>
+            <tr><th scope="row"><a href="AdminStudent.dc.html" style="display: flex; align-items: center; gap: 12px; color: #111111; text-underline-offset: 3px"><span class="ph" aria-hidden="true"></span>Divya Sri P.</a></th><td class="na">—</td><td>Grade 6</td><td class="na">—</td><td class="num na">—</td><td style="text-align: right"><a class="go" href="AdminStudent.dc.html">View profile</a></td></tr>
+            <tr><th scope="row"><a href="AdminStudent.dc.html" style="display: flex; align-items: center; gap: 12px; color: rgb(17, 17, 17); text-underline-offset: 3px"><span class="ph" aria-hidden="true"></span>Mahima C.</a></th><td class="na">—</td><td>Grade 6</td><td class="na">—</td><td class="num na">—</td><td style="text-align: right"><a class="go" href="AdminStudent.dc.html">View profile</a></td></tr>
+            <tr><th scope="row"><a href="AdminStudent.dc.html" style="display: flex; align-items: center; gap: 12px; color: #111111; text-underline-offset: 3px"><span class="ph" aria-hidden="true"></span>Sneha Varma</a></th><td class="na">—</td><td>Grade 6</td><td class="na">—</td><td class="num na">—</td><td style="text-align: right"><a class="go" href="AdminStudent.dc.html">View profile</a></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1512,"height":982}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

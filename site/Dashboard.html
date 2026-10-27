@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger – Dashboard</title>
+<link rel="icon" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2E2430}a:hover{color:#2E2430}
+.card{background:#FFFFFF;border:1px solid #E6E2DE;border-radius:8px;padding:20px;box-sizing:border-box;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:1px solid #E6E2DE;padding-bottom:10px}
+.sh h2{margin:0;font-size:16px;font-weight:600;color:#2E2430}
+.count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#2E2430;color:#FFFFFF;font-size:12px;font-weight:600;box-sizing:border-box}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #E6E2DE}
+.item:last-child{border-bottom:none}
+.it{display:flex;flex-direction:column;gap:3px;min-width:0}
+.it b{font-size:14px;font-weight:600;color:#2E2430}
+.it span{font-size:12.5px;color:#666664}
+.go{flex-shrink:0;display:inline-flex;align-items:center;height:34px;padding:0 12px;border:1.5px solid #7C7C7A;border-radius:8px;font-size:13px;font-weight:500;color:#2E2430;text-decoration:none;background:#FFFFFF}
+.go:hover{background:#EFE9F0}
+.sk{height:10px;background:#EFE9F0;border-radius:4px}
+.box{width:18px;height:18px;border:1.5px solid #7C7C7A;border-radius:4px;flex-shrink:0;box-sizing:border-box}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#FFFFFF;border:1px solid #E6E2DE;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#2E2430;text-decoration:none;border-radius:4px}
+.dd a:hover{background:#EFE9F0}
+.dd a small{font-size:11.5px;color:#666664}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #E6E2DE;margin-bottom:4px;font-size:12.5px;color:#666664}
+.dd .who b{display:block;font-size:13.5px;color:#2E2430}
+</style>
+<link rel="stylesheet" href="assets/ledger.css">
+</head>
+<body>
+<script type="text/x-template" id="ledger-tpl">
+<div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
+
+  <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
+    <div style="display: flex;align-items: center;gap: 12px">
+      <img class="brand-logo" src="assets/logo.svg" alt="Sai Seva Sangh" width="36" height="36">
+      <span style="display: flex;flex-direction: column;line-height: 1.1"><span style="font-size: 18px;font-weight: 700;letter-spacing: 0.01em">Ledger</span><span class="brand-sub">sai seva sangh</span></span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – Ms. Vineetha" aria-haspopup="true" style="width: 36px;height: 36px;border-radius: 50%;border: 1.5px solid #7C7C7A;background: #EFE9F0;color: #2E2430;font: 600 14px 'Lato', sans-serif;cursor: pointer;padding: 0">V</button><div class="dd" role="menu" style="left: auto;right: 0;top: 44px"><div class="who"><b>Ms. Vineetha</b>Teacher</div><a href="MyAccount.html">My Account</a><a href="Login.html">Log out</a></div></div>
+  </header>
+
+  <nav aria-label="Primary" style="height: 46px;flex-shrink: 0;display: flex;align-items: stretch;gap: 8px;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 50">
+    <a href="Dashboard.html" aria-current="page" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;font-weight: 600;color: #2E2430;text-decoration: none;border-bottom: 3px solid #6E5A70">Dashboard</a>
+    <div class="nv {{ddOpen}}"><a href="Main.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Classes<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="Main.html">My Classes <small>Editable</small></a><a href="AllClassesStart.html">All Classes <small>View only</small></a></div></div>
+    <a href="SearchStart.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Students</a>
+    <a href="MySchedule.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">My Schedule</a>
+  </nav>
+
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 22px">
+    <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
+      <div style="display: flex;flex-direction: column;gap: 6px">
+        <h1 style="margin: 0;font-size: 26px;font-weight: 600;color: #2E2430">Good morning, Ms. Vineetha</h1>
+        <p style="margin: 0;font-size: 14px;color: #666664">Here's what needs your attention · Academic Year 2025–26</p>
+      </div>
+      <a class="pill" href="SearchStart.html" style="display: inline-flex;align-items: center;gap: 10px;width: 340px;height: 40px;padding: 0 14px;box-sizing: border-box;border: 1.5px solid #7C7C7A;border-radius: 8px;background: #FFFFFF;color: #666664;font-size: 14px;text-decoration: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>Search students by name or adm. no.</a>
+    </div>
+
+    <div style="display: grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap: 20px;align-items: start">
+
+      <!-- Grades due -->
+      <section class="card">
+        <div class="sh"><h2>Grades Due</h2><span class="count">3</span></div>
+        <div>
+          <div class="item">
+            <div class="it"><b>Term 1 Exam</b><span>Grade 6 – Mathematics · Max 80 · Due [date]</span></div>
+            <a class="go" href="Marks.html">Enter marks</a>
+          </div>
+          <div class="item">
+            <div class="it"><b>Project</b><span>Grade 6 – Mathematics · Max 20 · Due [date]</span></div>
+            <a class="go" href="Marks.html">Enter marks</a>
+          </div>
+          <div class="item">
+            <div class="it" style="gap: 8px;width: 100%"><div class="sk" style="width: 120px"></div><div class="sk" style="width: 200px;height: 8px"></div></div>
+            <span class="go" style="color: #666664;border-color: #E6E2DE">Enter marks</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tasks -->
+      <section class="card">
+        <div class="sh"><h2>Tasks</h2><span class="count">4</span></div>
+        <div>
+          <div class="item">
+            <div style="display: flex;gap: 12px;align-items: flex-start"><span class="box" aria-hidden="true"></span><div class="it"><b>Take today's attendance</b><span>Grade 6 · Class teacher</span></div></div>
+            <a class="go" href="Attendance.html">Open</a>
+          </div>
+          <div class="item">
+            <div style="display: flex;gap: 12px;align-items: flex-start"><span class="box" aria-hidden="true"></span><div class="it"><b>Pending documents</b><span>Lakshmi Hansika K. · 3 certificates not submitted</span></div></div>
+            <a class="go" href="Student.html">View</a>
+          </div>
+          <div class="item">
+            <div style="display: flex;gap: 12px;align-items: flex-start"><span class="box" aria-hidden="true"></span><div class="it"><b>Add remarks to evaluations</b><span>Grade 6 – Mathematics · 10 evaluations</span></div></div>
+            <a class="go" href="TestDetail.html">Open</a>
+          </div>
+          <div class="item">
+            <div style="display: flex;gap: 12px;align-items: flex-start"><span class="box" aria-hidden="true"></span><div class="it" style="gap: 8px"><div class="sk" style="width: 160px"></div><div class="sk" style="width: 120px;height: 8px"></div></div></div>
+            <span class="go" style="color: #666664;border-color: #E6E2DE">Open</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- My classes -->
+      <section class="card">
+        <div class="sh"><h2>My Classes</h2><a href="Main.html" style="font-size: 13px">View all</a></div>
+        <a href="Main.html" style="display: flex;flex-direction: column;gap: 10px;padding: 14px;border: 1.5px solid #7C7C7A;border-radius: 8px;text-decoration: none;color: #2E2430">
+          <b style="font-size: 15px;color: #2E2430">Grade 6 – Mathematics</b>
+          <div style="display: flex;gap: 24px;font-size: 12.5px;color: #666664">
+            <span><b style="display: block;font-size: 18px;color: #2E2430">5</b>Students</span>
+            <span><b style="display: block;font-size: 18px;color: #2E2430">10</b>Evaluations</span>
+            <span><b style="display: block;font-size: 18px;color: #2E2430">78.3</b>Class avg (adjusted)</span>
+          </div>
+        </a>
+        <div style="display: flex;flex-direction: column;gap: 10px;padding: 14px;border: 1px dashed #D3CBD4;border-radius: 8px">
+          <div class="sk" style="width: 170px"></div>
+          <div style="display: flex;gap: 24px"><div class="sk" style="width: 60px;height: 22px"></div><div class="sk" style="width: 60px;height: 22px"></div><div class="sk" style="width: 60px;height: 22px"></div></div>
+        </div>
+        <div style="display: flex;flex-direction: column;gap: 10px;padding: 14px;border: 1px dashed #D3CBD4;border-radius: 8px">
+          <div class="sk" style="width: 140px"></div>
+          <div style="display: flex;gap: 24px"><div class="sk" style="width: 60px;height: 22px"></div><div class="sk" style="width: 60px;height: 22px"></div><div class="sk" style="width: 60px;height: 22px"></div></div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</script>
+<div id="ledger-root"></div>
+<script src="assets/ledger.js"></script>
+<script>
+class Component extends DCLogic {
+  renderVals() {
+    return { ddOpen: (this.props.showNavDropdown ?? true) ? 'open' : '' };
+  }
+}
+Ledger.mount(Component, Ledger.propsFrom({"showNavDropdown": {"editor": "boolean", "default": false}, "$preview": {"width": 1512, "height": 982}}));
+</script>
+</body>
+</html>

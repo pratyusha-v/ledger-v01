@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger – My Account</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#333}a:hover{color:#000}
+.card{background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;padding:18px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sh{margin:0;font-size:15px;font-weight:600;color:#111111;padding-bottom:10px;border-bottom:1px solid #e0e0e0;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.sh small{font-size:12.5px;font-weight:400;color:#5c5c5c}
+.tt{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:14px;color:#1f1f1f}
+.tt th,.tt td{border-bottom:1px solid #e0e0e0;padding:0 14px;background:#ffffff;text-align:left;white-space:nowrap;height:50px}
+.tt thead th{background:#f4f4f4;border-bottom:2px solid #9a9a9a;height:42px;font-size:13px;font-weight:600}
+.tt tbody th{font-weight:500}
+.tt .num{text-align:right}
+.tbx{border:1px solid #c8c8c8;background:#ffffff;border-radius:4px;overflow:hidden}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:40px;padding:0 16px;box-sizing:border-box;border:1.5px solid #555555;border-radius:4px;background:#ffffff;color:#1f1f1f;font:500 14px 'IBM Plex Sans',sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap}
+.btn:hover{background:#f0f0f0;color:#111111}
+.btn.p{background:#222222;border-color:#222222;color:#ffffff}
+.btn.p:hover{background:#000000;color:#ffffff}
+.btn.s{height:32px;padding:0 12px;font-size:13px}
+.btn.ghost{border-color:#c8c8c8;color:#8a8a8a;cursor:not-allowed}
+.fl{display:flex;flex-direction:column;gap:6px;font-size:11.5px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:#5c5c5c;min-width:0}
+.in{box-sizing:border-box;width:100%;height:38px;border:1px solid #9a9a9a;border-radius:3px;padding:0 10px;font:400 14px 'IBM Plex Sans',sans-serif;background:#ffffff;color:#1f1f1f;text-transform:none;letter-spacing:0}
+.in::placeholder,.ta::placeholder{color:#767676;font-style:italic}
+.in:focus,.ta:focus{outline:2px solid #333333;outline-offset:-1px}
+.ta{box-sizing:border-box;width:100%;border:1px solid #9a9a9a;border-radius:3px;padding:8px 10px;font:400 14px/1.45 'IBM Plex Sans',sans-serif;background:#ffffff;color:#1f1f1f;resize:vertical;text-transform:none;letter-spacing:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px 20px}
+.tabs{display:flex;gap:24px;border-bottom:1px solid #d6d6d6}
+.tab{display:flex;align-items:center;gap:6px;padding:0 4px;height:38px;font-size:14px;text-decoration:none;border-bottom:3px solid transparent;color:#555555}
+.tab.on{color:#111111;font-weight:600;border-bottom-color:#222222}
+.tab span{font-size:12px;color:#5c5c5c;background:#ededed;border-radius:9px;padding:0 7px;font-weight:500}
+.tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:3px;border:1px solid #9a9a9a;color:#333333;background:#f6f6f6;white-space:nowrap}
+.tag.dk{background:#333333;color:#ffffff;border-color:#333333}
+.tag.dash{border-style:dashed;color:#555555;background:#ffffff}
+.stat{flex:1;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid #d6d6d6;border-radius:4px;background:#ffffff;min-width:0}
+.stat b{font-size:26px;font-weight:600;color:#111111;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:#5c5c5c}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;margin:0}
+.kv div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.kv dt{font-size:11.5px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:#5c5c5c}
+.kv dd{margin:0;font-size:14px;color:#1a1a1a}
+.ph{color:#767676;font-style:italic}
+.sk{display:inline-block;height:10px;background:#e3e3e3;border-radius:2px}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;border:1.5px dashed #b5b5b5;border-radius:4px;background:#ffffff;padding:40px;text-align:center;min-height:320px;box-sizing:border-box}
+.empty h2{margin:0;font-size:17px;font-weight:600;color:#222222}
+.empty p{margin:0;max-width:440px;font-size:14px;line-height:1.5;color:#555555}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#444444;text-decoration:none;align-self:flex-start}
+.note{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px dashed #8a8a8a;border-radius:4px;background:#f2f2f2;font-size:13px;color:#333333}
+.ck{display:flex;align-items:center;gap:8px;font-size:14px;color:#1f1f1f;text-transform:none;letter-spacing:0;font-weight:400}
+.ck input{width:16px;height:16px;margin:0}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#222222;text-decoration:none;border-radius:3px}
+.dd a:hover{background:#efefef}
+.dd a small{font-size:11.5px;color:#767676}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #e3e3e3;margin-bottom:4px;font-size:12.5px;color:#555555}
+.dd .who b{display:block;font-size:13.5px;color:#111111}
+</style>
+</helmet>
+<div style="width: 1512px; height: 982px; box-sizing: border-box; display: flex; flex-direction: column; background: #fafafa; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1f1f1f; overflow: hidden">
+
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 55">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <div style="width: 36px; height: 36px; border: 1.5px dashed #8a8a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #5c5c5c; background: #f2f2f2">LOGO</div>
+      <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.01em">Ledger</span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – Ms. Vineetha" aria-haspopup="true" style="width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #8a8a8a; background: #e2e2e2; color: #333333; font: 600 14px 'IBM Plex Sans', sans-serif; cursor: pointer; padding: 0">V</button><div class="dd" role="menu" style="left: auto; right: 0; top: 44px"><div class="who"><b>Ms. Vineetha</b>Teacher</div><a href="MyAccount.dc.html">My Account</a><a href="Login.dc.html">Log out</a></div></div>
+  </header>
+
+  <nav aria-label="Primary" style="height: 46px; flex-shrink: 0; display: flex; align-items: stretch; gap: 8px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 50">
+    <a href="Dashboard.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Dashboard</a>
+    <div class="nv"><a href="Main.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Classes<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="Main.dc.html">My Classes <small>Editable</small></a><a href="AllClassesStart.dc.html">All Classes <small>View only</small></a></div></div>
+    <a href="SearchStart.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Students</a>
+    <a href="MySchedule.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">My Schedule</a>
+  </nav>
+
+  <main style="flex: 1; min-height: 0; padding: 28px 40px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111111">My Account</h1>
+          <p style="margin: 0; font-size: 14px; color: #555555">Ms. Vineetha · Teacher · Class teacher of Grade 6</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-shrink: 0"><button type="button" class="btn p">Save Changes</button></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start">
+        <section class="card"><h2 class="sh">Profile</h2><div style="display: flex; align-items: center; gap: 14px"><span style="width: 64px; height: 64px; border-radius: 50%; border: 1.5px dashed #8a8a8a; background: #f0f0f0"></span><button type="button" class="btn s">Change Photo</button></div><div class="grid2"><label class="fl" style="grid-column: span 2">Name<input class="in" type="text" placeholder="" value="Ms. Vineetha"></label><label class="fl" style="grid-column: span 2">Email<input class="in" type="text" placeholder="name@example.com"></label><label class="fl" style="grid-column: span 2">Phone<input class="in" type="text" placeholder="10-digit mobile"></label></div></section>
+        <section class="card"><h2 class="sh">Password</h2><label class="fl">Current password<input class="in" type="password" placeholder=""></label><label class="fl">New password<input class="in" type="password" placeholder="At least 8 characters"></label><label class="fl">Confirm new password<input class="in" type="password" placeholder=""></label><button type="button" class="btn">Update Password</button></section>
+        <section class="card"><h2 class="sh">Notifications</h2><label class="ck"><input type="checkbox" checked> Email me when grades are due</label><label class="ck"><input type="checkbox" checked> Email me when attendance isn't taken</label><label class="ck"><input type="checkbox"> Weekly summary</label><div style="border-top: 1px solid #e0e0e0; padding-top: 14px"><a class="btn" href="Login.dc.html">Log Out</a></div></section>
+      </div>
+    </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview": {"width": 1512, "height": 982}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {  };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger – Attendance</title>
+<link rel="icon" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2E2430}a:hover{color:#2E2430}
+.tt{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:14px;color:#2E2430}
+.tt th,.tt td{border-bottom:1px solid #E6E2DE;padding:0 14px;background:#FFFFFF;text-align:left;white-space:nowrap}
+.tt thead th{background:#FAF7F4;border-bottom:2px solid #7C7C7A;height:42px;font-size:13px;font-weight:600}
+.tt td,.tt tbody th{height:56px}
+.tt tbody th{font-weight:500}
+.tt .num{text-align:right}
+.seg{display:inline-flex;border:1.5px solid #7C7C7A;border-radius:8px;overflow:hidden}
+.seg button{height:32px;min-width:44px;padding:0 12px;border:none;border-right:1px solid #7C7C7A;background:#FFFFFF;color:#2E2430;font:500 13px 'Lato',sans-serif;cursor:pointer}
+.seg button:last-child{border-right:none}
+.seg button[aria-pressed=true]{background:#FF911E;color:#2E2430}
+.in{width:100%;box-sizing:border-box;height:34px;border:1px solid #E6E2DE;border-radius:4px;padding:0 10px;font:400 13px 'Lato',sans-serif;background:#FAF7F4}
+.in::placeholder{color:#666664;font-style:italic}
+.tab{display:flex;align-items:center;padding:0 4px;height:38px;font-size:14px;text-decoration:none;border-bottom:3px solid transparent;color:#666664}
+.tab.on{color:#2E2430;font-weight:600;border-bottom-color:#6E5A70}
+.stat{display:flex;flex-direction:column;gap:2px;padding:0 20px;border-left:1px solid #E6E2DE}
+.stat b{font-size:20px;font-weight:600;color:#2E2430}
+.stat span{font-size:12px;color:#666664}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#FFFFFF;border:1px solid #E6E2DE;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#2E2430;text-decoration:none;border-radius:4px}
+.dd a:hover{background:#EFE9F0}
+.dd a small{font-size:11.5px;color:#666664}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #E6E2DE;margin-bottom:4px;font-size:12.5px;color:#666664}
+.dd .who b{display:block;font-size:13.5px;color:#2E2430}
+</style>
+<link rel="stylesheet" href="assets/ledger.css">
+</head>
+<body>
+<div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
+
+  <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
+    <div style="display: flex;align-items: center;gap: 12px">
+      <img class="brand-logo" src="assets/logo.svg" alt="Sai Seva Sangh" width="36" height="36">
+      <span style="display: flex;flex-direction: column;line-height: 1.1"><span style="font-size: 18px;font-weight: 700;letter-spacing: 0.01em">Ledger</span><span class="brand-sub">sai seva sangh</span></span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – Ms. Vineetha" aria-haspopup="true" style="width: 36px;height: 36px;border-radius: 50%;border: 1.5px solid #7C7C7A;background: #EFE9F0;color: #2E2430;font: 600 14px 'Lato', sans-serif;cursor: pointer;padding: 0">V</button><div class="dd" role="menu" style="left: auto;right: 0;top: 44px"><div class="who"><b>Ms. Vineetha</b>Teacher</div><a href="MyAccount.html">My Account</a><a href="Login.html">Log out</a></div></div>
+  </header>
+
+  <nav aria-label="Primary" style="height: 46px;flex-shrink: 0;display: flex;align-items: stretch;gap: 8px;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 50">
+    <a href="Dashboard.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Dashboard</a>
+    <div class="nv"><a href="Main.html" aria-current="page" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;font-weight: 600;color: #2E2430;text-decoration: none;border-bottom: 3px solid #6E5A70">Classes<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="Main.html">My Classes <small>Editable</small></a><a href="AllClassesStart.html">All Classes <small>View only</small></a></div></div>
+    <a href="SearchStart.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Students</a>
+    <a href="MySchedule.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">My Schedule</a>
+  </nav>
+
+  <div style="flex: 1;display: flex;min-height: 0">
+    <aside aria-label="My classes" style="width: 232px;flex-shrink: 0;background: #FFFFFF;border-right: 1px solid #E6E2DE;padding: 20px 12px;box-sizing: border-box;display: flex;flex-direction: column;gap: 4px">
+      <div style="font-size: 11px;font-weight: 600;letter-spacing: 0.08em;text-transform: uppercase;color: #666664;padding: 0 10px 10px">My Classes</div>
+      <a href="Attendance.html" aria-current="true" style="display: flex;align-items: flex-start;gap: 8px;padding: 10px 10px;border-radius: 8px;background: #EFE9F0;border-left: 3px solid #6E5A70;color: #2E2430;text-decoration: none"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink: 0;margin-top: 2px" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z"></path></svg><span style="display: flex;flex-direction: column;gap: 2px"><span style="font-size: 14px;font-weight: 600">Grade 6</span><span style="font-size: 11.5px;color: rgb(85, 85, 85)">Class teacher</span></span></a>
+      <div style="height: 1px;background: #EFE9F0;margin: 8px 10px"></div>
+      <a href="Main.html" style="display: block;padding: 11px 10px;border-radius: 8px;border-left: 3px solid transparent;font-size: 14px;color: #2E2430;text-decoration: none">Grade 6 - Mathematics</a>
+      <div style="padding: 13px 10px;display: flex;flex-direction: column;gap: 22px">
+        <div style="height: 10px;width: 150px;background: #EFE9F0;border-radius: 4px"></div>
+        <div style="height: 10px;width: 170px;background: #EFE9F0;border-radius: 4px"></div>
+        <div style="height: 10px;width: 140px;background: #EFE9F0;border-radius: 4px"></div>
+        <div style="height: 10px;width: 160px;background: #EFE9F0;border-radius: 4px"></div>
+      </div>
+    </aside>
+
+    <main style="flex: 1;min-width: 0;padding: 28px 32px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
+      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
+        <div style="display: flex;flex-direction: column;gap: 6px">
+          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430;display: flex;align-items: center;gap: 10px"><span>Grade 6&nbsp;</span></h1>
+          <p style="margin: 0;font-size: 14px;color: #666664">Class teacher: Ms. Vineetha · 5 students&nbsp;</p>
+        </div>
+        <div style="display: flex;gap: 10px;flex-shrink: 0">
+          <button class="pill" type="button" style="display: inline-flex;align-items: center;height: 40px;padding: 0 16px;border: 1.5px solid #7C7C7A;border-radius: 8px;background: #FFFFFF;color: #2E2430;font: 500 14px 'Lato', sans-serif;cursor: pointer">Mark All Present</button>
+          <button class="pill primary" type="button" style="display: inline-flex;align-items: center;height: 40px;padding: 0 18px;border: 1.5px solid #FF911E;border-radius: 8px;background: #FF911E;color: #2E2430;font: 500 14px 'Lato', sans-serif;cursor: pointer">Save Attendance</button>
+        </div>
+      </div>
+
+      <nav aria-label="Class sections" style="display: flex;gap: 24px;border-bottom: 1px solid #E6E2DE">
+        <a class="tab on" href="Attendance.html" aria-current="page">Attendance</a>
+      </nav>
+
+      <div style="display: flex;align-items: center;justify-content: space-between;gap: 16px">
+        <div style="display: flex;align-items: center;gap: 14px">
+          <div class="seg" role="group" aria-label="Mode"><button type="button" aria-pressed="true">Take attendance</button><button type="button" aria-pressed="false">View records</button></div>
+          <label style="display: inline-flex;align-items: center;gap: 8px;font-size: 13px;color: #666664">Date <input type="date" class="in" style="width: 170px"></label>
+        </div>
+        <div style="display: flex;align-items: stretch">
+          <div class="stat" style="border-left: none"><b>4</b><span>Present</span></div>
+          <div class="stat"><b>1</b><span>Absent</span></div>
+          <div class="stat"><b>0</b><span>Late</span></div>
+          <div class="stat"><b>0</b><span>Not marked</span></div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid #E6E2DE;background: #FFFFFF;overflow: hidden">
+        <table class="tt">
+          <thead>
+            <tr><th scope="col" class="num" style="width: 32px">Roll No.</th><th scope="col">Student</th><th scope="col">Status</th><th scope="col" style="width: 40%">Remark</th><th scope="col" class="num">Year to date</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="num">1</td><th scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Lakshmi Hansika K.</a></th><td><div class="seg" role="group" aria-label="Status for Lakshmi Hansika K."><button type="button" aria-pressed="true">P</button><button type="button" aria-pressed="false">A</button><button type="button" aria-pressed="false">L</button></div></td><td><input class="in" aria-label="Remark for Lakshmi Hansika K." placeholder="Optional remark"></td><td class="num">97.0%</td></tr>
+            <tr><td class="num">2</td><th scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Bhavya S.</a></th><td><div class="seg" role="group" aria-label="Status for Bhavya S."><button type="button" aria-pressed="true">P</button><button type="button" aria-pressed="false">A</button><button type="button" aria-pressed="false">L</button></div></td><td><input class="in" aria-label="Remark for Bhavya S." placeholder="Optional remark"></td><td class="num" style="color: #666664">—</td></tr>
+            <tr><td class="num">3</td><th scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Divya Sri P.</a></th><td><div class="seg" role="group" aria-label="Status for Divya Sri P."><button type="button" aria-pressed="true">P</button><button type="button" aria-pressed="false">A</button><button type="button" aria-pressed="false">L</button></div></td><td><input class="in" aria-label="Remark for Divya Sri P." placeholder="Optional remark"></td><td class="num" style="color: #666664">—</td></tr>
+            <tr><td class="num">4</td><th scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Mahima C.</a></th><td><div class="seg" role="group" aria-label="Status for Mahima C."><button type="button" aria-pressed="true">P</button><button type="button" aria-pressed="false">A</button><button type="button" aria-pressed="false">L</button></div></td><td><input class="in" aria-label="Remark for Mahima C." placeholder="Optional remark"></td><td class="num" style="color: #666664">—</td></tr>
+            <tr><td class="num">5</td><th scope="row"><a href="Student.html" style="color: #2E2430;text-underline-offset: 3px">Sneha Varma</a></th><td><div class="seg" role="group" aria-label="Status for Sneha Varma"><button type="button" aria-pressed="false">P</button><button type="button" aria-pressed="true">A</button><button type="button" aria-pressed="false">L</button></div></td><td><input class="in" aria-label="Remark for Sneha Varma" placeholder="Optional remark"></td><td class="num" style="color: #666664">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin: 0;font-size: 12px;color: #666664">P = Present · A = Absent · L = Late. Subject teachers see this attendance read-only in their own class pages.</p>
+    </main>
+  </div>
+</div>
+<script src="assets/ledger.js"></script>
+
+</body>
+</html>
