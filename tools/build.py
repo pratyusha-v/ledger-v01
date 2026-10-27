@@ -2,7 +2,8 @@
 """Build the mid-fi Ledger site from the low-fi wireframes.
 
 Reads wireframes/*.dc.html, swaps the grayscale wireframe palette for the
-Sai Seva Sangh palette, makes each page fluid, and writes site/*.html.
+Sai Seva Sangh palette, makes each page fluid, and writes the pages to the repo root,
+where GitHub Pages serves them.
 Run from the project root:  python3 tools/build.py
 """
 import html
@@ -12,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "wireframes"
-OUT = ROOT / "site"
+OUT = ROOT
 
 WHITE, OFFWHITE, INK, MAUVE = "#FFFFFF", "#FAF7F4", "#2E2430", "#6E5A70"
 MAUVE_LIGHT, SAFFRON, STONE, MUTED, HAIRLINE = "#EFE9F0", "#FF911E", "#7C7C7A", "#666664", "#E6E2DE"
@@ -298,7 +299,7 @@ def main():
     for f in files:
         build_page(f)
     build_index()
-    print(f"Built {len(files)} pages + index into {OUT.relative_to(ROOT)}/")
+    print(f"Built {len(files)} pages + index.html")
 
 
 if __name__ == "__main__":

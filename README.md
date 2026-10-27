@@ -1,18 +1,12 @@
 # ledger-v01
+
 Mid-fidelity prototype of Ledger, the school records site for Sai Seva Sangh, built from the low-fi wireframes.
 
-- `site/` – the static site (48 teacher and admin screens plus `index.html`, a screen directory)
-- `site/assets/ledger.css` – palette, type and shape layer
+- `index.html` – screen directory; start here
+- `*.html` – the 48 teacher and admin screens
+- `assets/` – palette and type layer (`ledger.css`), small runtime (`ledger.js`), logo
 - `wireframes/` – source wireframe screens
-- `tools/build.py` – rebuilds `site/` from `wireframes/`
-
-## Run locally
-
-```bash
-python3 -m http.server 8765 --directory site
-```
-
-Then open http://localhost:8765.
+- `tools/build.py` – regenerates the screens from `wireframes/`
 
 ## Rebuild after editing wireframes
 
@@ -20,4 +14,4 @@ Then open http://localhost:8765.
 python3 tools/build.py
 ```
 
-The logo at `site/assets/logo.svg` is a placeholder; replace it with the Sai Seva Sangh logo under the same name.
+The logo at `assets/logo.svg` is a placeholder; replace it with the Sai Seva Sangh logo under the same name.
