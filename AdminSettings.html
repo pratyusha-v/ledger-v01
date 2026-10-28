@@ -88,26 +88,8 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <div class="nv"><a href="AdminStaff.html" aria-current="page" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;font-weight: 600;color: #2E2430;text-decoration: none;border-bottom: 3px solid #6E5A70">Permissions<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.html">Staff Directory</a><a href="AdminRoles.html">Roles and Permissions</a><a href="AdminSettings.html">School Settings</a></div></div>
   </nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
-        <div style="display: flex;flex-direction: column;gap: 6px">
-          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">School Settings</h1>
-          <p style="margin: 0;font-size: 14px;color: #666664">Defaults used across Ledger, like the grading scale in Gradebook and codes in Attendance.</p>
-        </div>
-        <div style="display: flex;gap: 10px;flex-shrink: 0"><button type="button" class="btn p">Save Changes</button></div>
-      </div>
-      <div style="display: grid;grid-template-columns: 240px minmax(0, 1fr) minmax(0, 1fr);gap: 20px;align-items: start">
-        <nav aria-label="Settings sections" class="card" style="gap: 4px"><a href="#" style="display: block;padding: 10px;border-radius: 8px;text-decoration: none;background: #EFE9F0;border-left: 3px solid #6E5A70;font-weight: 600;color: #2E2430">School Profile</a><a href="AdminTerms.html" style="display: block;padding: 10px;border-radius: 8px;text-decoration: none;border-left: 3px solid transparent;color: #2E2430">Academic Year and Terms</a><a href="#grading" style="display: block;padding: 10px;border-radius: 8px;text-decoration: none;border-left: 3px solid transparent;color: #2E2430">Grading Scales</a><a href="#codes" style="display: block;padding: 10px;border-radius: 8px;text-decoration: none;border-left: 3px solid transparent;color: #2E2430">Attendance Codes</a><a href="#" style="display: block;padding: 10px;border-radius: 8px;text-decoration: none;border-left: 3px solid transparent;color: #2E2430">Notifications</a></nav>
-        <section class="card"><h2 class="sh">School Profile</h2><div class="grid2"><label class="fl" style="grid-column: span 2">School name<input class="in" type="text" placeholder="" value="Sri Satya Sai Vidya Mandir"></label><label class="fl" style="grid-column: span 2">Managed by<input class="in" type="text" placeholder="" value="Sai Seva Sangh"></label><label class="fl">UDISE code<input class="in" type="text" placeholder="" value="36210500235"></label><label class="fl">School code<input class="in" type="text" placeholder="" value="30272"></label><label class="fl" style="grid-column: span 2">Recognised by<input class="in" type="text" placeholder="" value="Govt of Telangana"></label><label class="fl">Current academic year<input class="in" type="text" placeholder="" value="2025–26"></label><label class="fl">Week<select class="in"><option>Mon–Sat</option><option>Mon–Fri</option></select></label></div>
-          <div style="display: flex;align-items: center;gap: 14px"><img class="brand-logo" src="assets/logo.svg" alt="School logo" width="64" height="64"><button type="button" class="btn s">Upload Logo</button></div></section>
-        <div style="display: flex;flex-direction: column;gap: 20px">
-          <section class="card" id="grading"><h2 class="sh"><span>Grading</span><button type="button" class="btn s">Edit</button></h2><div class="grid2"><label class="fl">Pass mark<input class="in" type="text" placeholder="" value="35%"></label><label class="fl">Absent counts as<select class="in"><option>0 marks</option><option>Excluded</option></select></label></div><table class="tt"><thead><tr><th>Grade</th><th>Meaning</th></tr></thead><tbody><tr><th scope="row">A+</th><td>[Range or description]</td></tr><tr><th scope="row">A</th><td>[Range or description]</td></tr><tr><th scope="row">O</th><td>Outstanding (co-curricular)</td></tr></tbody></table></section>
-          <section class="card" id="codes"><h2 class="sh"><span>Attendance codes</span><button type="button" class="btn s"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add Code</button></h2><table class="tt"><thead><tr><th>Code</th><th>Meaning</th></tr></thead><tbody><tr><th scope="row">P</th><td>Present</td></tr><tr><th scope="row">A</th><td>Absent</td></tr><tr><th scope="row">L</th><td>Late</td></tr></tbody></table></section>
-        </div>
-      </div>
-    </main>
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
-<script src="assets/ledger.js"></script>
-
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

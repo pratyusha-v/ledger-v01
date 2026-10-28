@@ -212,17 +212,15 @@ PAGE = """<!doctype html>
 </head>
 <body>
 {body}
-<script src="assets/ledger.js"></script>
 {script}
 </body>
 </html>
 """
 
-DEMO_ROLES = (
-    '<p style="margin: 0; font-size: 13px; text-align: center; color: #666664">'
-    'Prototype: open the <a href="Dashboard.html">teacher view</a> or the '
-    '<a href="AdminDashboard.html">admin view</a> · <a href="index.html">all screens</a></p>'
-)
+APP_SCRIPT = '<script type="module" src="assets/app.js"></script>'
+# Pages whose markup is the form itself; the app wires it up instead of redrawing it.
+KEEP_MAIN = {"Login.dc.html", "ForgotPassword.dc.html"}
+LOADING = '<div class="app-loading" role="status">Loading…</div>'
 
 
 def build_page(src):
@@ -231,24 +229,15 @@ def build_page(src):
     helmet = re.search(r"<helmet>(.*?)</helmet>", text, re.S).group(1)
     css = "\n".join(re.findall(r"<style>(.*?)</style>", helmet, re.S))
     body = re.search(r"</helmet>(.*)</x-dc>", text, re.S).group(1).strip()
-    logic = re.search(r"<script type=\"text/x-dc\" data-dc-script data-props='([^']*)'>(.*?)</script>", text, re.S)
-    props = json.loads(logic.group(1))
-    if "showNavDropdown" in props:
-        props["showNavDropdown"]["default"] = False  # the canvas pinned it open for review
 
     body = transform_markup(body)
-    if src.name == "Login.dc.html":
-        body = re.sub(r'<p class="ph"[^>]*>Your role.*?</p>', lambda m: m.group(0) + DEMO_ROLES, body, flags=re.S)
-
-    if "{{" in body:
-        body_out = ('<script type="text/x-template" id="ledger-tpl">\n' + body +
-                    '\n</script>\n<div id="ledger-root"></div>')
-        script = ("<script>\n" + logic.group(2).strip() +
-                  f"\nLedger.mount(Component, Ledger.propsFrom({json.dumps(props)}));\n</script>")
-    else:
-        body_out, script = body, ""
-    out = PAGE.format(title=title, css=map_stylesheet(css).strip(),
-                      body=body_out, script=script)
+    body = body.replace("{{ddOpen}}", "")
+    # The wireframes' sample content is replaced by live data from Supabase.
+    if src.name not in KEEP_MAIN:
+        body = re.sub(r"(<main\b[^>]*>).*?(</main>)", lambda m: m.group(1) + LOADING + m.group(2), body, count=1, flags=re.S)
+        body = re.sub(r"(<aside\b[^>]*>).*?(</aside>)", r"\1\2", body, count=1, flags=re.S)
+    assert "{{" not in body, f"unrendered template hole in {src.name}"
+    out = PAGE.format(title=title, css=map_stylesheet(css).strip(), body=body, script=APP_SCRIPT)
     (OUT / src.name.replace(".dc.html", ".html")).write_text(out)
 
 

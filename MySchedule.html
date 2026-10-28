@@ -79,7 +79,6 @@ a{color:#2E2430}a:hover{color:#2E2430}
 <link rel="stylesheet" href="assets/ledger.css">
 </head>
 <body>
-<script type="text/x-template" id="ledger-tpl">
 <div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
 
   <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
@@ -97,30 +96,8 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <a href="MySchedule.html" aria-current="page" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;font-weight: 600;color: #2E2430;text-decoration: none;border-bottom: 3px solid #6E5A70">My Schedule</a>
   </nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
-        <div style="display: flex;flex-direction: column;gap: 6px">
-          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">My Schedule</h1>
-          <p style="margin: 0;font-size: 14px;color: #666664">Your weekly timetable · Term 2 · Set by the school office</p>
-        </div>
-        <div style="display: flex;gap: 10px;flex-shrink: 0"><button type="button" class="btn">Download PDF</button></div>
-      </div>
-      <div class="note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg><span><b>View only.</b> To change your timetable, contact the school office. Click a class to open it.</span></div>
-      <sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div style="display: flex;flex-direction: column;gap: 10px"><div class="tbx"><table class="tg"><thead><tr><th></th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th></tr></thead><tbody><tr><th>Period 1<small>08:45</small></th><td><a class="sl me" href="Main.html">Grade 6 – Mathematics<small>[Room]</small></a></td><td></td><td></td><td><a class="sl me" href="Main.html">Grade 6 – Mathematics<small>[Room]</small></a></td><td></td><td></td></tr><tr><th>Period 2<small>09:30</small></th><td></td><td><a class="sl me" href="Main.html">Grade 6 – Mathematics<small>[Room]</small></a></td><td></td><td></td><td><a class="sl me" href="Main.html">Grade 6 – Mathematics<small>[Room]</small></a></td><td><span class="sl">[Grade] – [Subject]<small>[Room]</small></span></td></tr><tr><th>Period 3<small>10:15</small></th><td></td><td></td><td><a class="sl me" href="Main.html">Grade 6 – Mathematics<small>[Room]</small></a></td><td><span class="sl">[Grade] – [Subject]<small>[Room]</small></span></td><td></td><td><a class="sl me" href="Main.html">Grade 6 – Mathematics<small>[Room]</small></a></td></tr><tr><th>Period 4<small>11:15</small></th><td><span class="sl">[Grade] – [Subject]<small>[Room]</small></span></td><td></td><td></td><td></td><td><span class="sl">[Grade] – [Subject]<small>[Room]</small></span></td><td></td></tr><tr class="lunch"><th>Lunch</th><td colspan="6">Lunch break · 12:00</td></tr><tr><th>Period 5<small>12:45</small></th><td></td><td></td><td><span class="sl">[Grade] – [Subject]<small>[Room]</small></span></td><td></td><td></td><td></td></tr><tr><th>Period 6<small>13:30</small></th><td></td><td></td><td></td><td></td><td></td><td></td></tr></tbody></table></div><div style="display: flex;gap: 16px;font-size: 12.5px;color: #666664;align-items: center"><span style="display: inline-flex;align-items: center;gap: 6px"><span style="width: 14px;height: 14px;background: #2E2430;border-radius: 4px"></span>Your class</span><span style="display: inline-flex;align-items: center;gap: 6px"><span style="width: 14px;height: 14px;background: #FAF7F4;border: 1px solid #7C7C7A;border-radius: 4px"></span>Other teaching periods</span><span>Empty = free period</span></div></div></sc-if>
-      <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}"><section class="empty" aria-label="Empty state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7C7C7A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg><h2>No timetable published yet</h2><p>Your schedule will appear here once the school office publishes the timetable for this term.</p></section></sc-if>
-    </main>
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
-</script>
-<div id="ledger-root"></div>
-<script src="assets/ledger.js"></script>
-<script>
-class Component extends DCLogic {
-  renderVals() {
-    const e = this.props.emptyState ?? false;
-    return { empty: !!e, full: !e };
-  }
-}
-Ledger.mount(Component, Ledger.propsFrom({"emptyState": {"editor": "boolean", "default": false}, "$preview": {"width": 1512, "height": 982}}));
-</script>
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

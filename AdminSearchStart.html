@@ -57,54 +57,11 @@ a{color:#2E2430}a:hover{color:#2E2430}
 
   <div style="flex: 1;display: flex;min-height: 0">
     <!-- Filters, all at defaults -->
-    <aside aria-label="Filters" style="width: 272px;flex-shrink: 0;background: #FFFFFF;border-right: 1px solid #E6E2DE;padding: 22px 20px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <h2 style="margin: 0;font-size: 15px;font-weight: 600">Filters</h2>
-      <label class="fl">Class<select class="in"><option>Any class</option><option>Grade 6</option><option>Grade 7</option></select></label>
-      <label class="fl">Subject teacher
-        <span class="combo">
-          <input class="in" list="st-teachers" placeholder="Type or choose">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>
-        </span>
-        <datalist id="st-teachers"><option value="Ms. Vineetha"></option></datalist>
-      </label>
-      <fieldset class="fl" style="border: none;margin: 0;padding: 0"><legend style="padding: 0 0 6px">Residential status</legend>
-        <label class="ck"><input type="checkbox"> Hostler</label>
-        <label class="ck"><input type="checkbox"> Day scholar</label>
-      </fieldset>
-      <label class="fl">Attendance<select class="in"><option>Any</option><option>Below 90%</option><option>Below 75%</option></select></label>
-      <label class="fl">Promotion status<select class="in"><option>Any</option><option>Promoted</option><option>Not decided</option></select></label>
-      <a href="AdminSearch.html" style="display: flex;align-items: center;justify-content: center;height: 40px;border: 1.5px solid #FF911E;border-radius: 8px;background: #FF911E;color: #2E2430;font-size: 14px;font-weight: 500;text-decoration: none">Apply Filters</a>
-    </aside>
+    <aside aria-label="Filters" style="width: 272px;flex-shrink: 0;background: #FFFFFF;border-right: 1px solid #E6E2DE;padding: 22px 20px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"></aside>
 
-    <main style="flex: 1;min-width: 0;padding: 28px 32px;box-sizing: border-box;display: flex;flex-direction: column;gap: 16px">
-      <div style="display: flex;justify-content: space-between;align-items: center;gap: 16px"><h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">Student Search</h1><div style="display: flex;gap: 10px"><button type="button" class="btn s pill" style="display: inline-flex;align-items: center;height: 36px;padding: 0 14px;border: 1.5px solid #7C7C7A;border-radius: 8px;background: #FFFFFF;font: 500 13.5px 'Lato', sans-serif;cursor: pointer">Export</button><a class="pill primary" href="AdminNewApplication.html" style="display: inline-flex;align-items: center;gap: 8px;height: 36px;padding: 0 14px;box-sizing: border-box;border: 1.5px solid #FF911E;border-radius: 8px;background: #FF911E;color: #2E2430;font-size: 13.5px;font-weight: 500;text-decoration: none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>Add Student</a></div></div>
-      <div style="display: flex;gap: 10px">
-        <label style="flex: 1;display: flex;align-items: center;gap: 10px;height: 46px;padding: 0 14px;border: 1.5px solid #7C7C7A;border-radius: 8px;background: #FFFFFF;color: #666664">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
-          <input aria-label="Search students" placeholder="Search by name, admission no., APAAR ID or PEN" style="border: none;outline: none;flex: 1;min-width: 0;font: 400 15px 'Lato', sans-serif;background: transparent">
-        </label>
-        <label style="display: flex;align-items: center">
-          <span style="position: absolute;left: -9999px">Search in</span>
-          <select class="in" style="height: 46px;width: 170px;font-size: 14px"><option>All fields</option><option>Name</option><option>Admission no.</option><option>APAAR ID</option><option>PEN</option></select>
-        </label>
-        <a href="AdminSearch.html" style="display: inline-flex;align-items: center;height: 46px;padding: 0 22px;box-sizing: border-box;border: 1.5px solid #FF911E;border-radius: 8px;background: #FF911E;color: #2E2430;font-size: 14px;font-weight: 500;text-decoration: none">Search</a>
-      </div>
-
-      <!-- Empty state -->
-      <section aria-label="Results" style="flex: 1;display: flex;flex-direction: column;align-items: center;justify-content: center;gap: 14px;border: 1.5px dashed #D3CBD4;border-radius: 8px;background: #FFFFFF;padding: 32px;text-align: center">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7C7C7A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
-        <h2 style="margin: 0;font-size: 17px;font-weight: 600;color: #2E2430">Start searching for a student</h2>
-        <p style="margin: 0;max-width: 460px;font-size: 14px;line-height: 1.5;color: #666664">Type in the search box, or choose filters on the left. Results will show up here.</p>
-        <div style="display: grid;grid-template-columns: repeat(3, minmax(0, 220px));gap: 12px;margin-top: 10px">
-          <div class="tip"><span style="font-size: 13px;font-weight: 700;color: #2E2430">1</span><div><b>By name</b><span>Even part of a name works, e.g. "Lakshmi".</span></div></div>
-          <div class="tip"><span style="font-size: 13px;font-weight: 700;color: #2E2430">2</span><div><b>By ID</b><span>Admission no., APAAR ID or PEN.</span></div></div>
-          <div class="tip"><span style="font-size: 13px;font-weight: 700;color: #2E2430">3</span><div><b>By filters</b><span>Class, residence, attendance.</span></div></div>
-        </div>
-      </section>
-    </main>
+    <main style="flex: 1;min-width: 0;padding: 28px 32px;box-sizing: border-box;display: flex;flex-direction: column;gap: 16px"><div class="app-loading" role="status">Loading…</div></main>
   </div>
 </div>
-<script src="assets/ledger.js"></script>
-
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

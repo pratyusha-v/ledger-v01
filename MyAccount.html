@@ -85,22 +85,8 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <a href="MySchedule.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">My Schedule</a>
   </nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
-        <div style="display: flex;flex-direction: column;gap: 6px">
-          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">My Account</h1>
-          <p style="margin: 0;font-size: 14px;color: #666664">Ms. Vineetha · Teacher · Class teacher of Grade 6</p>
-        </div>
-        <div style="display: flex;gap: 10px;flex-shrink: 0"><button type="button" class="btn p">Save Changes</button></div>
-      </div>
-      <div style="display: grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap: 20px;align-items: start">
-        <section class="card"><h2 class="sh">Profile</h2><div style="display: flex;align-items: center;gap: 14px"><span style="width: 64px;height: 64px;border-radius: 50%;border: 1.5px dashed #7C7C7A;background: #FAF7F4"></span><button type="button" class="btn s">Change Photo</button></div><div class="grid2"><label class="fl" style="grid-column: span 2">Name<input class="in" type="text" placeholder="" value="Ms. Vineetha"></label><label class="fl" style="grid-column: span 2">Email<input class="in" type="text" placeholder="name@example.com"></label><label class="fl" style="grid-column: span 2">Phone<input class="in" type="text" placeholder="10-digit mobile"></label></div></section>
-        <section class="card"><h2 class="sh">Password</h2><label class="fl">Current password<input class="in" type="password" placeholder=""></label><label class="fl">New password<input class="in" type="password" placeholder="At least 8 characters"></label><label class="fl">Confirm new password<input class="in" type="password" placeholder=""></label><button type="button" class="btn">Update Password</button></section>
-        <section class="card"><h2 class="sh">Notifications</h2><label class="ck"><input type="checkbox" checked> Email me when grades are due</label><label class="ck"><input type="checkbox" checked> Email me when attendance isn't taken</label><label class="ck"><input type="checkbox"> Weekly summary</label><div style="border-top: 1px solid #E6E2DE;padding-top: 14px"><a class="btn" href="Login.html">Log Out</a></div></section>
-      </div>
-    </main>
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
-<script src="assets/ledger.js"></script>
-
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

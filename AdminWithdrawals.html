@@ -68,7 +68,6 @@ a{color:#2E2430}a:hover{color:#2E2430}
 <link rel="stylesheet" href="assets/ledger.css">
 </head>
 <body>
-<script type="text/x-template" id="ledger-tpl">
 <div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
 
   <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
@@ -89,45 +88,8 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <div class="nv"><a href="AdminStaff.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Permissions<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.html">Staff Directory</a><a href="AdminRoles.html">Roles and Permissions</a><a href="AdminSettings.html">School Settings</a></div></div>
   </nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
-        <div style="display: flex;flex-direction: column;gap: 6px">
-          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">Withdrawals</h1>
-          <p style="margin: 0;font-size: 14px;color: #666664">Students leaving the school. Their records are archived, not deleted.</p>
-        </div>
-        <div style="display: flex;gap: 10px;flex-shrink: 0"></div>
-      </div>
-      <div style="flex: 1;min-height: 0;display: grid;grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);gap: 20px">
-        <div style="display: flex;flex-direction: column;gap: 14px;min-width: 0">
-          <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 12px;flex-wrap: wrap"><label style="display: flex;align-items: center;gap: 8px;width: 360px;height: 38px;padding: 0 12px;box-sizing: border-box;border: 1px solid #7C7C7A;border-radius: 4px;background: #FFFFFF;color: #666664"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input aria-label="Search withdrawn students" placeholder="Search withdrawn students" style="border: none;outline: none;flex: 1;min-width: 0;font: 400 14px 'Lato', sans-serif;background: transparent"></label><label class="fl" style="width: 160px">Year<select class="in"><option>2025–26</option><option>2024–25</option></select></label></div>
-          <sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div class="tbx"><table class="tt"><thead><tr><th scope="col">Student</th><th scope="col">Grade</th><th scope="col">Last day</th><th scope="col">Reason</th><th scope="col">Records</th></tr></thead><tbody>
-            <tr><th scope="row"><a href="AdminFormerStudents.html" style="color: #2E2430;text-underline-offset: 3px">Pooja N.</a></th><td>Grade 9</td><td>31/12/2025</td><td>Family relocation</td><td><span class="tag">Records archived</span></td></tr>
-            <tr><th scope="row"><a href="AdminFormerStudents.html" style="color: #2E2430;text-underline-offset: 3px">Arvind K.</a></th><td>Grade 7</td><td>15/11/2025</td><td>Health</td><td><span class="tag">Records archived</span></td></tr>
-            </tbody></table></div></sc-if>
-      <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}"><section class="empty" aria-label="Empty state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7C7C7A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg><h2>No withdrawals this year</h2><p>Withdrawn students will be listed here with their archived records.</p></section></sc-if>
-        </div>
-        <section class="card" style="align-self: start"><h2 class="sh">New Withdrawal</h2>
-          <label style="display: flex;align-items: center;gap: 8px;width: 100%;height: 38px;padding: 0 12px;box-sizing: border-box;border: 1px solid #7C7C7A;border-radius: 4px;background: #FFFFFF;color: #666664"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input aria-label="Find student" placeholder="Find student" style="border: none;outline: none;flex: 1;min-width: 0;font: 400 14px 'Lato', sans-serif;background: transparent"></label>
-          <label class="fl">Reason *<select class="in"><option>Select reason</option><option>Family relocation</option><option>Health</option><option>Financial</option><option>Other</option></select></label>
-          <label class="fl">Last day at school *<input class="in" type="text" placeholder="DD/MM/YYYY"></label>
-          <label class="fl">Notes<textarea class="ta" rows="3" placeholder="Optional details"></textarea></label>
-          <label class="ck"><input type="checkbox" checked> Archive records (stay viewable under Former Students)</label>
-          <label class="ck"><input type="checkbox"> Issue Transfer Certificate</label>
-          <button type="button" class="btn p">Confirm Withdrawal</button></section>
-      </div>
-    </main>
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
-</script>
-<div id="ledger-root"></div>
-<script src="assets/ledger.js"></script>
-<script>
-class Component extends DCLogic {
-  renderVals() {
-    const e = this.props.emptyState ?? false;
-    return { empty: !!e, full: !e };
-  }
-}
-Ledger.mount(Component, Ledger.propsFrom({"emptyState": {"editor": "boolean", "default": false}, "$preview": {"width": 1512, "height": 982}}));
-</script>
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

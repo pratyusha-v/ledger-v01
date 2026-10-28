@@ -68,7 +68,6 @@ a{color:#2E2430}a:hover{color:#2E2430}
 <link rel="stylesheet" href="assets/ledger.css">
 </head>
 <body>
-<script type="text/x-template" id="ledger-tpl">
 <div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
 
   <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
@@ -89,38 +88,8 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <div class="nv"><a href="AdminStaff.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Permissions<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.html">Staff Directory</a><a href="AdminRoles.html">Roles and Permissions</a><a href="AdminSettings.html">School Settings</a></div></div>
   </nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
-        <div style="display: flex;flex-direction: column;gap: 6px">
-          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">Admissions</h1>
-          <p style="margin: 0;font-size: 14px;color: #666664">Move applicants from application to enrolled student · Admissions for 2026–27</p>
-        </div>
-        <div style="display: flex;gap: 10px;flex-shrink: 0"><button type="button" class="btn">Export</button><a class="btn p" href="AdminNewApplication.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New Application</a></div>
-      </div>
-      <nav aria-label="Views" class="tabs"><a class="tab on" href="#" aria-current="page">All <span>12</span></a><a class="tab" href="#">New <span>4</span></a><a class="tab" href="#">In review <span>3</span></a><a class="tab" href="#">Accepted <span>2</span></a><a class="tab" href="#">Rejected <span>1</span></a><a class="tab" href="#">Enrolled <span>2</span></a></nav>
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 12px;flex-wrap: wrap"><label style="display: flex;align-items: center;gap: 8px;width: 360px;height: 38px;padding: 0 12px;box-sizing: border-box;border: 1px solid #7C7C7A;border-radius: 4px;background: #FFFFFF;color: #666664"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg><input aria-label="Search applicants by name or application no." placeholder="Search applicants by name or application no." style="border: none;outline: none;flex: 1;min-width: 0;font: 400 14px 'Lato', sans-serif;background: transparent"></label><div style="display: flex;gap: 12px"><label class="fl" style="width: 180px">Grade applied<select class="in"><option>All grades</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option></select></label><label class="fl" style="width: 160px">Sort by<select class="in"><option>Newest first</option><option>Oldest first</option><option>Name</option></select></label></div></div>
-      <sc-if value="{{full}}" hint-placeholder-val="{{ true }}"><div class="tbx"><table class="tt"><thead><tr><th scope="col">Applicant</th><th scope="col">Grade applied</th><th scope="col">Applied on</th><th scope="col">Guardian</th><th scope="col">Status</th><th scope="col"></th></tr></thead><tbody>
-            <tr><th scope="row"><a href="AdminApplication.html" style="color: #2E2430;text-underline-offset: 3px">Ananya Rao</a></th><td>Grade 6</td><td>14/02/2026</td><td>Rao Srinivas (Father)</td><td><span class="tag dk">New</span></td><td><a class="btn s" href="AdminApplication.html">Review</a></td></tr>
-            <tr><th scope="row"><a href="AdminApplication.html" style="color: #2E2430;text-underline-offset: 3px">Karthik M.</a></th><td>Grade 8</td><td>10/02/2026</td><td>[Guardian name]</td><td><span class="tag">In review</span></td><td><a class="btn s" href="AdminApplication.html">Review</a></td></tr>
-            <tr><th scope="row"><a href="AdminApplication.html" style="color: #2E2430;text-underline-offset: 3px">Riya Sharma</a></th><td>Grade 7</td><td>06/02/2026</td><td>[Guardian name]</td><td><span class="tag">In review</span></td><td><a class="btn s" href="AdminApplication.html">Review</a></td></tr>
-            <tr><th scope="row"><a href="AdminApplication.html" style="color: #2E2430;text-underline-offset: 3px">Farhan Ali</a></th><td>Grade 6</td><td>28/01/2026</td><td>[Guardian name]</td><td><span class="tag">Accepted</span></td><td><a class="btn s" href="AdminApplication.html">Enroll</a></td></tr>
-            <tr><th scope="row"><a href="AdminApplication.html" style="color: #2E2430;text-underline-offset: 3px">Meera K.</a></th><td>Grade 9</td><td>20/01/2026</td><td>[Guardian name]</td><td><span class="tag dash">Rejected</span></td><td><a class="btn s" href="AdminApplication.html">View</a></td></tr>
-            <tr><th scope="row"><a href="AdminStudent.html" style="color: #2E2430;text-underline-offset: 3px">Sai Teja R.</a></th><td>Grade 6</td><td>12/01/2026</td><td>[Guardian name]</td><td><span class="tag">Enrolled</span></td><td><a class="btn s" href="AdminStudent.html">Profile</a></td></tr>
-            </tbody></table></div></sc-if>
-      <sc-if value="{{empty}}" hint-placeholder-val="{{ false }}"><section class="empty" aria-label="Empty state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#7C7C7A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"></rect><path d="M8 8h8M8 12h8M8 16h5"></path></svg><h2>No applications yet</h2><p>New applications from parents or the office will appear here.</p><a class="btn p" href="AdminNewApplication.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>New Application</a></section></sc-if>
-    </main>
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
-</script>
-<div id="ledger-root"></div>
-<script src="assets/ledger.js"></script>
-<script>
-class Component extends DCLogic {
-  renderVals() {
-    const e = this.props.emptyState ?? false;
-    return { empty: !!e, full: !e };
-  }
-}
-Ledger.mount(Component, Ledger.propsFrom({"emptyState": {"editor": "boolean", "default": false}, "$preview": {"width": 1512, "height": 982}}));
-</script>
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

@@ -88,38 +88,8 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <div class="nv"><a href="AdminStaff.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Permissions<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.html">Staff Directory</a><a href="AdminRoles.html">Roles and Permissions</a><a href="AdminSettings.html">School Settings</a></div></div>
   </nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <a class="back" href="AdminAdmissions.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Back to admissions</a>
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
-        <div style="display: flex;flex-direction: column;gap: 6px">
-          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">Ananya Rao <span class="tag" style="vertical-align: middle;margin-left: 8px">In review</span></h1>
-          <p style="margin: 0;font-size: 14px;color: #666664">Application no. [APP-0000] · Applied 14/02/2026 for Grade 6</p>
-        </div>
-        <div style="display: flex;gap: 10px;flex-shrink: 0"><button type="button" class="btn">Request Info</button><button type="button" class="btn">Reject</button><button type="button" class="btn p">Accept</button></div>
-      </div>
-      <div style="flex: 1;min-height: 0;display: grid;grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);gap: 20px">
-        <div style="display: flex;flex-direction: column;gap: 16px;min-width: 0">
-          <section class="card"><h2 class="sh">Applicant</h2><dl class="kv">
-            <div><dt>Full name</dt><dd>Ananya Rao</dd></div><div><dt>Date of birth</dt><dd>[DD/MM/YYYY]</dd></div>
-            <div><dt>Grade applied</dt><dd>Grade 6</dd></div><div><dt>Residential</dt><dd>Day scholar</dd></div>
-            <div><dt>Previous school</dt><dd class="ph">[School name]</dd></div><div><dt>Aadhaar</dt><dd>XXXX XXXX [####]</dd></div></dl></section>
-          <section class="card"><h2 class="sh">Guardians</h2><dl class="kv">
-            <div><dt>Father</dt><dd>Rao Srinivas · [Occupation]</dd></div><div><dt>Contact</dt><dd>[Phone] · [Email]</dd></div>
-            <div><dt>Mother</dt><dd class="ph">[Name] · [Occupation]</dd></div><div><dt>Contact</dt><dd class="ph">[Phone]</dd></div></dl></section>
-          <section class="card"><h2 class="sh"><span>Documents</span><button type="button" class="btn s">Upload</button></h2><div><div style="display: flex;justify-content: space-between;align-items: center;padding: 9px 0;border-bottom: 1px solid #E6E2DE;font-size: 14px"><span>Birth certificate</span><span class="tag">Uploaded</span></div><div style="display: flex;justify-content: space-between;align-items: center;padding: 9px 0;border-bottom: 1px solid #E6E2DE;font-size: 14px"><span>Transfer certificate (TC)</span><span class="tag dash">Missing</span></div><div style="display: flex;justify-content: space-between;align-items: center;padding: 9px 0;border-bottom: 1px solid #E6E2DE;font-size: 14px"><span>Aadhaar (masked)</span><span class="tag">Uploaded</span></div><div style="display: flex;justify-content: space-between;align-items: center;padding: 9px 0;border-bottom: 1px solid #E6E2DE;font-size: 14px"><span>Previous report card</span><span class="tag">Uploaded</span></div></div></section>
-        </div>
-        <div style="display: flex;flex-direction: column;gap: 16px;min-width: 0">
-          <section class="card"><h2 class="sh">Notes</h2><textarea class="ta" rows="3" aria-label="Add a note" placeholder="Add a note for the admissions team"></textarea><div style="font-size: 13px;color: #666664;line-height: 1.5"><b style="color: #2E2430">[Admin name]</b> · 15/02/2026<br>Called parent to request TC.</div></section>
-          <section class="card" style="flex: 1"><h2 class="sh"><span>Enroll</span><small>Available after Accept</small></h2>
-            <label class="fl">Assign grade<select class="in"><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option></select></label>
-            <div class="fl">Classes<div style="display: flex;flex-direction: column;gap: 8px;margin-top: 4px"><label class="ck"><input type="checkbox" checked> Grade 6 – Telugu</label><label class="ck"><input type="checkbox" checked> Grade 6 – Hindi</label><label class="ck"><input type="checkbox" checked> Grade 6 – English</label><label class="ck"><input type="checkbox" checked> Grade 6 – Mathematics</label><label class="ck"><input type="checkbox" checked> Grade 6 – Physical Science</label><label class="ck"><input type="checkbox" checked> Grade 6 – Biological Science</label><label class="ck"><input type="checkbox" checked> Grade 6 – Social Studies</label></div></div>
-            <a class="btn p" href="AdminStudent.html" style="align-self: flex-start">Enroll &amp; Create Profile</a>
-            <p class="ph" style="margin: 0;font-size: 12.5px">Creates a Student Profile and adds the student to each class roster.</p></section>
-        </div>
-      </div>
-    </main>
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
-<script src="assets/ledger.js"></script>
-
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>

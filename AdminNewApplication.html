@@ -88,23 +88,8 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <div class="nv"><a href="AdminStaff.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Permissions<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.html">Staff Directory</a><a href="AdminRoles.html">Roles and Permissions</a><a href="AdminSettings.html">School Settings</a></div></div>
   </nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px">
-      <a class="back" href="AdminAdmissions.html"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Back to admissions</a>
-      <div style="display: flex;justify-content: space-between;align-items: flex-end;gap: 24px">
-        <div style="display: flex;flex-direction: column;gap: 6px">
-          <h1 style="margin: 0;font-size: 24px;font-weight: 600;color: #2E2430">New Application</h1>
-          <p style="margin: 0;font-size: 14px;color: #666664">Enter the applicant's details. Required fields are marked *.</p>
-        </div>
-        <div style="display: flex;gap: 10px;flex-shrink: 0"><a class="btn" href="AdminAdmissions.html">Cancel</a><button type="button" class="btn">Save Draft</button><a class="btn p" href="AdminAdmissions.html">Submit Application</a></div>
-      </div>
-      <div style="display: grid;grid-template-columns: repeat(3, minmax(0, 1fr));gap: 20px;align-items: start">
-        <section class="card"><h2 class="sh">Applicant</h2><div class="grid2"><label class="fl" style="grid-column: span 2">Full name *<input class="in" type="text" placeholder="Applicant's full name"></label><label class="fl">Date of birth *<input class="in" type="text" placeholder="DD/MM/YYYY"></label><label class="fl">Gender<select class="in"><option>Select</option><option>Female</option><option>Male</option><option>Other</option></select></label><label class="fl">Grade applying for *<select class="in"><option>Select grade</option><option>Grade 6</option><option>Grade 7</option><option>Grade 8</option><option>Grade 9</option><option>Grade 10</option></select></label><label class="fl">Residential<select class="in"><option>Day scholar</option><option>Hostler</option></select></label><label class="fl" style="grid-column: span 2">Previous school<input class="in" type="text" placeholder="School name"></label><label class="fl" style="grid-column: span 2">Aadhaar no.<input class="in" type="text" placeholder="XXXX XXXX XXXX"></label></div></section>
-        <section class="card"><h2 class="sh">Guardian</h2><div class="grid2"><label class="fl" style="grid-column: span 2">Guardian name *<input class="in" type="text" placeholder="Full name"></label><label class="fl">Relation<select class="in"><option>Father</option><option>Mother</option><option>Guardian</option></select></label><label class="fl">Occupation<input class="in" type="text" placeholder="e.g. IT"></label><label class="fl">Phone *<input class="in" type="text" placeholder="10-digit mobile"></label><label class="fl">Email<input class="in" type="text" placeholder="name@example.com"></label><label class="ck" style="grid-column: span 2"><input type="checkbox"> Add second guardian</label></div></section>
-        <section class="card"><h2 class="sh">Documents</h2><div class="grid2"><div style="border: 1.5px dashed #D3CBD4;border-radius: 8px;padding: 16px;text-align: center;font-size: 13px;color: #666664;background: #FAF7F4">Birth certificate<br><span style="text-decoration: underline">Upload file</span></div><div style="border: 1.5px dashed #D3CBD4;border-radius: 8px;padding: 16px;text-align: center;font-size: 13px;color: #666664;background: #FAF7F4">Transfer certificate (TC)<br><span style="text-decoration: underline">Upload file</span></div><div style="border: 1.5px dashed #D3CBD4;border-radius: 8px;padding: 16px;text-align: center;font-size: 13px;color: #666664;background: #FAF7F4">Aadhaar<br><span style="text-decoration: underline">Upload file</span></div><div style="border: 1.5px dashed #D3CBD4;border-radius: 8px;padding: 16px;text-align: center;font-size: 13px;color: #666664;background: #FAF7F4">Previous report card<br><span style="text-decoration: underline">Upload file</span></div></div><p class="ph" style="margin: 0;font-size: 12.5px">Documents can also be added later from the application.</p></section>
-      </div>
-    </main>
+  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
-<script src="assets/ledger.js"></script>
-
+<script type="module" src="assets/app.js"></script>
 </body>
 </html>
