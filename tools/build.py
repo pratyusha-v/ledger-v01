@@ -234,6 +234,8 @@ def build_page(src):
     body = body.replace("{{ddOpen}}", "")
     # Teacher Classes dropdown: plain links, no Editable / View only tags.
     body = body.replace(" <small>Editable</small>", "").replace(" <small>View only</small>", "")
+    # Teachers see their timetable on the Dashboard, so My Schedule leaves the nav.
+    body = re.sub(r'\s*<a href="MySchedule\.html"[^>]*>My Schedule</a>', "", body)
     # The wireframes' sample content is replaced by live data from Supabase.
     if src.name not in KEEP_MAIN:
         body = re.sub(r"(<main\b[^>]*>).*?(</main>)", lambda m: m.group(1) + LOADING + m.group(2), body, count=1, flags=re.S)

@@ -2,6 +2,7 @@
 import { db, must, h, mount, getCurrentYear, getClasses, getGrades, getSettings, className, gradebook, isoDate, fmtDMY,
   greeting, n1, pct, btn, card, stat, pageHead, studentName, input, field, textarea, modal, toast, emptyState } from '../lib.js';
 import { findConflicts } from './scheduling.js';
+import { scheduleCard } from './schedule.js';
 
 const item = (title, sub, action) => h('div', { class: 'item' }, h('div', { class: 'it' }, h('b', {}, title), h('span', {}, sub)), action);
 const count = (n) => h('span', { class: 'count tag' }, n);
@@ -73,6 +74,7 @@ async function teacher(ctx) {
       }), 'All marks are entered.'),
       section('Tasks', tasks.length, null, tasks, 'Nothing pending.'),
       section('Announcements', null, null, announcements.map((a) => item(a.title, `${a.body} · Posted ${fmtDMY(a.posted_at)}`)), 'No announcements.')),
+    await scheduleCard(ctx),
     h('div', { class: 'spread' }, h('h2', { style: 'margin: 0; font-size: 18px' }, 'My Classes'), h('a', { href: ctx.link('AllClassesStart'), style: 'font-size: 13px' }, 'Browse all classes')),
     classCards.length ? h('div', { class: 'grid3' }, classCards) : emptyState('No classes assigned', 'The school office assigns classes to teachers.', null, 'users')));
 }
