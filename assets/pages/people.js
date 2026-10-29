@@ -1,19 +1,25 @@
 // Permissions (admin): staff directory, roles and permissions, school settings.
-import { db, must, h, mount, param, go, getYears, getGrades, getCurrentYear, getClasses, className, btn, card, table, tabs, tag,
+import { db, must, h, mount, param, go, getYears, getGrades, getSubjects, getCurrentYear, getClasses, className, btn, card, table, tabs, tag,
   pageHead, emptyState, input, select, field, checkbox, modal, toast, busy, confirmBox, downloadCSV } from '../lib.js';
 
-const STATUS_TAG = { active: ['Active', 'ok'], invited: ['Invited', 'warn'], inactive: ['Inactive', 'bad'] };
-const setupNote = (email) => h('p', { class: 'small', style: 'margin: 0; line-height: 1.5' },
+export const STATUS_TAG = { active: ['Active', 'ok'], invited: ['Invited', 'warn'], inactive: ['Inactive', 'bad'] };
+export const setupNote = (email) => h('p', { class: 'small', style: 'margin: 0; line-height: 1.5' },
   `Ask them to open Ledger’s sign-in page, choose “Set up your account” and use ${email}. They get access as soon as they sign in.`);
 
 async function staffPage(ctx) {
   const tab = param('tab') || 'all';
   const status = param('status') || '';
+  const grade = tab === 'teachers' ? param('grade') || '' : '';
+  const subject = tab === 'teachers' ? param('subject') || '' : '';
   const year = await getCurrentYear();
-  const [staff, classes, grades] = await Promise.all([db.from('staff').select('*').order('name').then(must), getClasses(year.id), getGrades()]);
-  const rows = staff.filter((s) => (tab === 'all' || s.role === (tab === 'teachers' ? 'teacher' : 'admin')) && (!status || s.status === status));
-  const url = (q) => 'AdminStaff.html?' + new URLSearchParams({ tab, status, ...q });
-  const classesOf = (s) => [...grades.filter((g) => g.class_teacher_id === s.id).map((g) => `★ ${g.name}`), ...classes.filter((c) => c.teacher_id === s.id).map(className)];
+  const [staff, classes, grades, subjects] = await Promise.all([db.from('staff').select('*').order('name').then(must), getClasses(year.id), getGrades(), getSubjects()]);
+  const teaches = (s, test) => classes.some((c) => c.teacher_id === s.id && test(c));
+  const rows = staff.filter((s) => (tab === 'all' || s.role === (tab === 'teachers' ? 'teacher' : 'admin')) && (!status || s.status === status)
+    && (!grade || teaches(s, (c) => c.grade_id === +grade) || grades.some((g) => g.id === +grade && g.class_teacher_id === s.id))
+    && (!subject || teaches(s, (c) => c.subject_id === +subject)));
+  const url = (q) => 'AdminStaff.html?' + new URLSearchParams({ tab, status, grade, subject, ...q });
+  const homeroomOf = (s) => grades.filter((g) => g.class_teacher_id === s.id).map((g) => g.name);
+  const roleText = (s) => (s.role === 'admin' ? 'Admin' : homeroomOf(s).length ? `Teacher · Class teacher of ${homeroomOf(s).join(', ')}` : 'Teacher');
 
   const invite = () => {
     const name = input({ placeholder: 'e.g. Ms. Lakshmi' });
@@ -29,40 +35,31 @@ async function staffPage(ctx) {
       },
     });
   };
+  const resend = (s) => h('button', { type: 'button', class: 'linkbtn small', style: 'margin-left: 8px', onclick: () => modal('Set-up instructions', setupNote(s.email), { submit: 'Done' }) }, 'Resend');
 
-  const edit = (s) => {
-    const name = input({ value: s.name });
-    const email = input({ type: 'email', value: s.email, disabled: !!s.user_id });
-    const phone = input({ value: s.phone || '' });
-    const role = select([['teacher', 'Teacher'], ['admin', 'Admin']], s.role, { disabled: s.id === ctx.me.id });
-    const st = select([['active', 'Active'], ['invited', 'Invited'], ['inactive', 'Inactive']], s.status, { disabled: s.id === ctx.me.id });
-    const homeroom = select([['', 'None'], ...grades.map((g) => [g.id, g.name])], grades.find((g) => g.class_teacher_id === s.id)?.id ?? '');
-    modal(s.name, [h('div', { class: 'grid2' }, field('Name', name), field('Email', email), field('Phone', phone), field('Role', role), field('Status', st), field('Class teacher of', homeroom)),
-      s.user_id ? h('p', { class: 'muted small', style: 'margin: 0' }, 'Signed in at least once, so the email is locked to their sign-in account.') : setupNote(s.email),
-      h('div', {}, h('b', { class: 'small' }, 'Classes: '), h('span', { class: 'small' }, classesOf(s).join('; ') || 'None — assign from a class page'))], {
-      onSubmit: async () => {
-        must(await db.from('staff').update({ name: name.value.trim(), email: email.value.trim().toLowerCase(), phone: phone.value, role: role.value, status: st.value }).eq('id', s.id));
-        const was = grades.find((g) => g.class_teacher_id === s.id);
-        if (was && String(was.id) !== homeroom.value) must(await db.from('grade_levels').update({ class_teacher_id: null }).eq('id', was.id));
-        if (homeroom.value && String(was?.id) !== homeroom.value) must(await db.from('grade_levels').update({ class_teacher_id: s.id }).eq('id', +homeroom.value));
-        toast('Saved'); go(location.href);
-      },
-    });
-  };
+  const filterRow = h('div', { class: 'row' },
+    h('span', { class: 'muted small' }, 'Status'),
+    select([['', 'All'], ['active', 'Active'], ['invited', 'Invited'], ['inactive', 'Inactive']], status, { style: 'width: auto', onchange: (e) => go(url({ status: e.target.value })) }),
+    tab === 'teachers' ? [
+      h('span', { class: 'muted small' }, 'Grade'),
+      select([['', 'All grades'], ...grades.map((g) => [g.id, g.name])], grade, { style: 'width: auto', onchange: (e) => go(url({ grade: e.target.value })) }),
+      h('span', { class: 'muted small' }, 'Subject'),
+      select([['', 'All subjects'], ...subjects.filter((x) => x.academic).map((x) => [x.id, x.name])], subject, { style: 'width: auto', onchange: (e) => go(url({ subject: e.target.value })) }),
+      grade || subject ? h('a', { href: url({ grade: '', subject: '' }), class: 'small' }, 'Clear') : null,
+    ] : null);
 
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead('Staff Directory', 'Teachers and admins, their roles and assigned classes.', [
-      btn('Export', { icon: 'download', onclick: () => downloadCSV('staff.csv', [['Name', 'Role', 'Classes', 'Email', 'Status'], ...staff.map((s) => [s.name, s.role, classesOf(s).join('; '), s.email, s.status])]) }),
+    pageHead('Staff Directory', 'Teachers and admins. Click a name to see their details, classes and attendance.', [
+      btn('Export', { icon: 'download', onclick: () => downloadCSV('staff.csv', [['Name', 'Role', 'Email', 'Phone', 'Status'], ...rows.map((s) => [s.name, roleText(s), s.email, s.phone, s.status])]) }),
       btn('Invite Staff', { primary: true, icon: 'plus', onclick: invite })]),
-    tabs([['all', 'All', staff.length], ['teachers', 'Teachers', staff.filter((s) => s.role === 'teacher').length], ['admins', 'Admins', staff.filter((s) => s.role === 'admin').length]], tab, null, { hrefFor: (k) => url({ tab: k }) }),
-    h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'Status'), select([['', 'All'], ['active', 'Active'], ['invited', 'Invited'], ['inactive', 'Inactive']], status, { style: 'width: auto', onchange: (e) => go(url({ status: e.target.value })) })),
+    tabs([['all', 'All', staff.length], ['teachers', 'Teachers', staff.filter((s) => s.role === 'teacher').length], ['admins', 'Admins', staff.filter((s) => s.role === 'admin').length]], tab, null, { hrefFor: (k) => 'AdminStaff.html?tab=' + k }),
+    filterRow,
     staff.length ? table([
-      { label: 'Name', th: true, key: 'name' },
-      { label: 'Role', render: (s) => (s.role === 'admin' ? 'Admin' : `Teacher${grades.some((g) => g.class_teacher_id === s.id) ? ' · Class teacher' : ''}`) },
-      { label: 'Classes', cls: 'wrap', render: (s) => classesOf(s).join('; ') || '—' },
-      { label: 'Email', key: 'email' }, { label: 'Status', render: (s) => tag(...STATUS_TAG[s.status]) },
-      { label: '', render: (s) => h('span', { class: 'row' }, btn('View', { small: true, onclick: () => edit(s) }),
-        s.status === 'invited' ? btn('Resend', { small: true, onclick: () => modal('Set-up instructions', setupNote(s.email), { submit: 'Done' }) }) : null) },
+      { label: 'Name', th: true, render: (s) => h('a', { href: `AdminStaffProfile.html?id=${s.id}` }, s.name) },
+      { label: 'Role', render: roleText },
+      { label: 'Email', key: 'email' },
+      { label: 'Phone', render: (s) => s.phone || '—' },
+      { label: 'Status', render: (s) => h('span', {}, tag(...STATUS_TAG[s.status]), s.status === 'invited' ? resend(s) : null) },
     ], rows, { empty: 'No staff match.' })
       : emptyState('No staff yet', 'Invite teachers and admins to give them access to Ledger.', btn('Invite Staff', { primary: true, icon: 'plus', onclick: invite }), 'users')));
 }

@@ -19,7 +19,7 @@ const MODULES = {
   AdminWithdrawals: 'withdrawals',
   AdminPastYears: 'records', AdminFormerStudents: 'records', AdminReports: 'reports',
   AdminTimetable: 'scheduling', AdminTerms: 'scheduling', AdminRooms: 'scheduling',
-  AdminStaff: 'people', AdminRoles: 'people', AdminSettings: 'people',
+  AdminStaff: 'people', AdminStaffProfile: 'staff', AdminRoles: 'people', AdminSettings: 'people',
   Login: 'auth', ForgotPassword: 'auth',
 };
 
