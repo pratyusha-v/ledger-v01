@@ -36,98 +36,6 @@ export function grid({ periods, days, cellFor }) {
       : h('tr', {}, h('th', {}, p.name, h('small', {}, String(p.starts_at || '').slice(0, 5))), days.map((_, i) => h('td', {}, cellFor(i + 1, p)))))))));
 }
 
-async function timetable(ctx) {
-  const year = await getCurrentYear();
-  const [terms, periods, grades, subjects, staff, classes, settings, rooms] = await Promise.all([
-    getTerms(year.id), getPeriods(), getGrades(), getSubjects(), getStaff(), getClasses(year.id), getSettings(),
-    db.from('rooms').select('*').order('name').then(must)]);
-  const def = await currentTerm(year);
-  if (!terms.length) { mount(ctx.main, emptyState('No terms set up', 'Add the academic year’s terms before building the timetable.', btn('Terms and Periods', { href: 'AdminTerms.html' }), 'cal')); return; }
-  const termId = Number(param('term')) || def.id;
-  const by = param('by') || 'class';
-  const target = param('id') || (by === 'class' ? String(grades[0].id) : by === 'teacher' ? staff.find((s) => s.role === 'teacher')?.id : String(rooms[0]?.id || ''));
-  const days = DAYS.slice(0, settings.week_days === 'Mon–Fri' ? 5 : 6);
-
-  let slots = must(await db.from('timetable_slots').select(SLOT_SELECT).eq('term_id', termId));
-  const status = must(await db.from('timetable_status').select('*').eq('term_id', termId).maybeSingle());
-  const conflicts = await findConflicts(termId);
-  const conflictIds = new Set(conflicts.flatMap((c) => c.slots.map((s) => s.id)));
-  const pending = new Map(); // key day:period -> { subject_id, teacher_id, room_id } | null (clear)
-  const go2 = (q) => go('AdminTimetable.html?' + new URLSearchParams({ by, id: target, term: termId, ...q }));
-
-  const bySel = select([['class', 'Class'], ['teacher', 'Teacher'], ['room', 'Room']], by, { style: 'width: auto', onchange: (e) => go('AdminTimetable.html?' + new URLSearchParams({ by: e.target.value, term: termId })) });
-  const targetSel = by === 'class' ? select(grades.map((g) => [g.id, g.name]), target)
-    : by === 'teacher' ? select(staff.filter((s) => s.role === 'teacher').map((s) => [s.id, s.name]), target)
-    : select(rooms.map((r) => [r.id, r.name]), target);
-  targetSel.style.width = 'auto';
-  targetSel.addEventListener('change', (e) => go2({ id: e.target.value }));
-  const termSel = select(terms.map((t) => [t.id, t.name]), termId, { style: 'width: auto', onchange: (e) => go2({ term: e.target.value }) });
-
-  const unsaved = h('span', {});
-  const markDirty = () => mount(unsaved, pending.size ? tag(`${pending.size} unsaved change${pending.size > 1 ? 's' : ''}`, 'warn') : null);
-  const gridBox = h('div', {});
-
-  const visible = () => slots.filter((s) => (by === 'class' ? s.grade_id === +target : by === 'teacher' ? s.teacher_id === target : s.room_id === +target));
-  const draw = () => {
-    const at = (day, p) => visible().find((s) => s.day === day && s.period_id === p.id);
-    mount(gridBox, grid({ periods, days, cellFor: (day, p) => {
-      const key = `${day}:${p.id}`;
-      const change = pending.get(key);
-      const s = pending.has(key) ? (change && { ...change, subject: subjects.find((x) => x.id === +change.subject_id), teacher: staff.find((x) => x.id === change.teacher_id), room: rooms.find((x) => x.id === +change.room_id) }) : at(day, p);
-      const label = s ? [s.subject?.name, h('small', {}, by === 'class' ? `${s.teacher?.name || 'No teacher'} · ${s.room?.name || 'No room'}` : `${s.grade?.name || ''} · ${by === 'teacher' ? s.room?.name || 'No room' : s.teacher?.name || ''}`)] : 'Free';
-      const cls = 'slot' + (!s ? ' empty-slot' : '') + (s && conflictIds.has(s.id) && !pending.has(key) ? ' conflict' : '') + (pending.has(key) ? ' me' : '');
-      if (by !== 'class') return h('div', { class: cls }, label);
-      return h('button', { type: 'button', class: cls, onclick: () => editSlot(day, p, s) }, label, s && conflictIds.has(s.id) && !pending.has(key) ? h('small', {}, '⚠ Double-booked') : null);
-    } }));
-  };
-  const editSlot = (day, p, s) => {
-    const grade = grades.find((g) => g.id === +target);
-    const subj = select([['', 'Free period'], ...subjects.map((x) => [x.id, x.name])], s?.subject_id ?? s?.subject?.id ?? '');
-    const teach = select([['', 'No teacher'], ...staff.filter((x) => x.role === 'teacher').map((x) => [x.id, x.name])], s?.teacher_id ?? s?.teacher?.id ?? '');
-    const room = select([['', 'No room'], ...rooms.map((r) => [r.id, r.name])], s?.room_id ?? s?.room?.id ?? '');
-    subj.addEventListener('change', () => { const c = classes.find((x) => x.grade_id === grade.id && x.subject_id === +subj.value); if (c?.teacher_id) teach.value = c.teacher_id; });
-    modal(`${grade.name} · ${DAYS[day - 1]} · ${p.name}`, [field('Subject', subj), field('Teacher', teach), field('Room', room)], {
-      submit: 'Apply',
-      onSubmit: () => {
-        pending.set(`${day}:${p.id}`, subj.value ? { subject_id: +subj.value, teacher_id: teach.value || null, room_id: room.value ? +room.value : null } : null);
-        markDirty(); draw();
-      },
-    });
-  };
-
-  const publish = btn('Publish Timetable', { primary: true, onclick: () => busy(publish, async () => {
-    for (const [key, val] of pending) {
-      const [day, period_id] = key.split(':').map(Number);
-      const match = { term_id: termId, grade_id: +target, day, period_id };
-      if (val) must(await db.from('timetable_slots').upsert({ ...match, ...val }, { onConflict: 'term_id,grade_id,day,period_id' }));
-      else must(await db.from('timetable_slots').delete().match(match));
-    }
-    must(await db.from('timetable_status').upsert({ term_id: termId, published: true, published_at: new Date().toISOString() }));
-    toast('Timetable published');
-    go2({});
-  }).catch(() => {}) });
-  const discard = btn('Discard Changes', { onclick: () => { pending.clear(); markDirty(); draw(); } });
-
-  const placed = new Set(slots.filter((s) => s.grade_id === +target).map((s) => s.subject_id));
-  const unplaced = by === 'class' ? classes.filter((c) => c.grade_id === +target && !placed.has(c.subject_id)) : [];
-
-  mount(ctx.main, h('div', { class: 'stack' },
-    pageHead('Timetable', 'Build the school timetable. Click a slot to set its subject, teacher and room; publishing updates every teacher’s My Schedule.', [discard, publish]),
-    h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'View by'), bySel, targetSel, h('span', { class: 'muted small' }, 'Term'), termSel,
-      status?.published ? tag(`Published ${fmtDMY(status.published_at)}`, 'ok') : tag('Draft · not published', 'warn'), unsaved),
-    gridBox,
-    h('div', { class: 'cols' },
-      card(h('span', {}, 'Conflicts ', h('span', { class: 'count tag' }, conflicts.length)), conflicts.length
-        ? conflicts.map((c) => h('div', { class: 'item' }, h('div', { class: 'it' }, h('b', {}, `${c.label} is double-booked`),
-          h('span', {}, `${DAYS[c.slots[0].day - 1]}, ${periods.find((p) => p.id === c.slots[0].period_id)?.name} · ${c.slots.map((s) => s.grade?.name).join(' and ')}`)),
-          btn('Show', { small: true, href: `AdminTimetable.html?by=class&id=${c.slots[0].grade_id}&term=${termId}` })))
-        : h('p', { class: 'muted small', style: 'margin: 0' }, 'No double bookings.')),
-      by === 'class' ? card('Unplaced subjects', unplaced.length
-        ? h('div', { class: 'row' }, unplaced.map((c) => tag(c.subject.name, 'warn')), h('span', { class: 'muted small' }, 'Click an empty slot to place them.'))
-        : h('p', { class: 'muted small', style: 'margin: 0' }, 'Every class for this grade has at least one period.')) : null)));
-  draw();
-}
-
 async function termsPage(ctx) {
   const year = await getCurrentYear();
   const terms = must(await db.from('terms').select('*').eq('year_id', year.id).order('position'));
@@ -210,7 +118,5 @@ async function roomsPage(ctx) {
 }
 
 export function render(ctx) {
-  if (ctx.page === 'AdminTerms') return termsPage(ctx);
-  if (ctx.page === 'AdminRooms') return roomsPage(ctx);
-  return timetable(ctx);
+  return ctx.page === 'AdminTerms' ? termsPage(ctx) : roomsPage(ctx);
 }

@@ -18,7 +18,7 @@ const MODULES = {
   AdminTransfers: 'transfers', AdminNewTransfer: 'transfers',
   AdminWithdrawals: 'withdrawals',
   AdminPastYears: 'records', AdminFormerStudents: 'records', AdminReports: 'reports',
-  AdminTimetable: 'scheduling', AdminTerms: 'scheduling', AdminRooms: 'scheduling',
+  AdminTimetable: 'timetable', AdminTerms: 'scheduling', AdminRooms: 'scheduling',
   AdminStaff: 'people', AdminStaffProfile: 'staff', AdminStaffAttendance: 'staffattendance', AdminRoles: 'people', AdminSettings: 'people',
   Login: 'auth', ForgotPassword: 'auth',
 };
