@@ -30,16 +30,13 @@ export async function teacherSidebar(ctx, { classId, gradeId, browse = false } =
     return;
   }
 
+  // Homeroom attendance lives on the class's own Attendance tab, so only classes are listed.
+  const homeroomIds = new Set(homeroom.map((g) => g.id));
   mount(ctx.aside,
     h('div', { class: 'side-h' }, 'My Classes'),
-    homeroom.map((g) => h('a', { class: 'side-link', href: ctx.link('Attendance', { grade: g.id }), 'aria-current': gradeId === g.id ? 'true' : undefined },
-      h('span', {}, '★ ', g.name), h('small', {}, 'Class teacher · attendance'))),
-    homeroom.length ? h('div', { class: 'side-sep' }) : null,
     own.length ? own.map((c) => h('a', { class: 'side-link', href: ctx.link('Main', { class: c.id }), 'aria-current': c.id === classId ? 'true' : undefined },
-      h('span', {}, className(c)), h('small', {}, 'Subject teacher')))
-      : h('p', { class: 'muted small', style: 'padding: 0 10px' }, 'No classes assigned yet.'),
-    h('div', { class: 'side-sep' }),
-    h('a', { class: 'side-link', href: ctx.link('AllClassesStart') }, h('span', {}, 'Browse all classes'), h('small', {}, 'View only')));
+      h('span', {}, className(c)), h('small', {}, homeroomIds.has(c.grade_id) ? '★ Class teacher' : 'Subject teacher')))
+      : h('p', { class: 'muted small', style: 'padding: 0 10px' }, 'No classes assigned yet.'));
 }
 
 // Admin side column: filter every class by grade, subject and teacher.
@@ -78,7 +75,7 @@ export function classTabs(ctx, cls, active) {
     const href = key === 'gradebook'
       ? ctx.link(ctx.isAdmin || cls.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: cls.id })
       : ctx.isAdmin ? ctx.link('Attendance', { grade: cls.grade_id, class: cls.id })
-      : cls.grade.class_teacher_id === ctx.me.id ? ctx.link('Attendance', { grade: cls.grade_id }) : `AttendanceView.html?class=${cls.id}`;
+      : cls.grade.class_teacher_id === ctx.me.id ? ctx.link('Attendance', { grade: cls.grade_id, class: cls.id }) : `AttendanceView.html?class=${cls.id}`;
     return h('a', { class: 'tab' + (key === active ? ' on' : ''), href, 'aria-current': key === active ? 'page' : undefined }, label);
   }));
 }

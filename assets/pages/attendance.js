@@ -1,5 +1,5 @@
 // Attendance for a grade: the class teacher (or an admin) takes it; everyone else sees it read-only.
-import { db, must, h, mount, param, go, guardUnsaved, getGrades, getCurrentYear, getClass, className, isoDate, fmtDate, pct, btn, card,
+import { db, must, h, mount, param, go, guardUnsaved, getGrades, getCurrentYear, getClass, getClasses, className, isoDate, fmtDate, pct, btn, card,
   pageHead, emptyState, studentName, input, select, tabs, toast, busy } from '../lib.js';
 import { classSidebar, classTabs } from './common.js';
 
@@ -23,6 +23,15 @@ export async function render(ctx) {
   }
   const canEdit = ctx.isAdmin || grade.class_teacher_id === ctx.me.id;
   if (ctx.page === 'Attendance' && !canEdit && cls) return go(`AttendanceView.html?class=${cls.id}`);
+  if (!ctx.isAdmin) {
+    // One attendance page per class: class teachers mark it from their class's Attendance tab.
+    const keep = Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => ['date', 'view', 'month'].includes(k)));
+    if (ctx.page === 'AttendanceView' && canEdit && cls) return go(`Attendance.html?${new URLSearchParams({ grade: grade.id, class: cls.id, ...keep })}`);
+    if (ctx.page === 'Attendance' && !cls) {
+      const own = (await getClasses((await getCurrentYear()).id)).find((c) => c.grade_id === grade.id && c.teacher_id === ctx.me.id);
+      if (own) return go(`Attendance.html?${new URLSearchParams({ grade: grade.id, class: own.id, ...keep })}`);
+    }
+  }
   await classSidebar(ctx, { classId: cls?.id, gradeId: grade.id, browse: !ctx.isAdmin && !!cls && cls.teacher_id !== ctx.me.id });
 
   const year = await getCurrentYear();
