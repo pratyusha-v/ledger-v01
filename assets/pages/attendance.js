@@ -1,7 +1,7 @@
 // Attendance for a grade: the class teacher (or an admin) takes it; everyone else sees it read-only.
 import { db, must, h, mount, param, go, guardUnsaved, getGrades, getCurrentYear, getClass, getClasses, className, isoDate, fmtDate, pct, btn, card,
   pageHead, emptyState, studentName, input, select, tabs, toast, busy } from '../lib.js';
-import { classSidebar, classTabs } from './common.js';
+import { classSidebar, classTabs, searchBack } from './common.js';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -25,7 +25,7 @@ export async function render(ctx) {
   if (ctx.page === 'Attendance' && !canEdit && cls) return go(`AttendanceView.html?class=${cls.id}`);
   if (!ctx.isAdmin) {
     // One attendance page per class: class teachers mark it from their class's Attendance tab.
-    const keep = Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => ['date', 'view', 'month'].includes(k)));
+    const keep = Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => ['date', 'view', 'month', 'from'].includes(k)));
     if (ctx.page === 'AttendanceView' && canEdit && cls) return go(`Attendance.html?${new URLSearchParams({ grade: grade.id, class: cls.id, ...keep })}`);
     if (ctx.page === 'Attendance' && !cls) {
       const own = (await getClasses((await getCurrentYear()).id)).find((c) => c.grade_id === grade.id && c.teacher_id === ctx.me.id);
@@ -38,7 +38,7 @@ export async function render(ctx) {
   const roster = await gradeRoster(grade.id);
   const view = param('view') === 'records' ? 'records' : 'take';
   const date = param('date') || isoDate();
-  const selfHref = (q) => `${location.pathname.split('/').pop()}?${new URLSearchParams({ grade: grade.id, ...(cls ? { class: cls.id } : {}), ...q })}`;
+  const selfHref = (q) => `${location.pathname.split('/').pop()}?${new URLSearchParams({ grade: grade.id, ...(cls ? { class: cls.id } : {}), ...(param('from') ? { from: param('from') } : {}), ...q })}`;
 
   const header = cls
     ? pageHead(cls.subject.name, `${grade.name} · ${!ctx.isAdmin && cls.teacher_id === ctx.me.id ? '' : `Teacher: ${cls.teacher?.name || 'Not assigned'} · `}${roster.length} students`)
@@ -50,7 +50,7 @@ export async function render(ctx) {
   ytdRows.forEach((r) => { const t = ytd.get(r.student_id); t.total++; if (r.status !== 'A') t.present++; });
   const ytdText = (id) => { const t = ytd.get(id); return t.total ? pct((t.present / t.total) * 100) : '—'; };
 
-  const parts = [header];
+  const parts = [searchBack(ctx), header].filter(Boolean);
   if (cls) parts.push(classTabs(ctx, cls, 'attendance'));
   if (!canEdit) parts.push(h('div', { class: 'note' }, `View only. Attendance is taken by the class teacher of ${grade.name}${grade.class_teacher ? ` (${grade.class_teacher.name})` : ''}.`));
   parts.push(tabs([['take', canEdit ? 'Take attendance' : 'By date'], ['records', 'View records']], view, null, { hrefFor: (k) => selfHref({ view: k, date }) }));

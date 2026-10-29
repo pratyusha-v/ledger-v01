@@ -4,7 +4,7 @@ import {
   db, must, h, mount, param, go, getClass, getCurrentYear, getClasses, getRoster, getSettings, getStaff, getGrades,
   className, gradebook, n1, pct, fmtDate, stat, btn, pageHead, emptyState, studentName, modal, select, field, checkbox, toast,
 } from '../lib.js';
-import { classSidebar, classTabs } from './common.js';
+import { classSidebar, classTabs, searchBack } from './common.js';
 
 async function pickClassId(ctx) {
   const id = Number(param('class'));
@@ -130,6 +130,7 @@ export async function render(ctx) {
     : !editable ? h('div', { class: 'note' }, 'View only. You can see this class’s marks but can’t edit them.') : null;
 
   mount(ctx.main, h('div', { class: 'stack' },
+    searchBack(ctx),
     notice,
     pageHead(className(cls), `${!ctx.isAdmin && own ? '' : `Teacher: ${cls.teacher?.name || 'Not assigned'} · `}${roster.length} students · ${evalCount.count ?? 0} evaluations${cls.year && !cls.year.is_current ? ' · ' + cls.year.name : ''}`, actions),
     classTabs(ctx, cls, 'gradebook'),

@@ -2,6 +2,7 @@
 import { db, must, h, mount, param, getYears, getCurrentYear, getClasses, getGrades, getSubjects, getStaff, getClass, className,
   select, field, input, btn, table, pageHead, emptyState, card, getRoster } from '../lib.js';
 import { gradebookSection } from './gradebook.js';
+import { SEARCH_KEY } from './common.js';
 
 const RECENT = 'ledger-recent-classes';
 function recent() { try { return JSON.parse(localStorage.getItem(RECENT)) || []; } catch { return []; } }
@@ -32,6 +33,7 @@ async function teacherBrowse(ctx) {
       && (!teach || (c.teacher?.name || '').toLowerCase().includes(teach)));
     const q = new URLSearchParams(Object.entries({ grade: gradeSel.value, subject: subjIn.value.trim(), teacher: teachIn.value.trim() }).filter(([, v]) => v));
     history.replaceState(null, '', location.pathname + (String(q) ? '?' + q : ''));
+    try { sessionStorage.setItem(SEARCH_KEY, String(q) ? '?' + q : ''); } catch { /* storage off */ }
     mount(results, h('div', { class: 'stack', style: 'gap: 8px' },
       h('div', { class: 'muted small' }, `${rows.length} class${rows.length === 1 ? '' : 'es'}`),
       table([
@@ -39,7 +41,7 @@ async function teacherBrowse(ctx) {
         { label: 'Subject', render: (c) => c.subject.name },
         { label: 'Teacher', render: (c) => (c.teacher_id === ctx.me.id ? 'You' : c.teacher?.name || 'Not assigned') },
         { label: 'Students', cls: 'num', render: count },
-        { label: '', cls: 'r', render: (c) => btn('Open class', { small: true, href: ctx.link(c.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: c.id }) }) },
+        { label: '', cls: 'r', render: (c) => btn('Open class', { small: true, href: ctx.link(c.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: c.id, from: 'search' }) }) },
       ], rows, { empty: 'No classes match. Try another grade, subject or teacher.' })));
   };
   [gradeSel, subjIn, teachIn].forEach((el) => el.addEventListener('input', draw));

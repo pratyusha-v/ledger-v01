@@ -1,5 +1,15 @@
 // Pieces shared by several pages: class side columns and class headers.
-import { h, mount, getCurrentYear, getClasses, getGrades, getStaff, getSubjects, select, field, className } from '../lib.js';
+import { h, mount, param, backLink, getCurrentYear, getClasses, getGrades, getStaff, getSubjects, select, field, className } from '../lib.js';
+
+// A teacher who opened a class from All Classes sees it full width, with a way back to their search.
+export const SEARCH_KEY = 'ledger-class-search';
+export const fromSearch = (ctx) => !ctx.isAdmin && param('from') === 'search';
+export function searchBack(ctx) {
+  if (!fromSearch(ctx)) return null;
+  let q = '';
+  try { q = sessionStorage.getItem(SEARCH_KEY) || ''; } catch { /* storage off */ }
+  return backLink('Back to search', 'AllClassesStart.html' + q);
+}
 
 // Teacher side column: homeroom first, then own classes; or every class when browsing.
 export async function teacherSidebar(ctx, { classId, gradeId, browse = false } = {}) {
@@ -65,6 +75,7 @@ export async function adminSidebar(ctx, { classId } = {}) {
 }
 
 export function classSidebar(ctx, opts) {
+  if (fromSearch(ctx)) { ctx.aside?.remove(); return; }
   return ctx.isAdmin ? adminSidebar(ctx, opts) : teacherSidebar(ctx, opts);
 }
 
@@ -76,6 +87,7 @@ export function classTabs(ctx, cls, active) {
       ? ctx.link(ctx.isAdmin || cls.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: cls.id })
       : ctx.isAdmin ? ctx.link('Attendance', { grade: cls.grade_id, class: cls.id })
       : cls.grade.class_teacher_id === ctx.me.id ? ctx.link('Attendance', { grade: cls.grade_id, class: cls.id }) : `AttendanceView.html?class=${cls.id}`;
-    return h('a', { class: 'tab' + (key === active ? ' on' : ''), href, 'aria-current': key === active ? 'page' : undefined }, label);
+    const keep = fromSearch(ctx) ? (href.includes('?') ? '&' : '?') + 'from=search' : '';
+    return h('a', { class: 'tab' + (key === active ? ' on' : ''), href: href + keep, 'aria-current': key === active ? 'page' : undefined }, label);
   }));
 }
