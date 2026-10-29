@@ -1,13 +1,60 @@
 // All Classes: find any class by grade, subject, teacher and year.
-import { h, mount, param, getYears, getCurrentYear, getClasses, getGrades, getSubjects, getStaff, getClass, className,
-  select, field, btn, pageHead, emptyState, card, getRoster } from '../lib.js';
+import { db, must, h, mount, param, getYears, getCurrentYear, getClasses, getGrades, getSubjects, getStaff, getClass, className,
+  select, field, input, btn, table, pageHead, emptyState, card, getRoster } from '../lib.js';
 import { gradebookSection } from './gradebook.js';
 
 const RECENT = 'ledger-recent-classes';
 function recent() { try { return JSON.parse(localStorage.getItem(RECENT)) || []; } catch { return []; } }
 function remember(id) { try { localStorage.setItem(RECENT, JSON.stringify([id, ...recent().filter((x) => x !== id)].slice(0, 5))); } catch { /* storage off */ } }
 
+// Teacher view: every class this year in one list, narrowed by grade, subject and teacher as they type.
+async function teacherBrowse(ctx) {
+  const [current, grades, subjects, staff] = await Promise.all([getCurrentYear(), getGrades(), getSubjects(), getStaff()]);
+  const classes = await getClasses(current.id);
+  const enrol = classes.length ? must(await db.from('enrollments').select('class_id').in('class_id', classes.map((c) => c.id))) : [];
+  const count = (c) => enrol.filter((e) => e.class_id === c.id).length;
+
+  // Text fields with suggestions: the browser lists matching names as they type.
+  const suggest = (id, label, names, value) => {
+    const el = input({ value, list: id, placeholder: label, autocomplete: 'off', 'aria-label': label });
+    return [el, h('datalist', { id }, [...new Set(names)].map((n) => h('option', { value: n })))];
+  };
+  const gradeSel = select([['', 'All grades'], ...grades.map((g) => [g.id, g.name])], param('grade') || '');
+  const [subjIn, subjList] = suggest('subject-options', 'Any subject', classes.map((c) => c.subject.name), param('subject') || '');
+  const [teachIn, teachList] = suggest('teacher-options', 'Any teacher', classes.map((c) => c.teacher?.name).filter(Boolean), param('teacher') || '');
+
+  const results = h('div', {});
+  const draw = () => {
+    const subj = subjIn.value.trim().toLowerCase();
+    const teach = teachIn.value.trim().toLowerCase();
+    const rows = classes.filter((c) => (!gradeSel.value || c.grade_id === +gradeSel.value)
+      && (!subj || c.subject.name.toLowerCase().includes(subj))
+      && (!teach || (c.teacher?.name || '').toLowerCase().includes(teach)));
+    const q = new URLSearchParams(Object.entries({ grade: gradeSel.value, subject: subjIn.value.trim(), teacher: teachIn.value.trim() }).filter(([, v]) => v));
+    history.replaceState(null, '', location.pathname + (String(q) ? '?' + q : ''));
+    mount(results, h('div', { class: 'stack', style: 'gap: 8px' },
+      h('div', { class: 'muted small' }, `${rows.length} class${rows.length === 1 ? '' : 'es'}`),
+      table([
+        { label: 'Grade', th: true, render: (c) => c.grade.name },
+        { label: 'Subject', render: (c) => c.subject.name },
+        { label: 'Teacher', render: (c) => (c.teacher_id === ctx.me.id ? 'You' : c.teacher?.name || 'Not assigned') },
+        { label: 'Students', cls: 'num', render: count },
+        { label: '', cls: 'r', render: (c) => btn('Open class', { small: true, href: ctx.link(c.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: c.id }) }) },
+      ], rows, { empty: 'No classes match. Try another grade, subject or teacher.' })));
+  };
+  [gradeSel, subjIn, teachIn].forEach((el) => el.addEventListener('input', draw));
+  const clear = btn('Clear', { onclick: () => { gradeSel.value = ''; subjIn.value = ''; teachIn.value = ''; draw(); } });
+
+  mount(ctx.main, h('div', { class: 'stack' },
+    pageHead('All Classes', `Every class in the school this year (${current.name}). Other teachers\u2019 classes are view only.`),
+    card('Search', h('div', { style: 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 20px; align-items: end' },
+      field('Grade', gradeSel), field('Subject', subjIn), field('Teacher', teachIn), h('div', { class: 'row' }, clear)), subjList, teachList),
+    results));
+  draw();
+}
+
 export async function render(ctx) {
+  if (!ctx.isAdmin) return teacherBrowse(ctx);
   const [years, current, grades, subjects, staff] = await Promise.all([getYears(), getCurrentYear(), getGrades(), getSubjects(), getStaff()]);
   const yearId = Number(param('year')) || current.id;
   const classes = await getClasses(yearId);
