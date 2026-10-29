@@ -59,8 +59,6 @@ export async function render(ctx) {
   const ids = staff.map((s) => s.id);
   const yearRows = ids.length ? must(await db.from('staff_attendance').select('staff_id, on_date, status, remark, leave_id').in('staff_id', ids).gte('on_date', year.starts_on).lte('on_date', year.ends_on)) : [];
   const leaveDays = (id) => yearRows.filter((r) => r.staff_id === id && r.leave_id).length;
-  const absences = (id) => yearRows.filter((r) => r.staff_id === id && r.status === 'A' && !r.leave_id).length;
-  const lates = (id) => yearRows.filter((r) => r.staff_id === id && r.status === 'L').length;
   const url = (q) => 'AdminStaffAttendance.html?' + new URLSearchParams({ view, role, date, ...q });
 
   const roleSel = select([['', 'All staff'], ['teacher', 'Teachers'], ['admin', 'Admins']], role, { style: 'width: auto', onchange: (e) => go(url({ role: e.target.value })) });
@@ -85,16 +83,6 @@ export async function render(ctx) {
       render(ctx);
     };
 
-    const allowance = new Map(staff.map((s) => [s.id, input({ type: 'number', min: 0, value: s.paid_leave_days, style: 'width: 80px; height: 34px; text-align: right', 'aria-label': `Leave allowance for ${s.name}` })]));
-    const save = btn('Save Allowances', { onclick: () => busy(save, async () => {
-      for (const s of staff) {
-        const v = Number(allowance.get(s.id).value);
-        if (!Number.isInteger(v) || v < 0) throw new Error(`Allowance for ${s.name} must be a whole number of days.`);
-        if (v !== s.paid_leave_days) must(await db.from('staff').update({ paid_leave_days: v }).eq('id', s.id));
-      }
-      go(url({}));
-    }, 'Saved').catch(() => {}) });
-
     parts.push(h('div', { class: 'spread', style: 'align-items: center' }, h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'Show'), roleSel),
       btn('Add Leave', { primary: true, icon: 'plus', onclick: () => addLeave(allStaff, fiveDay, ctx.me, () => render(ctx)) })));
 
@@ -109,21 +97,6 @@ export async function render(ctx) {
           h('td', {}, btn('Remove', { small: true, danger: true, onclick: remove(l) })))))))
         : h('p', { class: 'muted small', style: 'margin: 0' }, 'No upcoming leave. Use Add Leave to plan one.')));
 
-    parts.push(card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, h('span', {}, 'Leave balances ', h('small', {}, `Academic Year ${year.name}`)), save),
-      h('div', { class: 'tbx' }, h('table', { class: 'tt' },
-        h('thead', {}, h('tr', {}, ['Name', 'Role', 'Allowance (days)', 'Leave taken', 'Remaining', 'Other absences', 'Late'].map((l, i) => h('th', { class: i > 1 ? 'num' : '' }, l)))),
-        h('tbody', {}, staff.map((s) => {
-          const left = s.paid_leave_days - leaveDays(s.id);
-          return h('tr', {},
-            h('th', { scope: 'row' }, h('a', { href: `AdminStaffProfile.html?id=${s.id}` }, s.name)),
-            h('td', {}, s.role === 'admin' ? 'Admin' : 'Teacher'),
-            h('td', { class: 'num' }, allowance.get(s.id)),
-            h('td', { class: 'num' }, leaveDays(s.id)),
-            h('td', { class: 'num' }, left < 0 ? tag(`${left} over`, 'bad') : left === 0 ? tag('0', 'warn') : left),
-            h('td', { class: 'num' }, absences(s.id)),
-            h('td', { class: 'num' }, lates(s.id)));
-        })))),
-      h('p', { class: 'muted small', style: 'margin: 0' }, 'Leave taken counts school days covered by a leave this academic year. Other absences are days marked A without a leave.')));
     mount(ctx.main, h('div', { class: 'stack' }, parts));
     return;
   }
