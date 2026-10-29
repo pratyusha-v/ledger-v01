@@ -27,9 +27,8 @@ async function list(ctx) {
   const action = (a) => ({ new: 'Review', in_review: 'Review', draft: 'Continue', accepted: 'Enroll', rejected: 'View', enrolled: 'Profile' })[a.status];
 
   mount(ctx.main, h('div', { class: 'stack' },
+    backLink('Back to Student Enrollment', 'AdminEnrollment.html'),
     pageHead('Admissions', `Move applicants from application to enrolled student${yearName ? ' · Admissions for ' + yearName : ''}`, [
-      btn('Export', { icon: 'download', onclick: () => downloadCSV('admissions.csv', [['Application', 'Applicant', 'Grade', 'Applied on', 'Status'],
-        ...rows.map((a) => [a.app_no, a.full_name, a.grade?.name, a.applied_on, APP_STATUS[a.status][0]])]) }),
       btn('New Application', { primary: true, icon: 'plus', href: 'AdminNewApplication.html' })]),
     tabs([['all', 'All', all.length], ...Object.entries(APP_STATUS).filter(([k]) => k !== 'draft' || counts.draft).map(([k, [l]]) => [k, l, counts[k]])], status, null, { hrefFor: (k) => url({ status: k }) }),
     h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'Grade applied'),

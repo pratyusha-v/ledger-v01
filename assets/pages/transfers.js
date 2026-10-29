@@ -56,6 +56,7 @@ async function list(ctx) {
     t.student_id ? btn('Profile', { small: true, href: `AdminStudent.html?id=${t.student_id}` }) : null);
 
   mount(ctx.main, h('div', { class: 'stack' },
+    backLink('Back to Student Enrollment', 'AdminEnrollment.html'),
     pageHead('Transfers', 'Move students in, out, or between classes. Records stay viewable in history.', [btn('New Transfer', { primary: true, icon: 'plus', href: 'AdminNewTransfer.html' })]),
     tabs(Object.entries(KIND).map(([k, l]) => [k, l, count(k)]), shownKind, null, { hrefFor: (k) => 'AdminTransfers.html?kind=' + k }),
     h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'Status'),

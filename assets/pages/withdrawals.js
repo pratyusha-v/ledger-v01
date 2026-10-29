@@ -1,5 +1,5 @@
 // Withdrawals (admin): students leaving the school. Records are archived, not deleted.
-import { db, must, h, mount, param, go, getYears, getCurrentYear, fmtDMY, isoDate, btn, card, table, tag, pageHead, emptyState,
+import { db, must, h, mount, param, go, getYears, getCurrentYear, fmtDMY, isoDate, btn, card, table, tag, pageHead, backLink, emptyState,
   studentName, input, select, field, textarea, checkbox, toast, busy, logActivity } from '../lib.js';
 
 const REASONS = ['Family relocation', 'Health', 'Financial', 'Other'];
@@ -50,6 +50,7 @@ export async function render(ctx) {
 
   const yearSel = select(years.map((y) => y.name), yearName, { style: 'width: auto', onchange: (e) => go('AdminWithdrawals.html?year=' + encodeURIComponent(e.target.value)) });
   mount(ctx.main, h('div', { class: 'stack' },
+    backLink('Back to Student Enrollment', 'AdminEnrollment.html'),
     pageHead('Withdrawals', 'Students leaving the school. Their records are archived, not deleted.', showForm ? [] : [btn('New Withdrawal', { primary: true, icon: 'plus', href: 'AdminWithdrawals.html?new=1' })]),
     form,
     h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'Year'), yearSel),
