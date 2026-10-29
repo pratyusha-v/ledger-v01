@@ -1,5 +1,5 @@
 // My Account: profile, password and notification preferences.
-import { db, must, h, mount, btn, card, pageHead, input, field, checkbox, toast, busy, signOut, getGrades } from '../lib.js';
+import { db, must, h, mount, guardUnsaved, btn, card, pageHead, input, field, checkbox, toast, busy, signOut, getGrades } from '../lib.js';
 
 const NOTIFY = {
   teacher: [['grades_due', 'Email me when grades are due'], ['attendance', 'Email me when attendance isn’t taken'], ['weekly', 'Weekly summary']],
@@ -22,6 +22,7 @@ export async function render(ctx) {
     const notify = { ...me.notify, ...Object.fromEntries(prefs.map(([k, el]) => [k, el.querySelector('input').checked])) };
     must(await db.from('staff').update({ name: name.value.trim(), phone: phone.value.trim(), notify }).eq('id', me.id));
     Object.assign(me, { name: name.value.trim(), phone: phone.value.trim(), notify });
+    guard?.clear();
   }, 'Saved').catch(() => {}) });
 
   const pwBtn = btn('Update Password', { onclick: () => busy(pwBtn, async () => {
@@ -29,6 +30,7 @@ export async function render(ctx) {
     if (pw1.value !== pw2.value) throw new Error('The two passwords don’t match.');
     must(await db.auth.updateUser({ password: pw1.value }));
     pw1.value = ''; pw2.value = '';
+    guard?.clear();
   }, 'Password updated').catch(() => {}) });
 
   mount(ctx.main, h('div', { class: 'stack', style: 'max-width: 880px' },
@@ -38,5 +40,7 @@ export async function render(ctx) {
     card('Password', h('div', { class: 'grid2' }, field('New password', pw1), field('Confirm new password', pw2)), h('div', {}, pwBtn)),
     card('Notifications', h('div', { class: 'stack', style: 'gap: 10px' }, prefs.map(([, el]) => el)),
       h('p', { class: 'muted small', style: 'margin: 0' }, 'Your preferences are saved. Ledger doesn’t send these emails yet.')),
-    h('div', {}, btn('Log Out', { danger: true, onclick: signOut }))));
+    h('div', {}, btn('Log Out', { danger: true, onclick: async () => { if (!guard || (await guard.leave())) signOut(); } }))));
+  // Teachers get a warning before leaving with unsaved account changes.
+  const guard = ctx.isAdmin ? null : guardUnsaved(ctx.main);
 }

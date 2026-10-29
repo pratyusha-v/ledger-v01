@@ -1,5 +1,5 @@
 // Attendance for a grade: the class teacher (or an admin) takes it; everyone else sees it read-only.
-import { db, must, h, mount, param, go, getGrades, getCurrentYear, getClass, className, isoDate, fmtDate, pct, btn, card,
+import { db, must, h, mount, param, go, guardUnsaved, getGrades, getCurrentYear, getClass, className, isoDate, fmtDate, pct, btn, card,
   pageHead, emptyState, studentName, input, select, tabs, toast, busy } from '../lib.js';
 import { classSidebar, classTabs } from './common.js';
 
@@ -87,7 +87,9 @@ export async function render(ctx) {
       .map(([l, n, k]) => h('span', { class: 'tag' + (k ? ' ' + k : '') }, `${n} ${l}`)));
   };
 
-  const dateIn = input({ type: 'date', value: date, style: 'width: auto', onchange: (e) => go(selfHref({ date: e.target.value })) });
+  const dateIn = input({ type: 'date', value: date, style: 'width: auto', 'data-no-dirty': true, onchange: async (e) => {
+    if (guard) { if (!(await guard.leave(selfHref({ date: e.target.value })))) e.target.value = date; } else go(selfHref({ date: e.target.value }));
+  } });
   const body = h('tbody', {}, roster.map((s) => {
     const st = state.get(s.id);
     const statusCell = canEdit
@@ -107,6 +109,7 @@ export async function render(ctx) {
       state.forEach((st) => { if (!st.status) st.status = 'P'; });
       body.querySelectorAll('.seg').forEach((seg) => { if (!seg.querySelector('input:checked')) seg.querySelector('input[value="P"]').checked = true; });
       drawCounts();
+      guard?.mark();
     } }),
   ] : [];
   const saveBtn = canEdit ? btn('Save Attendance', { primary: true, onclick: () => busy(saveBtn, async () => {
@@ -115,6 +118,7 @@ export async function render(ctx) {
     }));
     if (!rows.length) throw new Error('Mark at least one student first.');
     must(await db.from('attendance').upsert(rows));
+    guard?.clear();
     toast(`Attendance saved for ${fmtDate(date)}`);
   }).catch(() => {}) }) : null;
   if (saveBtn) actions.push(saveBtn);
@@ -127,4 +131,6 @@ export async function render(ctx) {
     ? (ctx.isAdmin ? 'As an admin you can take or correct attendance for any class.' : 'Subject teachers see this attendance read-only in their own class pages.') : ''));
   mount(ctx.main, h('div', { class: 'stack' }, parts));
   drawCounts();
+  // Teachers taking attendance get a warning before leaving without saving.
+  const guard = canEdit && !ctx.isAdmin ? guardUnsaved(ctx.main) : null;
 }

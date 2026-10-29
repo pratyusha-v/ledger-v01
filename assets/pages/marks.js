@@ -1,5 +1,5 @@
 // Add a test, or edit a test's details and marks. Stats update as marks are typed.
-import { db, must, h, mount, param, go, getClass, getRoster, className, testStats, n1, pct, isoDate, btn, card,
+import { db, must, h, mount, param, go, guardUnsaved, getClass, getRoster, className, testStats, n1, pct, isoDate, btn, card,
   pageHead, backLink, emptyState, studentName, select, field, input, textarea, tag, toast, busy, confirmBox } from '../lib.js';
 import { classSidebar } from './common.js';
 import { SORTS, sortRows, statsCard } from './test.js';
@@ -34,7 +34,7 @@ export async function render(ctx) {
   const absentOut = h('dd', {});
 
   const statsBox = h('div', {});
-  const sortSel = select(SORTS, 'roll', { style: 'width: auto; height: 32px' });
+  const sortSel = select(SORTS, 'roll', { style: 'width: auto; height: 32px', 'data-no-dirty': true });
   const tableBox = h('div', { class: 'tbx' });
   const maxHead = h('span', {});
   const rows = roster.map((s) => ({ student: s }));
@@ -111,13 +111,14 @@ export async function render(ctx) {
     if (upserts.length) must(await db.from('marks').upsert(upserts));
     if (cleared.length && test) must(await db.from('marks').delete().eq('evaluation_id', saved.id).in('student_id', cleared));
     toast('Saved');
+    guard?.clear();
     // Teachers land back on the gradebook after adding a test, where it now shows.
     go(adding && !ctx.isAdmin ? ctx.link('Main', { class: classId }) : ctx.link('TestDetail', { test: saved.id }));
   }).catch(() => {}) });
 
   const del = test ? btn('Delete Test', { danger: true, onclick: async () => {
     if (!(await confirmBox(`Delete ${test.name}?`, 'This removes the test and every mark entered for it. It can’t be undone.', 'Delete Test'))) return;
-    await busy(del, async () => { must(await db.from('evaluations').delete().eq('id', test.id)); go(ctx.link('Main', { class: classId })); });
+    await busy(del, async () => { must(await db.from('evaluations').delete().eq('id', test.id)); guard?.clear(); go(ctx.link('Main', { class: classId })); });
   } }) : null;
 
   const cancelHref = test ? ctx.link('TestDetail', { test: test.id }) : ctx.link('Main', { class: classId });
@@ -138,4 +139,6 @@ export async function render(ctx) {
         ? [h('div', { class: 'row', style: 'justify-content: flex-end' }, h('span', { class: 'muted small' }, 'Sorted by'), sortSel), tableBox]
         : h('p', { class: 'muted', style: 'margin: 0' }, 'No students on this class roster yet.')))));
   drawTable();
+  // Teachers get a warning before leaving with unsaved test details or marks.
+  const guard = ctx.isAdmin ? null : guardUnsaved(ctx.main);
 }

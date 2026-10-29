@@ -261,6 +261,31 @@ export function confirmBox(title, text, submit = 'Confirm', danger = true) {
   });
 }
 
+// Warns before leaving a page with unsaved edits. Edits are any input inside
+// `scope` (controls marked data-no-dirty, like sort pickers, don't count).
+// In-app links get a Ledger dialog; closing or reloading the tab gets the browser's own prompt.
+export function guardUnsaved(scope) {
+  let dirty = false;
+  const ask = () => confirmBox('Changes not saved', 'You’ve made changes that haven’t been saved. Are you sure you want to leave this page? Your changes will be lost.', 'Leave without saving');
+  const mark = (e) => { if (!e.target.closest('dialog, [data-no-dirty]')) dirty = true; };
+  scope.addEventListener('input', mark);
+  scope.addEventListener('change', mark);
+  window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  document.addEventListener('click', async (e) => {
+    const a = e.target.closest?.('a[href]');
+    if (!dirty || !a || a.target === '_blank' || a.getAttribute('href').startsWith('#')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (await ask()) { dirty = false; a.click(); }
+  }, true);
+  return {
+    mark() { dirty = true; },
+    clear() { dirty = false; },
+    // For in-page navigation done in code (e.g. picking another date).
+    async leave(href) { if (!dirty || (await ask())) { dirty = false; if (href) go(href); return true; } return false; },
+  };
+}
+
 // Runs an async action from a button, disabling it meanwhile and reporting errors.
 export async function busy(button, fn, okMsg) {
   if (button) button.disabled = true;
