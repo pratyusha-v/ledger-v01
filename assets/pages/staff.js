@@ -7,7 +7,7 @@ import { STATUS_TAG, setupNote } from './people.js';
 
 const MONTH_ORDER = [6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4];
 const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const ATT_LABEL = { P: 'Present', A: 'Absent', L: 'Late', Leave: 'On leave' };
+const ATT_LABEL = { P: 'Present', A: 'Absent', L: 'Late', Leave: 'Paid leave' };
 
 function yearsSince(d) {
   if (!d) return null;
@@ -124,7 +124,7 @@ export async function render(ctx) {
           h('div', { class: 'row' }, upload))),
       h('div', { class: 'row' },
         s.status === 'invited' ? btn('Resend set-up', { onclick: () => modal('Set-up instructions', setupNote(s.email), { submit: 'Done' }) }) : null,
-        btn('Record Attendance', { onclick: () => recordAttendance(s, reload) }),
+        teacher ? null : btn('Record Attendance', { onclick: () => recordAttendance(s, reload) }),
         btn('Edit Details', { primary: true, icon: 'edit', onclick: () => editDetails(s, grades, s.id === ctx.me.id, reload) }))),
     h('section', { class: 'stats' },
       stat(s.dob ? ageOn(s.dob) : '—', `Age · DOB ${fmtDMY(s.dob)}`),
@@ -145,7 +145,15 @@ export async function render(ctx) {
       ...homeroom.filter((g) => !classes.some((c) => c.grade_id === g.id)).map((g) => ({ homeOnly: g })),
       ...classes.map((c) => ({ c })),
     ];
-    sections.push(card(h('span', {}, 'Classes ', h('small', {}, `Academic Year ${year.name}`)),
+    const term = await currentTerm(year);
+    const [periods, settings, status] = await Promise.all([getPeriods(), getSettings(),
+      term ? db.from('timetable_status').select('*').eq('term_id', term.id).maybeSingle().then(must) : null]);
+    const slots = term ? must(await db.from('timetable_slots').select('*, grade:grade_levels(name), subject:subjects(name), room:rooms(name)').eq('term_id', term.id).eq('teacher_id', s.id)) : [];
+    const days = DAYS.slice(0, settings.week_days === 'Mon–Fri' ? 5 : 6);
+    const editTimetable = btn('Edit', { small: true, icon: 'edit', href: `AdminTimetable.html?by=teacher&id=${s.id}${term ? '&term=' + term.id : ''}` });
+
+    sections.push(card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' },
+      h('span', {}, 'Classes and timetable ', h('small', {}, `Academic Year ${year.name}`)), editTimetable),
       rows.length ? table([
         { label: 'Class', th: true, render: (r) => (r.homeOnly ? `${r.homeOnly.name} (homeroom)` : h('a', { href: `AdminMain.html?class=${r.c.id}` }, className(r.c))) },
         { label: 'Role in class', render: (r) => (r.homeOnly || homeIds.has(r.c.grade_id) ? tag(`★ Class teacher of ${(r.homeOnly || r.c.grade).name}`, 'warn') : 'Subject teacher') },
@@ -153,7 +161,12 @@ export async function render(ctx) {
         { label: 'Can edit', cls: 'wrap', render: (r) => (r.homeOnly ? 'Attendance'
           : homeIds.has(r.c.grade_id) ? 'Tests and grades · attendance for the grade' : 'Tests and grades') },
       ], rows) : h('p', { class: 'muted', style: 'margin: 0' }, 'No classes assigned this year. Assign a teacher from a class page.'),
-      h('p', { class: 'muted small', style: 'margin: 0' }, '★ A class teacher takes attendance for their grade as well as editing tests and grades. A subject teacher only edits tests and grades for their own classes.')));
+      h('p', { class: 'muted small', style: 'margin: 0' }, '★ A class teacher takes attendance for their grade as well as editing tests and grades. A subject teacher only edits tests and grades for their own classes.'),
+      h('div', { class: 'row', style: 'justify-content: space-between' }, h('b', {}, `Timetable · ${term?.name || '—'}`), status?.published ? tag('Published', 'ok') : tag('Draft', 'warn')),
+      slots.length ? grid({ periods, days, cellFor: (day, p) => {
+        const x = slots.find((y) => y.day === day && y.period_id === p.id);
+        return x ? h('div', { class: 'slot' + (homeroom.some((g) => g.name === x.grade.name) ? ' me' : '') }, `${x.grade.name} – ${x.subject.name}`, h('small', {}, x.room?.name || 'No room')) : '';
+      } }) : h('p', { class: 'muted small', style: 'margin: 0' }, 'No periods in this term\u2019s timetable.')));
 
     sections.push(card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, h('span', {}, 'Pending grades due ', h('span', { class: 'count tag' }, due.length))),
       due.length ? table([
@@ -162,27 +175,15 @@ export async function render(ctx) {
         { label: 'Students without marks', cls: 'num', render: (x) => x.missing },
         { label: '', render: (x) => btn('Enter marks', { small: true, href: `AdminMarks.html?test=${x.e.id}` }) },
       ], due) : h('p', { class: 'muted small', style: 'margin: 0' }, 'All marks are entered.')));
-
-    const term = await currentTerm(year);
-    const [periods, settings, status] = await Promise.all([getPeriods(), getSettings(),
-      term ? db.from('timetable_status').select('*').eq('term_id', term.id).maybeSingle().then(must) : null]);
-    const slots = term ? must(await db.from('timetable_slots').select('*, grade:grade_levels(name), subject:subjects(name), room:rooms(name)').eq('term_id', term.id).eq('teacher_id', s.id)) : [];
-    const days = DAYS.slice(0, settings.week_days === 'Mon–Fri' ? 5 : 6);
-    sections.push(card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, h('span', {}, 'Timetable ', h('small', {}, term?.name || '')),
-      h('span', { class: 'row' }, status?.published ? tag('Published', 'ok') : tag('Draft', 'warn'), h('a', { href: `AdminTimetable.html?by=teacher&id=${s.id}${term ? '&term=' + term.id : ''}`, style: 'font-size: 13px; font-weight: 400' }, 'Edit in Timetable'))),
-    slots.length ? grid({ periods, days, cellFor: (day, p) => {
-      const x = slots.find((y) => y.day === day && y.period_id === p.id);
-      return x ? h('div', { class: 'slot' + (homeroom.some((g) => g.name === x.grade.name) ? ' me' : '') }, `${x.grade.name} – ${x.subject.name}`, h('small', {}, x.room?.name || 'No room')) : '';
-    } }) : h('p', { class: 'muted small', style: 'margin: 0' }, 'No periods in this term’s timetable.')));
   }
 
   sections.push(card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, h('span', {}, 'Attendance ', h('small', {}, `Academic Year ${year.name}`)),
-    h('span', { class: 'muted small', style: 'font-weight: 400' }, `${tot.P} present · ${tot.L} late · ${tot.A} absent · ${tot.Leave} on leave`)),
+    h('span', { class: 'muted small', style: 'font-weight: 400' }, `${tot.P} present · ${tot.L} late · ${tot.A} absent · ${tot.Leave} paid leave`)),
   tot.days ? h('div', { class: 'tbx', style: 'overflow-x: auto' }, h('table', { class: 'tt' },
     h('thead', {}, h('tr', {}, h('th', {}, 'Month'), MONTH_ORDER.map((m) => h('th', { class: 'num' }, MONTH_NAMES[m])), h('th', { class: 'num' }, 'Total'))),
-    h('tbody', {}, [['Working days', 'days'], ['Present', 'P'], ['Late', 'L'], ['Absent', 'A'], ['On leave', 'Leave']].map(([label, k]) => h('tr', {}, h('th', { scope: 'row' }, label),
+    h('tbody', {}, [['Working days', 'days'], ['Present', 'P'], ['Late', 'L'], ['Absent', 'A'], ['Paid leave', 'Leave']].map(([label, k]) => h('tr', {}, h('th', { scope: 'row' }, label),
       MONTH_ORDER.map((m) => h('td', { class: 'num' }, byMonth.get(m).days ? byMonth.get(m)[k] : '—')), h('td', { class: 'num' }, h('b', {}, tot[k])))))))
-    : h('p', { class: 'muted small', style: 'margin: 0' }, 'No attendance recorded this year. Use Record Attendance to add a day.')));
+    : h('p', { class: 'muted small', style: 'margin: 0' }, 'No attendance recorded this year. Record it under Staff Services › Staff Attendance.')));
 
   mount(ctx.main, h('div', { class: 'stack' }, sections));
 }

@@ -430,3 +430,4 @@ dialog.modal .scroll { max-height: 50vh; overflow: auto; display: flex; flex-dir
   main { padding: 0 !important; }
   html, body { background: #fff; }
 }
+.seg input[value="Leave"]:checked + span { background: var(--mauve-light); color: var(--mauve); }

@@ -19,7 +19,7 @@ const MODULES = {
   AdminWithdrawals: 'withdrawals',
   AdminPastYears: 'records', AdminFormerStudents: 'records', AdminReports: 'reports',
   AdminTimetable: 'scheduling', AdminTerms: 'scheduling', AdminRooms: 'scheduling',
-  AdminStaff: 'people', AdminStaffProfile: 'staff', AdminRoles: 'people', AdminSettings: 'people',
+  AdminStaff: 'people', AdminStaffProfile: 'staff', AdminStaffAttendance: 'staffattendance', AdminRoles: 'people', AdminSettings: 'people',
   Login: 'auth', ForgotPassword: 'auth',
 };
 
@@ -50,7 +50,7 @@ document.addEventListener('click', (e) => {
 function noAccess(main, email) {
   mount(main, h('section', { class: 'empty', style: 'margin-top: 24px' },
     h('h2', {}, 'No Ledger access for this account'),
-    h('p', {}, `${email} is signed in, but isn't on the staff list, or the account is inactive. Ask the school admin to add you under Permissions › Staff Directory.`),
+    h('p', {}, `${email} is signed in, but isn't on the staff list, or the account is inactive. Ask the school admin to add you under Staff Services › Staff Directory.`),
     h('button', { type: 'button', class: 'btn', onclick: signOut }, 'Sign out')));
 }
 

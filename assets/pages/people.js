@@ -50,7 +50,6 @@ async function staffPage(ctx) {
 
   mount(ctx.main, h('div', { class: 'stack' },
     pageHead('Staff Directory', 'Teachers and admins. Click a name to see their details, classes and attendance.', [
-      btn('Export', { icon: 'download', onclick: () => downloadCSV('staff.csv', [['Name', 'Role', 'Email', 'Phone', 'Status'], ...rows.map((s) => [s.name, roleText(s), s.email, s.phone, s.status])]) }),
       btn('Invite Staff', { primary: true, icon: 'plus', onclick: invite })]),
     tabs([['all', 'All', staff.length], ['teachers', 'Teachers', staff.filter((s) => s.role === 'teacher').length], ['admins', 'Admins', staff.filter((s) => s.role === 'admin').length]], tab, null, { hrefFor: (k) => 'AdminStaff.html?tab=' + k }),
     filterRow,

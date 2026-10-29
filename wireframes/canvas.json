@@ -424,6 +424,15 @@
       "w": 1512,
       "x": 1592,
       "y": 9068
+    },
+    "AdminStaffAttendance.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Staff Attendance",
+      "w": 1512,
+      "x": 3184,
+      "y": 9068
     }
   },
   "createdOnFiles": {
@@ -485,7 +494,7 @@
       "kind": "title1",
       "maxW": 6288,
       "page": "page-m94h8k",
-      "text": "Admin View – Permissions & Account",
+      "text": "Admin View – Staff Services & Account",
       "w": 240,
       "x": 0,
       "y": 8768
@@ -562,6 +571,7 @@
     "AdminRooms.dc.html",
     "AdminStaff.dc.html",
     "AdminStaffProfile.dc.html",
+    "AdminStaffAttendance.dc.html",
     "AdminRoles.dc.html",
     "AdminSettings.dc.html",
     "AdminMyAccount.dc.html"
