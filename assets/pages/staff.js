@@ -7,7 +7,7 @@ import { STATUS_TAG, setupNote } from './people.js';
 
 const MONTH_ORDER = [6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4];
 const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const ATT_LABEL = { P: 'Present', A: 'Absent', L: 'Late', Leave: 'Paid leave' };
+const ATT_LABEL = { P: 'Present', A: 'Absent', L: 'Late', Leave: 'On leave' };
 
 function yearsSince(d) {
   if (!d) return null;
@@ -53,7 +53,7 @@ function editDetails(s, grades, isSelf, reload) {
 
 function recordAttendance(s, reload) {
   const date = input({ type: 'date', value: isoDate() });
-  const status = select(Object.entries(ATT_LABEL), 'P');
+  const status = select(Object.entries(ATT_LABEL).filter(([k]) => k !== 'Leave'), 'P');
   const remark = textarea({ rows: 2, placeholder: 'Optional, e.g. half-day leave' });
   modal(`Record attendance · ${s.name}`, h('div', { class: 'grid2' }, field('Date', date), field('Status', status), field('Remark', remark, { style: 'grid-column: span 2' })), {
     onSubmit: async () => {
@@ -74,14 +74,14 @@ export async function render(ctx) {
   const year = await getCurrentYear();
   const [grades, att, photo] = await Promise.all([
     getGrades(),
-    db.from('staff_attendance').select('on_date, status').eq('staff_id', s.id).gte('on_date', year.starts_on).lte('on_date', year.ends_on).then(must),
+    db.from('staff_attendance').select('on_date, status, leave_id').eq('staff_id', s.id).gte('on_date', year.starts_on).lte('on_date', year.ends_on).then(must),
     photoUrl(s.photo_path),
   ]);
   const homeroom = grades.filter((g) => g.class_teacher_id === s.id);
 
   // Attendance by month.
   const byMonth = new Map(MONTH_ORDER.map((m) => [m, { days: 0, P: 0, A: 0, L: 0, Leave: 0 }]));
-  att.forEach((a) => { const m = byMonth.get(Number(a.on_date.slice(5, 7))); if (m) { m.days++; m[a.status]++; } });
+  att.forEach((a) => { const m = byMonth.get(Number(a.on_date.slice(5, 7))); if (m) { m.days++; m[a.leave_id ? 'Leave' : a.status]++; } });
   const tot = [...byMonth.values()].reduce((t, m) => ({ days: t.days + m.days, P: t.P + m.P, A: t.A + m.A, L: t.L + m.L, Leave: t.Leave + m.Leave }), { days: 0, P: 0, A: 0, L: 0, Leave: 0 });
   const attPct = tot.days ? ((tot.P + tot.L) / tot.days) * 100 : null;
 
@@ -178,10 +178,10 @@ export async function render(ctx) {
   }
 
   sections.push(card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, h('span', {}, 'Attendance ', h('small', {}, `Academic Year ${year.name}`)),
-    h('span', { class: 'muted small', style: 'font-weight: 400' }, `${tot.P} present · ${tot.L} late · ${tot.A} absent · ${tot.Leave} paid leave`)),
+    h('span', { class: 'muted small', style: 'font-weight: 400' }, `${tot.P} present · ${tot.L} late · ${tot.A} absent · ${tot.Leave} on leave`)),
   tot.days ? h('div', { class: 'tbx', style: 'overflow-x: auto' }, h('table', { class: 'tt' },
     h('thead', {}, h('tr', {}, h('th', {}, 'Month'), MONTH_ORDER.map((m) => h('th', { class: 'num' }, MONTH_NAMES[m])), h('th', { class: 'num' }, 'Total'))),
-    h('tbody', {}, [['Working days', 'days'], ['Present', 'P'], ['Late', 'L'], ['Absent', 'A'], ['Paid leave', 'Leave']].map(([label, k]) => h('tr', {}, h('th', { scope: 'row' }, label),
+    h('tbody', {}, [['Working days', 'days'], ['Present', 'P'], ['Late', 'L'], ['Absent', 'A'], ['On leave', 'Leave']].map(([label, k]) => h('tr', {}, h('th', { scope: 'row' }, label),
       MONTH_ORDER.map((m) => h('td', { class: 'num' }, byMonth.get(m).days ? byMonth.get(m)[k] : '—')), h('td', { class: 'num' }, h('b', {}, tot[k])))))))
     : h('p', { class: 'muted small', style: 'margin: 0' }, 'No attendance recorded this year. Record it under Staff Services › Staff Attendance.')));
 
