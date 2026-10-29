@@ -32,7 +32,7 @@ export async function render(ctx) {
   const selfHref = (q) => `${location.pathname.split('/').pop()}?${new URLSearchParams({ grade: grade.id, ...(cls ? { class: cls.id } : {}), ...q })}`;
 
   const header = cls
-    ? pageHead(cls.subject.name, `${grade.name} · Teacher: ${cls.teacher?.name || 'Not assigned'} · ${roster.length} students`)
+    ? pageHead(cls.subject.name, `${grade.name} · ${!ctx.isAdmin && cls.teacher_id === ctx.me.id ? '' : `Teacher: ${cls.teacher?.name || 'Not assigned'} · `}${roster.length} students`)
     : pageHead(grade.name, `Class teacher: ${grade.class_teacher?.name || 'Not assigned'} · ${roster.length} students`);
 
   const ids = roster.map((s) => s.id);

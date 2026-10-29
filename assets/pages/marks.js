@@ -111,7 +111,8 @@ export async function render(ctx) {
     if (upserts.length) must(await db.from('marks').upsert(upserts));
     if (cleared.length && test) must(await db.from('marks').delete().eq('evaluation_id', saved.id).in('student_id', cleared));
     toast('Saved');
-    go(ctx.link('TestDetail', { test: saved.id }));
+    // Teachers land back on the gradebook after adding a test, where it now shows.
+    go(adding && !ctx.isAdmin ? ctx.link('Main', { class: classId }) : ctx.link('TestDetail', { test: saved.id }));
   }).catch(() => {}) });
 
   const del = test ? btn('Delete Test', { danger: true, onclick: async () => {

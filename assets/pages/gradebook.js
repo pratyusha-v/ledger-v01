@@ -131,7 +131,7 @@ export async function render(ctx) {
 
   mount(ctx.main, h('div', { class: 'stack' },
     notice,
-    pageHead(className(cls), `Teacher: ${cls.teacher?.name || 'Not assigned'} · ${roster.length} students · ${evalCount.count ?? 0} evaluations${cls.year && !cls.year.is_current ? ' · ' + cls.year.name : ''}`, actions),
+    pageHead(className(cls), `${!ctx.isAdmin && own ? '' : `Teacher: ${cls.teacher?.name || 'Not assigned'} · `}${roster.length} students · ${evalCount.count ?? 0} evaluations${cls.year && !cls.year.is_current ? ' · ' + cls.year.name : ''}`, actions),
     classTabs(ctx, cls, 'gradebook'),
     await gradebookSection(ctx, cls)));
 }
