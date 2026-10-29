@@ -15,10 +15,7 @@ export async function render(ctx) {
     db.from('rooms').select('*').order('name').then(must)]);
   if (!terms.length) { mount(ctx.main, emptyState('No terms set up', 'Add the academic year’s terms before building the timetable.', btn('Terms and Periods', { href: 'AdminTerms.html' }), 'cal')); return; }
 
-  // Default to the term covering today; outside every term, the latest published one.
-  const today = new Date().toISOString().slice(0, 10);
-  const published = new Set(must(await db.from('timetable_status').select('term_id').eq('published', true)).map((r) => r.term_id));
-  const def = terms.find((t) => t.starts_on <= today && today <= t.ends_on) || [...terms].reverse().find((t) => published.has(t.id)) || await currentTerm(year);
+  const def = await currentTerm(year);
   const termId = Number(param('term')) || def.id;
   const by = ['grade', 'teacher', 'room'].includes(param('by')) ? param('by') : 'school';
   const teachers = staff.filter((s) => s.role === 'teacher');

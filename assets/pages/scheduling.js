@@ -21,11 +21,15 @@ export async function findConflicts(termId) {
   return out;
 }
 
-// The term that covers today, else the last one.
+// The term that covers today; outside every term, the latest one with a
+// published timetable, else the last one.
 export async function currentTerm(year) {
   const terms = await getTerms(year.id);
   const today = isoDate();
-  return terms.find((t) => t.starts_on <= today && today <= t.ends_on) || terms[terms.length - 1] || null;
+  const now = terms.find((t) => t.starts_on <= today && today <= t.ends_on);
+  if (now || !terms.length) return now || null;
+  const published = new Set(must(await db.from('timetable_status').select('term_id').eq('published', true).in('term_id', terms.map((t) => t.id))).map((r) => r.term_id));
+  return [...terms].reverse().find((t) => published.has(t.id)) || terms[terms.length - 1];
 }
 
 export function grid({ periods, days, cellFor }) {
