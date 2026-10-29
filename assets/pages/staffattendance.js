@@ -54,11 +54,10 @@ export async function render(ctx) {
   const today = isoDate();
   const [year, settings] = await Promise.all([getCurrentYear(), db.from('school_settings').select('week_days').eq('id', 1).maybeSingle().then(must)]);
   const fiveDay = settings?.week_days === 'Mon–Fri';
-  const allStaff = must(await db.from('staff').select('id, name, role, paid_leave_days').eq('status', 'active').order('name'));
+  const allStaff = must(await db.from('staff').select('id, name, role').eq('status', 'active').order('name'));
   const staff = role ? allStaff.filter((s) => s.role === role) : allStaff;
   const ids = staff.map((s) => s.id);
   const yearRows = ids.length ? must(await db.from('staff_attendance').select('staff_id, on_date, status, remark, leave_id').in('staff_id', ids).gte('on_date', year.starts_on).lte('on_date', year.ends_on)) : [];
-  const leaveDays = (id) => yearRows.filter((r) => r.staff_id === id && r.leave_id).length;
   const url = (q) => 'AdminStaffAttendance.html?' + new URLSearchParams({ view, role, date, ...q });
 
   const roleSel = select([['', 'All staff'], ['teacher', 'Teachers'], ['admin', 'Admins']], role, { style: 'width: auto', onchange: (e) => go(url({ role: e.target.value })) });
@@ -114,15 +113,13 @@ export async function render(ctx) {
   };
   const body = h('tbody', {}, staff.map((s) => {
     const st = state.get(s.id);
-    const left = s.paid_leave_days - leaveDays(s.id);
     return h('tr', {},
       h('th', { scope: 'row' }, h('a', { href: `AdminStaffProfile.html?id=${s.id}` }, s.name), st.leave ? [' ', tag('On leave', 'warn')] : null),
       h('td', {}, s.role === 'admin' ? 'Admin' : 'Teacher'),
       h('td', {}, h('div', { class: 'seg', role: 'radiogroup', 'aria-label': `${s.name} attendance` }, CODES.map(([v, long]) => h('label', { title: st.leave ? 'On leave · remove the leave under the Leave tab to change this' : long },
         h('input', { type: 'radio', name: 'st-' + s.id, value: v, checked: st.status === v, disabled: st.leave, 'aria-label': long, onchange: () => { st.status = v; drawCounts(); } }),
         h('span', {}, v))))),
-      h('td', {}, st.leave ? h('span', { class: 'muted' }, 'On leave') : input({ value: st.remark, placeholder: 'Remark', style: 'height: 34px; min-width: 180px', 'aria-label': `Remark for ${s.name}`, oninput: (e) => { st.remark = e.target.value; } })),
-      h('td', { class: 'num' }, `${left} of ${s.paid_leave_days}`));
+      h('td', {}, st.leave ? h('span', { class: 'muted' }, 'On leave') : input({ value: st.remark, placeholder: 'Remark', style: 'height: 34px; min-width: 180px', 'aria-label': `Remark for ${s.name}`, oninput: (e) => { st.remark = e.target.value; } })));
   }));
   const markAll = btn('Mark All Present', { onclick: () => {
     staff.forEach((s) => { const st = state.get(s.id); if (!st.status && !st.leave) st.status = 'P'; });
@@ -144,7 +141,7 @@ export async function render(ctx) {
       h('span', { class: 'muted small' }, 'Show'), roleSel, counts),
     h('div', { class: 'row' }, markAll, save)));
   parts.push(h('div', { class: 'tbx' }, h('table', { class: 'tt' },
-    h('thead', {}, h('tr', {}, h('th', {}, 'Name'), h('th', {}, 'Role'), h('th', {}, 'Status'), h('th', {}, 'Remark'), h('th', { class: 'num' }, 'Leave left'))),
+    h('thead', {}, h('tr', {}, h('th', {}, 'Name'), h('th', {}, 'Role'), h('th', {}, 'Status'), h('th', {}, 'Remark'))),
     body)));
   parts.push(h('p', { class: 'muted small', style: 'margin: 0' }, `P = Present · A = Absent · L = Late. Staff on leave are marked absent automatically. Staff attendance this year so far: ${yearRows.length ? pct((present / yearRows.length) * 100) : '—'} present.`));
   mount(ctx.main, h('div', { class: 'stack' }, parts));
