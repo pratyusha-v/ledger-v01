@@ -19,7 +19,7 @@ export const pageName = () => (location.pathname.split('/').pop() || 'index.html
 export const go = (href) => { location.href = href; };
 
 // Pages that exist in a teacher and an admin version.
-const SHARED = ['Dashboard', 'Main', 'TestDetail', 'Attendance', 'Marks', 'AddTest', 'NewTest', 'AllClassesStart',
+const SHARED = ['Dashboard', 'Main', 'TestDetail', 'Attendance', 'Marks', 'AddTest', 'AddExtraTest', 'NewTest', 'AllClassesStart',
   'AllClasses', 'AllClassesResults', 'SearchStart', 'Search', 'Student', 'MyAccount'];
 
 export function makeLinker(isAdmin) {
@@ -76,7 +76,7 @@ export const getStaff = () => once('staff', async () => must(await db.from('staf
 export const getTerms = (yearId) => once('terms' + yearId, async () => must(await db.from('terms').select('*').eq('year_id', yearId).order('position')));
 export const getPeriods = () => once('periods', async () => must(await db.from('periods').select('*').order('position')));
 
-const CLASS_SELECT = 'id, year_id, grade_id, subject_id, teacher_id, grade:grade_levels(id, name, position, class_teacher_id), subject:subjects(id, name, short_name, position), teacher:staff(id, name)';
+const CLASS_SELECT = 'id, year_id, grade_id, subject_id, teacher_id, mandatory, grade:grade_levels(id, name, position, class_teacher_id), subject:subjects(id, name, short_name, position, academic), teacher:staff(id, name)';
 export async function getClasses(yearId) {
   return once('classes' + yearId, async () => {
     const rows = must(await db.from('classes').select(CLASS_SELECT).eq('year_id', yearId));

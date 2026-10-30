@@ -23,7 +23,7 @@ async function complete(ctx, t) {
       must(await db.from('enrollments').delete().eq('student_id', t.student_id).in('class_id', classes.map((c) => c.id)));
       must(await db.from('students').update({ grade_id: to.id }).eq('id', t.student_id));
       const add = classes.filter((c) => c.grade_id === to.id).map((c) => ({ class_id: c.id, student_id: t.student_id }));
-      if (add.length) must(await db.from('enrollments').insert(add));
+      if (add.length) must(await db.from('enrollments').upsert(add, { onConflict: 'class_id,student_id', ignoreDuplicates: true }));
     }
   }
   must(await db.from('transfers').update({ status: 'completed' }).eq('id', t.id));

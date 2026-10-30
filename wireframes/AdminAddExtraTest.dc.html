@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledger Admin – Add Test (extracurricular)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#333}a:hover{color:#000}
+.card{background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;padding:18px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sh{margin:0;font-size:15px;font-weight:600;color:#111111;padding-bottom:10px;border-bottom:1px solid #e0e0e0}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;margin:0}
+.kv > div,.kv > label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lb{font-size:11.5px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:#5c5c5c}
+.ro{font-size:14px;color:#1a1a1a;height:34px;display:flex;align-items:center}
+.in{box-sizing:border-box;width:100%;height:34px;border:1px solid #9a9a9a;border-radius:3px;padding:0 10px;font:400 14px 'IBM Plex Sans',sans-serif;background:#ffffff;color:#1f1f1f}
+.in:focus,.ta:focus{outline:2px solid #333333;outline-offset:-1px}
+.in:disabled{background:#efefef;color:#6b6b6b;border-style:dashed;font-style:italic}
+.ta{box-sizing:border-box;width:100%;border:1px solid #9a9a9a;border-radius:3px;padding:8px 10px;font:400 14px/1.45 'IBM Plex Sans',sans-serif;background:#ffffff;color:#1f1f1f;resize:vertical}
+.ta::placeholder,.in::placeholder{color:#767676;font-style:italic}
+.suf{position:relative;display:block}
+.suf span{position:absolute;right:10px;top:8px;font-size:13px;color:#5c5c5c;pointer-events:none}
+.stat{flex:1;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid #d6d6d6;border-radius:4px;background:#fafafa}
+.stat b{font-size:26px;font-weight:600;color:#111111;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:#5c5c5c}
+.dico{position:absolute;right:10px;top:9px;pointer-events:none;color:#555555}
+.tt{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:14px;color:#1f1f1f}
+.tt th,.tt td{border-bottom:1px solid #e0e0e0;padding:0 14px;background:#ffffff;text-align:left;white-space:nowrap;height:46px}
+.tt thead th{background:#f4f4f4;border-bottom:2px solid #9a9a9a;height:40px;font-size:13px;font-weight:600}
+.tt tbody th{font-weight:500}
+.tt .num{text-align:right}
+.tt .ctr{text-align:center}
+.mk{width:72px;height:32px;text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+.ck{width:18px;height:18px;margin:0;cursor:pointer}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:3px;border:1px solid #9a9a9a;color:#333333;background:#f6f6f6;margin-left:8px}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#ffffff;border:1px solid #c8c8c8;border-radius:4px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#222222;text-decoration:none;border-radius:3px}
+.dd a:hover{background:#efefef}
+.dd a small{font-size:11.5px;color:#767676}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #e3e3e3;margin-bottom:4px;font-size:12.5px;color:#555555}
+.dd .who b{display:block;font-size:13.5px;color:#111111}
+</style>
+</helmet>
+<div style="width: 1512px; height: 982px; box-sizing: border-box; display: flex; flex-direction: column; background: #fafafa; font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #1f1f1f; overflow: hidden">
+
+  <header style="height: 56px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 55">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <div style="width: 36px; height: 36px; border: 1.5px dashed #8a8a8a; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 9px; letter-spacing: 0.08em; color: #5c5c5c; background: #f2f2f2">LOGO</div>
+      <span style="font-size: 18px; font-weight: 700; letter-spacing: 0.01em">Ledger</span><span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #ffffff; background: #333333; border-radius: 3px; padding: 2px 6px">Admin</span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – [Admin name]" aria-haspopup="true" style="width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #8a8a8a; background: #333333; color: #ffffff; font: 600 14px 'IBM Plex Sans', sans-serif; cursor: pointer; padding: 0">A</button><div class="dd" role="menu" style="left: auto; right: 0; top: 44px"><div class="who"><b>[Admin name]</b>School admin</div><a href="AdminMyAccount.dc.html">My Account</a><a href="Login.dc.html">Log out</a></div></div>
+  </header>
+
+  <nav aria-label="Primary" style="height: 46px; flex-shrink: 0; display: flex; align-items: stretch; gap: 8px; padding: 0 24px; background: #ffffff; border-bottom: 1px solid #d6d6d6; position: relative; z-index: 50">
+    <a href="AdminDashboard.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Dashboard</a>
+    <a href="AdminEnrollment.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Student Enrollment</a>
+    <a href="AdminSearchStart.dc.html" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Student Search</a>
+    <a href="AdminAllClassesStart.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; font-weight: 600; color: #111111; text-decoration: none; border-bottom: 3px solid #222222">All Classes</a>
+    <div class="nv"><a href="AdminPastYears.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Past Records<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminPastYears.dc.html">Past Academic Years</a><a href="AdminFormerStudents.dc.html">Former Students</a><a href="AdminReports.dc.html">Reports</a></div></div>
+    <div class="nv"><a href="AdminTimetable.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Scheduling<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminTimetable.dc.html">Timetable</a><a href="AdminTerms.dc.html">Terms and Periods</a><a href="AdminRooms.dc.html">Rooms</a></div></div>
+    <div class="nv"><a href="AdminStaff.dc.html" aria-haspopup="true" style="display: flex; align-items: center; gap: 6px; padding: 0 14px; font-size: 14px; color: #555555; text-decoration: none; border-bottom: 3px solid transparent">Staff Services<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.dc.html">Staff Directory</a><a href="AdminStaffAttendance.dc.html">Staff Attendance</a><a href="AdminRoles.dc.html">Roles and Permissions</a><a href="AdminSettings.dc.html">School Settings</a></div></div>
+  </nav>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+    <aside aria-label="Find a class" style="width: 232px; flex-shrink: 0; background: #ffffff; border-right: 1px solid #d6d6d6; padding: 20px 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5c5c5c">Find a Class</span><a href="AdminAllClassesStart.dc.html" style="font-size: 12px">Clear</a></div>
+      <label style="display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #5c5c5c">Grade<select style="box-sizing: border-box; width: 100%; height: 36px; border: 1px solid #9a9a9a; border-radius: 3px; padding: 0 8px; font: 400 13.5px 'IBM Plex Sans', sans-serif; background: #ffffff; color: #1f1f1f"><option>Grade 6</option><option>All grades</option><option>Grade 7</option><option>Grade 8</option></select></label>
+      <label style="display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #5c5c5c">Subject<select style="box-sizing: border-box; width: 100%; height: 36px; border: 1px solid #9a9a9a; border-radius: 3px; padding: 0 8px; font: 400 13.5px 'IBM Plex Sans', sans-serif; background: #ffffff; color: #1f1f1f"><option>Mathematics</option><option>All subjects</option><option>Telugu</option><option>Hindi</option><option>English</option><option>Physical Science</option><option>Biological Science</option><option>Social Studies</option></select></label>
+      <label style="display: flex; flex-direction: column; gap: 5px; font-size: 11.5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: #5c5c5c">Teacher<select style="box-sizing: border-box; width: 100%; height: 36px; border: 1px solid #9a9a9a; border-radius: 3px; padding: 0 8px; font: 400 13.5px 'IBM Plex Sans', sans-serif; background: #ffffff; color: #1f1f1f"><option>Any teacher</option><option>Ms. Vineetha</option><option>[Teacher name]</option></select></label>
+      <div style="height: 1px; background: #e3e3e3; margin: 2px 0"></div>
+      <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #5c5c5c">Matching classes · 1</div>
+      <a href="AdminMain.dc.html" aria-current="true" style="display: flex; flex-direction: column; gap: 2px; padding: 10px 10px; border-radius: 4px; background: #e4e4e4; border-left: 3px solid #222222; color: #111111; text-decoration: none"><span style="font-size: 14px; font-weight: 600">Grade 6</span><span style="font-size: 12px; color: #444444">Mathematics · Ms. Vineetha</span></a>
+      <p style="margin: 0; font-size: 12px; color: #5c5c5c; line-height: 1.45">Widen a filter (e.g. All subjects) to see more classes here.</p>
+    </aside>
+
+    <main style="flex: 1; min-width: 0; padding: 22px 32px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <a href="AdminMain.dc.html" style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #444444; text-decoration: none; align-self: flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>Back to gradebook</a>
+
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111111">Add Test</h1>
+          <p style="margin: 0; font-size: 14px; color: #555555">Grade 6 – Mathematics · Fill in the test details. Marks can be added now or later.</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-shrink: 0">
+          <a href="AdminMain.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 16px; box-sizing: border-box; border: 1.5px solid #555555; border-radius: 4px; background: #ffffff; color: #1f1f1f; font-size: 14px; font-weight: 500; text-decoration: none">Cancel</a>
+          <a href="AdminNewTest.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; box-sizing: border-box; border: 1.5px solid #222222; border-radius: 4px; background: #222222; color: #ffffff; font-size: 14px; font-weight: 500; text-decoration: none">Save Test</a>
+        </div>
+      </div>
+
+      <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 20px">
+
+        <!-- Left: blank details, stats, notes -->
+        <div style="display: flex; flex-direction: column; gap: 14px; min-width: 0">
+          <section class="card">
+            <h2 class="sh">Test Details</h2>
+            <div class="kv">
+              <label><span class="lb">Test name</span><input class="in" placeholder="e.g. Test 07" value="{{f.name}}" onChange="{{onName}}"></label>
+              <label><span class="lb">Date</span><span style="position: relative; display: block"><input class="in" inputmode="numeric" maxlength="10" placeholder="DD/MM/YYYY" value="{{f.date}}" onChange="{{onDate}}" style="padding-right: 34px"><svg class="dico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></span></label>
+              <label><span class="lb">Max marks</span><input class="in" type="number" min="1" placeholder="e.g. 25" value="{{f.max}}" onChange="{{onMax}}"></label>
+              <label><span class="lb">Weightage</span><span class="suf"><input class="in" type="number" min="0" max="100" placeholder="e.g. 5" value="{{f.weight}}" onChange="{{onWeight}}" style="padding-right: 120px"><span>% of final grade</span></span></label>
+              <div><span class="lb">Students who wrote it</span><span class="ro">{{s.wroteText}}</span></div>
+              <div><span class="lb">Absent</span><span class="ro">{{s.absent}}</span></div>
+              <label style="grid-column: span 2"><span class="lb">Syllabus covered</span><textarea class="ta" rows="3" value="{{f.syllabus}}" onChange="{{onSyllabus}}" placeholder="Chapters / topics covered in this test"></textarea></label>
+            </div>
+          </section>
+
+          <section class="card">
+            <h2 class="sh">Stats</h2>
+            <div style="display: flex; gap: 12px">
+              <div class="stat"><b>{{s.avg}}</b><span>Average marks</span></div>
+              <div class="stat"><b>{{s.high}}</b><span>Highest{{s.highName}}</span></div>
+              <div class="stat"><b>{{s.low}}</b><span>Lowest{{s.lowName}}</span></div>
+              <div class="stat"><b>{{s.passPct}}</b><span>Pass percentage{{s.passText}}</span></div>
+            </div>
+          </section>
+
+          <section class="card" style="flex: 1; min-height: 0">
+            <h2 class="sh">Teacher's Notes</h2>
+            <textarea class="ta" rows="4" style="flex: 1" value="{{f.notes}}" onChange="{{onNotes}}" aria-label="Teacher's notes" placeholder="Any remarks about this test — e.g. paper difficulty, topics to revisit"></textarea>
+          </section>
+        </div>
+
+        <!-- Right: student marks, blank -->
+        <section class="card" style="padding: 18px 0 0; gap: 0; overflow: hidden; align-self: start">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 0 20px 12px">
+            <h2 style="margin: 0; font-size: 15px; font-weight: 600; color: #111111">Student Marks</h2>
+            <label style="display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; color: #5c5c5c">Sorted by
+              <select style="height: 32px; border: 1px solid #9a9a9a; border-radius: 3px; padding: 0 8px; font: 400 13px 'IBM Plex Sans', sans-serif; color: #1f1f1f; background: #ffffff">
+                <option>Roll number</option>
+                <option>Student name</option>
+                <option>Marks, high to low</option>
+                <option>Marks, low to high</option>
+              </select>
+            </label>
+          </div>
+          <table class="tt">
+            <thead><tr><th scope="col" class="num" style="width: 32px">Roll No.</th><th scope="col">Student</th><th scope="col" class="ctr" style="width: 72px">Absent?</th><th scope="col" class="num">Marks / {{maxLabel}}</th><th scope="col" class="num">%</th></tr></thead>
+            <tbody>
+              <tr><td class="num">1</td><th scope="row">{{r0.name}}<sc-if value="{{r0.isHigh}}" hint-placeholder-val="{{ false }}"><span class="tag">Highest</span></sc-if><sc-if value="{{r0.isLow}}" hint-placeholder-val="{{ false }}"><span class="tag">Lowest</span></sc-if></th><td class="ctr"><input type="checkbox" class="ck" checked="{{r0.absent}}" onChange="{{r0.toggle}}" aria-label="{{r0.name}} absent"></td><td class="num"><input class="in mk" value="{{r0.val}}" disabled="{{r0.absent}}" onChange="{{r0.change}}" aria-label="Marks for {{r0.name}}"></td><td class="num">{{r0.pct}}</td></tr>
+              <tr><td class="num">2</td><th scope="row">{{r1.name}}<sc-if value="{{r1.isHigh}}" hint-placeholder-val="{{ false }}"><span class="tag">Highest</span></sc-if><sc-if value="{{r1.isLow}}" hint-placeholder-val="{{ false }}"><span class="tag">Lowest</span></sc-if></th><td class="ctr"><input type="checkbox" class="ck" checked="{{r1.absent}}" onChange="{{r1.toggle}}" aria-label="{{r1.name}} absent"></td><td class="num"><input class="in mk" value="{{r1.val}}" disabled="{{r1.absent}}" onChange="{{r1.change}}" aria-label="Marks for {{r1.name}}"></td><td class="num">{{r1.pct}}</td></tr>
+              <tr><td class="num">3</td><th scope="row">{{r2.name}}<sc-if value="{{r2.isHigh}}" hint-placeholder-val="{{ false }}"><span class="tag">Highest</span></sc-if><sc-if value="{{r2.isLow}}" hint-placeholder-val="{{ false }}"><span class="tag">Lowest</span></sc-if></th><td class="ctr"><input type="checkbox" class="ck" checked="{{r2.absent}}" onChange="{{r2.toggle}}" aria-label="{{r2.name}} absent"></td><td class="num"><input class="in mk" value="{{r2.val}}" disabled="{{r2.absent}}" onChange="{{r2.change}}" aria-label="Marks for {{r2.name}}"></td><td class="num">{{r2.pct}}</td></tr>
+              <tr><td class="num">4</td><th scope="row">{{r3.name}}<sc-if value="{{r3.isHigh}}" hint-placeholder-val="{{ false }}"><span class="tag">Highest</span></sc-if><sc-if value="{{r3.isLow}}" hint-placeholder-val="{{ false }}"><span class="tag">Lowest</span></sc-if></th><td class="ctr"><input type="checkbox" class="ck" checked="{{r3.absent}}" onChange="{{r3.toggle}}" aria-label="{{r3.name}} absent"></td><td class="num"><input class="in mk" value="{{r3.val}}" disabled="{{r3.absent}}" onChange="{{r3.change}}" aria-label="Marks for {{r3.name}}"></td><td class="num">{{r3.pct}}</td></tr>
+              <tr><td class="num">5</td><th scope="row">{{r4.name}}<sc-if value="{{r4.isHigh}}" hint-placeholder-val="{{ false }}"><span class="tag">Highest</span></sc-if><sc-if value="{{r4.isLow}}" hint-placeholder-val="{{ false }}"><span class="tag">Lowest</span></sc-if></th><td class="ctr"><input type="checkbox" class="ck" checked="{{r4.absent}}" onChange="{{r4.toggle}}" aria-label="{{r4.name}} absent"></td><td class="num"><input class="in mk" value="{{r4.val}}" disabled="{{r4.absent}}" onChange="{{r4.change}}" aria-label="Marks for {{r4.name}}"></td><td class="num">{{r4.pct}}</td></tr>
+            </tbody>
+          </table>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1512,"height":982}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      f: { name: '', date: '', max: '', weight: '', syllabus: '', notes: '' },
+      marks: { lakshmi: '', bhavya: '', divya: '', mahima: '', sneha: '' },
+      absent: {}
+    };
+  }
+  setField(key) {
+    return (e) => { const v = e.target.value; this.setState((st) => ({ f: { ...st.f, [key]: v } })); };
+  }
+  renderVals() {
+    const st = this.state;
+    const students = [
+      { id: 'lakshmi', name: 'Lakshmi Hansika K.' },
+      { id: 'bhavya', name: 'Bhavya S.' },
+      { id: 'divya', name: 'Divya Sri P.' },
+      { id: 'mahima', name: 'Mahima C.' },
+      { id: 'sneha', name: 'Sneha Varma' }
+    ];
+    const max = parseFloat(st.f.max) || 0;
+    const fmt = (x) => (Math.round(x * 10) / 10).toString();
+    const rows = students.map((s) => {
+      const absent = !!st.absent[s.id];
+      const raw = st.marks[s.id];
+      const n = parseFloat(raw);
+      const has = !absent && raw !== '' && !isNaN(n);
+      return {
+        ...s, absent, has, num: has ? n : 0,
+        val: absent ? 'Ab' : raw,
+        pct: absent ? 'Ab' : (has && max ? (n / max * 100).toFixed(1) + '%' : ''),
+        toggle: () => this.setState((p) => ({ absent: { ...p.absent, [s.id]: !p.absent[s.id] } })),
+        change: (e) => { const v = e.target.value; this.setState((p) => ({ marks: { ...p.marks, [s.id]: v } })); }
+      };
+    });
+    const scored = rows.filter((r) => r.has);
+    const absentCount = rows.filter((r) => r.absent).length;
+    let s = { avg: '—', high: '—', highName: '', low: '—', lowName: '', passPct: '—', passText: '' };
+    if (scored.length) {
+      const nums = scored.map((r) => r.num);
+      const hi = Math.max(...nums), lo = Math.min(...nums);
+      const hiRow = scored.find((r) => r.num === hi), loRow = scored.find((r) => r.num === lo);
+      hiRow.isHigh = true; loRow.isLow = scored.length > 1;
+      const passMark = Math.round(max * 0.35);
+      const passed = scored.filter((r) => r.num >= passMark).length;
+      s = {
+        avg: fmt(nums.reduce((a, b) => a + b, 0) / nums.length),
+        high: fmt(hi), highName: ' · ' + hiRow.name,
+        low: fmt(lo), lowName: ' · ' + loRow.name,
+        passPct: Math.round(passed / rows.length * 100) + '%',
+        passText: ' · ' + passed + ' of ' + rows.length + ' passed' + (max ? ' (pass mark ' + passMark + ' / ' + max + ')' : '')
+      };
+    }
+    s.wroteText = (scored.length || absentCount) ? (rows.length - absentCount) + ' of ' + rows.length : '—';
+    s.absent = absentCount;
+    rows.forEach((r) => { r.isHigh = !!r.isHigh; r.isLow = !!r.isLow; });
+    return {
+      f: st.f, s,
+      maxLabel: st.f.max || '—',
+      r0: rows[0], r1: rows[1], r2: rows[2], r3: rows[3], r4: rows[4],
+      onName: this.setField('name'), onDate: this.setField('date'), onMax: this.setField('max'),
+      onWeight: this.setField('weight'), onSyllabus: this.setField('syllabus'), onNotes: this.setField('notes')
+    };
+  }
+}
+</script>
+</body>
+</html>

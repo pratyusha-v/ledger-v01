@@ -5,7 +5,8 @@ import { classSidebar } from './common.js';
 import { SORTS, sortRows, statsCard } from './test.js';
 
 export async function render(ctx) {
-  const adding = ctx.page.endsWith('AddTest');
+  const extra = ctx.page.endsWith('AddExtraTest');
+  const adding = extra || ctx.page.endsWith('AddTest');
   const testId = Number(param('test'));
   const test = !adding && testId ? must(await db.from('evaluations').select('*').eq('id', testId).maybeSingle()) : null;
   const classId = adding ? Number(param('class')) : test?.class_id;
@@ -124,7 +125,7 @@ export async function render(ctx) {
   const cancelHref = test ? ctx.link('TestDetail', { test: test.id }) : ctx.link('Main', { class: classId });
   mount(ctx.main, h('div', { class: 'stack' },
     backLink(test ? 'Back to test details' : 'Back to gradebook', cancelHref),
-    pageHead(adding ? 'Add Test' : `Edit – ${test.name}`, `${className(cls)} · ${adding ? 'Fill in the test details. Marks can be added now or later.' : 'Editing test details and marks'}`,
+    pageHead(adding ? 'Add Test' : `Edit – ${test.name}`, `${className(cls)} · ${extra ? 'Extracurricular grading. ' : ''}${adding ? 'Fill in the test details. Marks can be added now or later.' : 'Editing test details and marks'}`,
       [del, btn('Cancel', { href: cancelHref }), save]),
     h('div', { class: 'cols' },
       h('div', { class: 'stack' },

@@ -7,7 +7,7 @@ const MODULES = {
   Main: 'gradebook', AdminMain: 'gradebook', AllClasses: 'gradebook', AdminAllClasses: 'gradebook',
   AllClassesStart: 'classes', AllClassesResults: 'classes', AdminAllClassesStart: 'classes', AdminAllClassesResults: 'classes',
   TestDetail: 'test', AdminTestDetail: 'test', NewTest: 'test', AdminNewTest: 'test',
-  Marks: 'marks', AdminMarks: 'marks', AddTest: 'marks', AdminAddTest: 'marks',
+  Marks: 'marks', AdminMarks: 'marks', AddTest: 'marks', AdminAddTest: 'marks', AddExtraTest: 'marks', AdminAddExtraTest: 'marks',
   Attendance: 'attendance', AdminAttendance: 'attendance', AttendanceView: 'attendance',
   SearchStart: 'search', Search: 'search', AdminSearchStart: 'search', AdminSearch: 'search',
   Student: 'student', AdminStudent: 'student',

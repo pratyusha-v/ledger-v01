@@ -95,8 +95,11 @@ export async function gradebookSection(ctx, cls, { compact = false } = {}) {
     evals.length
       ? h('div', { style: 'overflow-x: auto' }, h('table', { class: 'tbl' }, h('thead', {}, head), h('tbody', {}, body)))
       : emptyState('No tests yet', editable ? 'Add the first test to start the gradebook.' : 'Tests appear here once the class teacher adds them.',
-        editable ? btn('Add Test', { primary: true, icon: 'plus', href: ctx.link('AddTest', { class: cls.id }) }) : null));
+        editable ? btn('Add Test', { primary: true, icon: 'plus', href: ctx.link(addTestPage(cls), { class: cls.id }) }) : null));
 }
+
+// Extracurricular classes grade differently, so Add Test opens their own template.
+const addTestPage = (cls) => (cls.subject?.academic === false ? 'AddExtraTest' : 'AddTest');
 
 export async function render(ctx) {
   const id = await pickClassId(ctx);
@@ -123,7 +126,7 @@ export async function render(ctx) {
   if (ctx.isAdmin && !cls.year?.closed) {
     actions.push(btn('Assign Teacher', { onclick: assignTeacher(cls, reload) }), btn('Manage Roster', { onclick: manageRoster(cls, roster, reload) }));
   }
-  if (editable) actions.push(btn('Add Test', { primary: true, icon: 'plus', href: ctx.link('AddTest', { class: id }) }));
+  if (editable) actions.push(btn('Add Test', { primary: true, icon: 'plus', href: ctx.link(addTestPage(cls), { class: id }) }));
 
   const notice = cls.year?.closed
     ? h('div', { class: 'note' }, `Archive · ${cls.year.name} is closed, so this class is read-only.`)

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ledger – Add Test (extracurricular)</title>
+<link rel="icon" href="assets/logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2E2430}a:hover{color:#2E2430}
+.card{background:#FFFFFF;border:1px solid #E6E2DE;border-radius:8px;padding:18px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px;min-width:0}
+.sh{margin:0;font-size:15px;font-weight:600;color:#2E2430;padding-bottom:10px;border-bottom:1px solid #E6E2DE}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px;margin:0}
+.kv > div,.kv > label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.lb{font-size:11.5px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;color:#666664}
+.ro{font-size:14px;color:#2E2430;height:34px;display:flex;align-items:center}
+.in{box-sizing:border-box;width:100%;height:34px;border:1px solid #7C7C7A;border-radius:4px;padding:0 10px;font:400 14px 'Lato',sans-serif;background:#FFFFFF;color:#2E2430}
+.in:focus,.ta:focus{outline:2px solid #7C7C7A;outline-offset:-1px}
+.in:disabled{background:#EFE9F0;color:#666664;border-style:dashed;font-style:italic}
+.ta{box-sizing:border-box;width:100%;border:1px solid #7C7C7A;border-radius:4px;padding:8px 10px;font:400 14px/1.45 'Lato',sans-serif;background:#FFFFFF;color:#2E2430;resize:vertical}
+.ta::placeholder,.in::placeholder{color:#666664;font-style:italic}
+.suf{position:relative;display:block}
+.suf span{position:absolute;right:10px;top:8px;font-size:13px;color:#666664;pointer-events:none}
+.stat{flex:1;display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid #E6E2DE;border-radius:8px;background:#FAF7F4}
+.stat b{font-size:26px;font-weight:600;color:#2E2430;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;color:#666664}
+.dico{position:absolute;right:10px;top:9px;pointer-events:none;color:#666664}
+.tt{width:100%;border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums;font-size:14px;color:#2E2430}
+.tt th,.tt td{border-bottom:1px solid #E6E2DE;padding:0 14px;background:#FFFFFF;text-align:left;white-space:nowrap;height:46px}
+.tt thead th{background:#FAF7F4;border-bottom:2px solid #7C7C7A;height:40px;font-size:13px;font-weight:600}
+.tt tbody th{font-weight:500}
+.tt .num{text-align:right}
+.tt .ctr{text-align:center}
+.mk{width:72px;height:32px;text-align:right;font-variant-numeric:tabular-nums;font-weight:500}
+.ck{width:18px;height:18px;margin:0;cursor:pointer}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 7px;border-radius:4px;border:1px solid #7C7C7A;color:#2E2430;background:#FAF7F4;margin-left:8px}
+.nv{position:relative;display:flex;align-items:stretch}
+.dd{display:none;position:absolute;top:100%;left:0;min-width:230px;background:#FFFFFF;border:1px solid #E6E2DE;border-radius:8px;box-shadow:0 6px 16px rgba(0,0,0,0.10);padding:6px;z-index:60;flex-direction:column;gap:2px}
+.nv:hover .dd,.nv:focus-within .dd,.nv.open .dd{display:flex}
+.dd a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 10px;font-size:13.5px;font-weight:400;color:#2E2430;text-decoration:none;border-radius:4px}
+.dd a:hover{background:#EFE9F0}
+.dd a small{font-size:11.5px;color:#666664}
+.dd .who{padding:8px 10px 10px;border-bottom:1px solid #E6E2DE;margin-bottom:4px;font-size:12.5px;color:#666664}
+.dd .who b{display:block;font-size:13.5px;color:#2E2430}
+</style>
+<link rel="stylesheet" href="assets/ledger.css">
+</head>
+<body>
+<div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
+
+  <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
+    <div style="display: flex;align-items: center;gap: 12px">
+      <img class="brand-logo" src="assets/logo.svg" alt="Sai Seva Sangh" width="36" height="36">
+      <span style="display: flex;flex-direction: column;line-height: 1.1"><span style="font-size: 18px;font-weight: 700;letter-spacing: 0.01em">Ledger</span><span class="brand-sub">sai seva sangh</span></span>
+    </div>
+    <div class="nv"><button aria-label="Profile menu – Ms. Vineetha" aria-haspopup="true" style="width: 36px;height: 36px;border-radius: 50%;border: 1.5px solid #7C7C7A;background: #EFE9F0;color: #2E2430;font: 600 14px 'Lato', sans-serif;cursor: pointer;padding: 0">V</button><div class="dd" role="menu" style="left: auto;right: 0;top: 44px"><div class="who"><b>Ms. Vineetha</b>Teacher</div><a href="MyAccount.html">My Account</a><a href="Login.html">Log out</a></div></div>
+  </header>
+
+  <nav aria-label="Primary" style="height: 46px;flex-shrink: 0;display: flex;align-items: stretch;gap: 8px;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 50">
+    <a href="Dashboard.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Dashboard</a>
+    <div class="nv"><a href="Main.html" aria-current="page" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;font-weight: 600;color: #2E2430;text-decoration: none;border-bottom: 3px solid #6E5A70">Classes<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="Main.html">My Classes</a><a href="AllClassesStart.html">All Classes</a></div></div>
+    <a href="SearchStart.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Students</a>
+  </nav>
+
+  <div style="flex: 1;display: flex;min-height: 0">
+    <aside aria-label="My classes" style="width: 232px;flex-shrink: 0;background: #FFFFFF;border-right: 1px solid #E6E2DE;padding: 20px 12px;box-sizing: border-box;display: flex;flex-direction: column;gap: 4px"></aside>
+
+    <main style="flex: 1;min-width: 0;padding: 22px 32px 28px;box-sizing: border-box;display: flex;flex-direction: column;gap: 16px"><div class="app-loading" role="status">Loading…</div></main>
+  </div>
+</div>
+<script type="module" src="assets/app.js"></script>
+</body>
+</html>

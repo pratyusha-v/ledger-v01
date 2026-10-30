@@ -102,7 +102,8 @@ async function detail(ctx) {
   const gradeSel = select(grades.map((g) => [g.id, g.name]), a.grade_id);
   const classBox = h('div', { class: 'stack', style: 'gap: 8px' });
   const classes = await getClasses(year.id);
-  const drawClasses = () => mount(classBox, classes.filter((c) => c.grade_id === +gradeSel.value).map((c) => checkbox(className(c), true, { value: c.id }))
+  // Mandatory classes are enrolled automatically (migration 009), so they stay ticked.
+  const drawClasses = () => mount(classBox, classes.filter((c) => c.grade_id === +gradeSel.value).map((c) => checkbox(className(c) + (c.mandatory ? ' · mandatory' : ''), true, { value: c.id, disabled: c.mandatory }))
     .concat(classes.some((c) => c.grade_id === +gradeSel.value) ? [] : [h('p', { class: 'muted small', style: 'margin: 0' }, 'No classes set up for this grade this year.')]));
   gradeSel.addEventListener('change', drawClasses);
   drawClasses();
@@ -118,7 +119,7 @@ async function detail(ctx) {
     const gs = (a.guardians || []).filter((g) => g.name);
     if (gs.length) must(await db.from('guardians').insert(gs.map((g, i) => ({ student_id: student.id, relation: g.relation || 'Guardian', name: g.name, occupation: g.occupation || '', phone: g.phone || '', email: g.email || '', position: i + 1 }))));
     const picked = [...classBox.querySelectorAll('input:checked')].map((x) => ({ class_id: +x.value, student_id: student.id }));
-    if (picked.length) must(await db.from('enrollments').insert(picked));
+    if (picked.length) must(await db.from('enrollments').upsert(picked, { onConflict: 'class_id,student_id', ignoreDuplicates: true }));
     const docRowsToAdd = DOCS.map(([key, label], i) => ({ student_id: student.id, name: label, submitted: docState(a.documents?.[key]) === 'uploaded',
       handled_by: ctx.me.name, file_path: a.documents?.[key] && !['uploaded', 'missing'].includes(a.documents[key]) ? a.documents[key] : null, position: i + 1 }));
     must(await db.from('student_documents').insert(docRowsToAdd));

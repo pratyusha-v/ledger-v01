@@ -433,6 +433,23 @@
       "w": 1512,
       "x": 3184,
       "y": 9068
+    },
+    "AddExtraTest.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "title": "My Classes – Add Test (extracurricular)",
+      "w": 1512,
+      "x": 7960,
+      "y": 1100
+    },
+    "AdminAddExtraTest.dc.html": {
+      "h": 982,
+      "is_interactive": true,
+      "page": "page-m94h8k",
+      "title": "Admin – Class – Add Test (extracurricular)",
+      "w": 1512,
+      "x": 7960,
+      "y": 1100
     }
   },
   "createdOnFiles": {
@@ -531,6 +548,7 @@
     "Attendance.dc.html",
     "Marks.dc.html",
     "AddTest.dc.html",
+    "AddExtraTest.dc.html",
     "NewTest.dc.html",
     "AttendanceView.dc.html",
     "AllClassesStart.dc.html",
@@ -545,6 +563,7 @@
     "AdminAttendance.dc.html",
     "AdminMarks.dc.html",
     "AdminAddTest.dc.html",
+    "AdminAddExtraTest.dc.html",
     "AdminNewTest.dc.html",
     "AdminAllClassesStart.dc.html",
     "AdminAllClasses.dc.html",
