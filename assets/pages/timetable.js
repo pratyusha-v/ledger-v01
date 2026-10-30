@@ -39,7 +39,7 @@ export async function render(ctx) {
   const subjectOf = (id) => subjects.find((s) => s.id === id);
   const staffOf = (id) => staff.find((s) => s.id === id);
   const roomOf = (id) => rooms.find((r) => r.id === id);
-  const colour = (slot) => (subjectOf(slot.subject_id)?.academic === false ? 'extra' : 'g' + (grades.findIndex((g) => g.id === slot.grade_id) % 5));
+  const colour = (slot) => (subjectOf(slot.subject_id)?.academic === false ? 'extra' : 'g' + (grades.findIndex((g) => g.id === slot.grade_id) % 7));
   const inView = (x) => by === 'school' || (by === 'grade' ? x.grade_id === +target : by === 'teacher' ? x.teacher_id === target : x.room_id === +target);
 
   // Clashes: a teacher, room or grade in two places in the same period.
@@ -227,7 +227,7 @@ export async function render(ctx) {
   } });
   addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
-  const legend = h('div', { class: 'row small muted' }, grades.map((g, i) => h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: `swatch g${i % 5}` }), g.name)),
+  const legend = h('div', { class: 'row small muted' }, grades.map((g, i) => h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: `swatch g${i % 7}` }), g.name)),
     h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: 'swatch extra' }), 'Extra-curricular'),
     h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: 'swatch clash' }), 'Clash'));
 

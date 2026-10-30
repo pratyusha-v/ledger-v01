@@ -439,6 +439,8 @@ dialog.modal .scroll { max-height: 50vh; overflow: auto; display: flex; flex-dir
   --g2: #DCEBF5; --g2-edge: #3D7BA8;
   --g3: #E0F0E6; --g3-edge: #2E7353;
   --g4: #F7E1E7; --g4-edge: #B0476A;
+  --g5: #FFF4C2; --g5-edge: #A88A00;
+  --g6: #DDF1F0; --g6-edge: #2C807C;
   --gx: #EFEDE9; --gx-edge: #7C7C7A;
 }
 .ttg { min-width: 900px; }
@@ -460,6 +462,8 @@ div.tchip:not(:has(.tchip-body)) { flex-direction: column; }
 .tchip.g2 { background: var(--g2); border-color: var(--g2-edge); }
 .tchip.g3 { background: var(--g3); border-color: var(--g3-edge); }
 .tchip.g4 { background: var(--g4); border-color: var(--g4-edge); }
+.tchip.g5 { background: var(--g5); border-color: var(--g5-edge); }
+.tchip.g6 { background: var(--g6); border-color: var(--g6-edge); }
 .tchip.extra { background: var(--gx); border-color: var(--gx-edge); }
 .tchip.clash { outline: 2px solid var(--debit); outline-offset: -1px; }
 .tchip .flag { position: absolute; top: -5px; right: -5px; width: 15px; height: 15px; border-radius: 50%; background: var(--debit); color: #fff; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
@@ -475,6 +479,8 @@ div.tchip:not(:has(.tchip-body)) { flex-direction: column; }
 .swatch.g2 { background: var(--g2); border-color: var(--g2-edge); }
 .swatch.g3 { background: var(--g3); border-color: var(--g3-edge); }
 .swatch.g4 { background: var(--g4); border-color: var(--g4-edge); }
+.swatch.g5 { background: var(--g5); border-color: var(--g5-edge); }
+.swatch.g6 { background: var(--g6); border-color: var(--g6-edge); }
 .swatch.extra { background: var(--gx); border-color: var(--gx-edge); }
 .swatch.clash { background: #fff; border: 2px solid var(--debit); }
 .count.bad { background: #FDECEA !important; color: var(--debit) !important; }
