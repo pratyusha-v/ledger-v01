@@ -146,7 +146,8 @@ export async function render(ctx) {
       h('div', { class: 'spread', style: 'align-items: center' },
         h('div', { class: 'row' }, h('b', {}, c.subject.name), h('span', { class: 'muted small' }, `Teacher: ${c.teacher?.name || 'Not assigned'}`),
           tag(r.pct === null ? 'No marks yet' : `${pct(r.pct)} · ${letterGrade(r.pct)}`, r.pct === null ? '' : 'ok')),
-        h('span', { class: 'row' }, btn('Open gradebook', { small: true, href: classHref(c) }), editBtn(() => editSubjectNotes(c, n, profile, saveProfile), 'Edit skills & feedback'))),
+        h('span', { class: 'row' }, btn('Open gradebook', { small: true, href: classHref(c) }),
+          admin || c.teacher_id === ctx.me.id ? btn('Edit skills & feedback', { small: true, icon: 'edit', onclick: () => editSubjectNotes(s, c, n, reload) }) : null)),
       marksTable(r, testHref),
       h('div', { class: 'grid2', style: 'align-items: start' },
         h('div', { class: 'stack', style: 'gap: 8px' }, h('b', {}, 'Skills & Conduct'), simpleTable(['Particulars', 'Grade'], n.skills || [])),
@@ -382,15 +383,19 @@ function healthNotes(ctx, s, notes, pastYears, healthRows, healthYears, healthTa
   });
 }
 
-// Skills & conduct grades and feedback for one subject.
-function editSubjectNotes(c, n, profile, saveProfile) {
+// Skills & conduct grades and feedback for one subject; admins and the subject's
+// teacher can edit them (set_subject_notes checks which, see migration 012).
+function editSubjectNotes(s, c, n, reload) {
   const draft = (n.skills || []).map((r) => [...r]);
   const teacher = textarea({ value: n.teacher_feedback || '', rows: 3 });
   const student = textarea({ value: n.student_feedback || '', rows: 3 });
   modal(`${c.subject.name} · skills & feedback`, h('div', { class: 'scroll stack' },
     h('b', {}, 'Skills & Conduct'), rowsField(['Particulars', 'Grade'], draft),
     field('Teacher feedback on student', teacher), field('Student feedback on teacher', student)), {
-    onSubmit: () => saveProfile({ subjects: { ...(profile.subjects || {}), [c.subject_id]: { skills: filled(draft), teacher_feedback: teacher.value, student_feedback: student.value } } }),
+    onSubmit: async () => {
+      must(await db.rpc('set_subject_notes', { p_student: s.id, p_subject: c.subject_id, p_notes: { skills: filled(draft), teacher_feedback: teacher.value, student_feedback: student.value } }));
+      toast('Saved'); reload();
+    },
   });
 }
 
