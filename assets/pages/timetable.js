@@ -13,7 +13,7 @@ export async function render(ctx) {
   const [terms, periods, grades, subjects, staff, settings, rooms] = await Promise.all([
     getTerms(year.id), getPeriods(), getGrades(), getSubjects(), getStaff(), getSettings(),
     db.from('rooms').select('*').order('name').then(must)]);
-  if (!terms.length) { mount(ctx.main, emptyState('No terms set up', 'Add the academic year’s terms before building the timetable.', btn('Terms and Periods', { href: 'AdminTerms.html' }), 'cal')); return; }
+  if (!terms.length) { mount(ctx.main, emptyState('No terms set up', 'Add the academic year’s terms before building the timetable.', btn('Edit Times', { href: 'AdminTerms.html?view=times' }), 'cal')); return; }
 
   const def = await currentTerm(year);
   const termId = Number(param('term')) || def.id;
@@ -151,7 +151,7 @@ export async function render(ctx) {
     });
   }
 
-  // Add subject opens the same form as Terms and Periods › Subjects; the grades it
+  // Add subject opens the same form as Scheduling › Subjects; the grades it
   // is offered in arrive as unplaced subjects. Unsaved moves on the grid are kept.
   const addSubject = () => openSubjectForm(null, async () => {
     const [fresh, freshPlan] = await Promise.all([
@@ -298,7 +298,7 @@ export async function render(ctx) {
   mount(ctx.main, h('div', { class: 'stack' },
     pageHead(editing ? 'Edit Timetable' : 'Timetable',
       editing ? 'Drag subjects into periods. Publishing updates every teacher’s My Schedule.' : 'The whole school’s week. Filter to see one grade, teacher or room.',
-      editing ? [discard, save] : [exportBtn, btn('Edit Timetable', { primary: true, icon: 'edit', href: url({ edit: '1' }) })]),
+      editing ? [discard, save] : [exportBtn, btn('Edit Times', { icon: 'cal', href: 'AdminTerms.html?view=times' }), btn('Edit Timetable', { primary: true, icon: 'edit', href: url({ edit: '1' }) })]),
     h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'View'), bySel, targetSel, h('span', { class: 'muted small' }, 'Term'), termSel,
       status?.published ? tag(`Published ${fmtDMY(status.published_at)}`, 'ok') : tag('Draft · not published', 'warn'), changes),
     legend,

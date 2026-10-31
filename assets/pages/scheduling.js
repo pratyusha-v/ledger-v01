@@ -1,8 +1,7 @@
-// Scheduling (admin): terms and periods, subjects per grade, rooms.
+// Scheduling (admin): subjects per grade, terms and periods (Edit Times on the timetable), rooms.
 import { db, must, h, mount, param, go, getCurrentYear, getTerms, getPeriods, getGrades, getSubjects, getStaff, getClasses, getSettings,
-  isoDate, fmtDMY, btn, card, table, tag, pageHead, emptyState, input, select, field, checkbox, modal, toast, busy, confirmBox, tabs } from '../lib.js';
+  isoDate, fmtDMY, backLink, btn, card, table, tag, pageHead, emptyState, input, select, field, checkbox, modal, toast, busy, confirmBox } from '../lib.js';
 
-const termTabs = (view) => tabs([['terms', 'Terms and periods'], ['subjects', 'Subjects']], view, null, { hrefFor: (k) => 'AdminTerms.html' + (k === 'subjects' ? '?view=subjects' : '') });
 
 export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const SLOT_SELECT = '*, grade:grade_levels(id, name), subject:subjects(id, name), teacher:staff(id, name), room:rooms(id, name)';
@@ -43,6 +42,7 @@ export function grid({ periods, days, cellFor }) {
 }
 
 async function termsPage(ctx) {
+  document.title = 'Ledger Admin – Terms and Periods';
   const year = await getCurrentYear();
   const terms = must(await db.from('terms').select('*').eq('year_id', year.id).order('position'));
   const periods = must(await db.from('periods').select('*').order('position'));
@@ -78,12 +78,12 @@ async function termsPage(ctx) {
       const row = { name: p.name, starts_at: p.starts_at, ends_at: p.ends_at, kind: p.kind || 'class', position: i + 1 };
       must(p.id ? await db.from('periods').update(row).eq('id', p.id) : await db.from('periods').insert(row));
     }
-    toast('Saved'); go('AdminTerms.html');
+    toast('Saved'); go('AdminTerms.html?view=times');
   }).catch(() => {}) });
 
   mount(ctx.main, h('div', { class: 'stack' },
+    backLink('Back to Timetable', 'AdminTimetable.html'),
     pageHead('Terms and Periods', 'Set the academic year’s terms and the daily bell schedule used by the timetable.', [save]),
-    termTabs('terms'),
     card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, `Academic Year ${year.name}`,
       btn('Add Term', { small: true, icon: 'plus', onclick: () => { termRows.push({ name: `Term ${termRows.length + 1}` }); drawTerms(); } })), termBox),
     card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, 'Daily periods',
@@ -197,8 +197,7 @@ async function subjectsPage(ctx) {
     ], rows, { empty: 'None yet.' }));
 
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead('Terms and Periods', 'Add subjects, choose which grades take them and which are mandatory.', [addBtn()]),
-    termTabs('subjects'),
+    pageHead('Subjects', 'Add subjects, choose which grades take them and which are mandatory.', [addBtn()]),
     list('Academic', subjects.filter((s) => s.academic)),
     list('Extracurricular', subjects.filter((s) => !s.academic))));
 }
@@ -239,5 +238,5 @@ async function roomsPage(ctx) {
 
 export function render(ctx) {
   if (ctx.page === 'AdminRooms') return roomsPage(ctx);
-  return param('view') === 'subjects' ? subjectsPage(ctx) : termsPage(ctx);
+  return param('view') === 'times' ? termsPage(ctx) : subjectsPage(ctx);
 }

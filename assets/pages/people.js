@@ -116,7 +116,7 @@ async function settingsPage(ctx) {
     body = h('div', { class: 'stack' },
       card('Academic years', table([{ label: 'Year', th: true, render: (r) => r.y.name + (r.y.is_current ? ' (current)' : '') }, { label: 'Starts', render: (r) => r.y.starts_on || '—' },
         { label: 'Ends', render: (r) => r.y.ends_on || '—' }, { label: 'Archive', render: (r) => r.closed }], rows),
-      h('a', { href: 'AdminTerms.html', class: 'small' }, 'Edit terms and periods for the current year')),
+      h('a', { href: 'AdminTerms.html?view=times', class: 'small' }, 'Edit terms and periods for the current year')),
       card('Add academic year', h('div', { class: 'grid3' }, field('Name', name), field('Starts', start), field('Ends', end))));
     save = async () => {
       for (const r of rows) { const c = r.closed.querySelector('input').checked; if (c !== r.y.closed) must(await db.from('academic_years').update({ closed: c }).eq('id', r.y.id)); }
