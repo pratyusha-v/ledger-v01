@@ -1,6 +1,7 @@
 // Scheduling (admin): subjects per grade, terms and periods (Edit Times on the timetable), rooms.
 import { db, must, h, mount, param, go, getCurrentYear, getTerms, getPeriods, getGrades, getSubjects, getStaff, getClasses, getSettings,
   isoDate, fmtDMY, backLink, btn, card, table, tag, pageHead, emptyState, input, select, field, checkbox, modal, toast, busy, confirmBox } from '../lib.js';
+import { teacherPicker } from './assign.js';
 
 
 export const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -92,7 +93,7 @@ async function termsPage(ctx) {
 
 // The add / edit subject form, shared by the Subjects tab and the timetable's
 // Add subject button. onDone gets the saved subject.
-export function subjectForm(s, { year, grades, subjects, classes }, onDone) {
+export function subjectForm(s, { year, grades, subjects, classes, teachers }, onDone) {
   s = s || {};
   const classFor = (x, g) => classes.find((c) => c.subject_id === x.id && c.grade_id === g.id);
   const name = input({ value: s.name || '', placeholder: 'e.g. Computer Science' });
@@ -102,18 +103,21 @@ export function subjectForm(s, { year, grades, subjects, classes }, onDone) {
     const c = s.id ? classFor(s, g) : null;
     const offered = h('input', { type: 'checkbox', checked: !!c, 'aria-label': `Offer in ${g.name}` });
     const mandatory = h('input', { type: 'checkbox', checked: !!c?.mandatory, disabled: !c, 'aria-label': `Mandatory in ${g.name}` });
-    offered.addEventListener('change', () => { mandatory.disabled = !offered.checked; if (!offered.checked) mandatory.checked = false; syncAll(); });
-    return { g, c, offered, mandatory };
+    const teacher = teacherPicker(teachers, c?.teacher_id || '', { 'aria-label': `Teacher for ${g.name}`, style: 'height: 34px; min-width: 180px' });
+    const sync = () => { mandatory.disabled = !offered.checked; if (!offered.checked) mandatory.checked = false; teacher.style.display = offered.checked ? '' : 'none'; };
+    offered.addEventListener('change', () => { sync(); syncAll(); });
+    sync();
+    return { g, c, offered, mandatory, teacher, sync };
   });
   const all = h('input', { type: 'checkbox' });
   const syncAll = () => { all.checked = rows.every((r) => r.offered.checked); };
-  all.addEventListener('change', () => rows.forEach((r) => { r.offered.checked = all.checked; r.mandatory.disabled = !all.checked; if (!all.checked) r.mandatory.checked = false; }));
+  all.addEventListener('change', () => rows.forEach((r) => { r.offered.checked = all.checked; r.sync(); }));
   syncAll();
   const gradeTable = h('div', { class: 'tbx' }, h('table', { class: 'tt' },
-    h('thead', {}, h('tr', {}, h('th', {}, 'Grade'), h('th', {}, 'Offered'), h('th', {}, 'Mandatory'))),
+    h('thead', {}, h('tr', {}, h('th', {}, 'Grade'), h('th', {}, 'Offered'), h('th', {}, 'Mandatory'), h('th', {}, 'Teacher'))),
     h('tbody', {},
-      h('tr', {}, h('th', { scope: 'row' }, 'All grades'), h('td', {}, all), h('td', {})),
-      rows.map((r) => h('tr', {}, h('th', { scope: 'row' }, r.g.name), h('td', {}, r.offered), h('td', {}, r.mandatory))))));
+      h('tr', {}, h('th', { scope: 'row' }, 'All grades'), h('td', {}, all), h('td', {}), h('td', {})),
+      rows.map((r) => h('tr', {}, h('th', { scope: 'row' }, r.g.name), h('td', {}, r.offered), h('td', {}, r.mandatory), h('td', {}, r.teacher))))));
 
   modal(s.id ? `Edit ${s.name}` : 'Add subject', [
     h('div', { class: 'grid2' }, field('Subject', name), field('Short name', short), field('Type', type, { style: 'grid-column: span 2' })),
@@ -126,6 +130,7 @@ export function subjectForm(s, { year, grades, subjects, classes }, onDone) {
       const nm = name.value.trim();
       if (!nm) throw new Error('Name the subject.');
       if (subjects.some((x) => x.id !== s.id && x.name.toLowerCase() === nm.toLowerCase())) throw new Error(`${nm} already exists.`);
+      const teacherOf = new Map(rows.filter((r) => r.offered.checked).map((r) => [r, r.teacher.teacherId]));
       const removing = rows.filter((r) => r.c && !r.offered.checked);
       if (removing.length) {
         const used = must(await db.from('evaluations').select('class_id').in('class_id', removing.map((r) => r.c.id)));
@@ -137,9 +142,11 @@ export function subjectForm(s, { year, grades, subjects, classes }, onDone) {
       const saved = s.id ? must(await db.from('subjects').update(row).eq('id', s.id).select().single())
         : must(await db.from('subjects').insert({ ...row, position: Math.max(0, ...subjects.map((x) => x.position || 0)) + 1 }).select().single());
       const adding = rows.filter((r) => !r.c && r.offered.checked);
-      if (adding.length) must(await db.from('classes').insert(adding.map((r) => ({ year_id: year.id, grade_id: r.g.id, subject_id: saved.id, mandatory: r.mandatory.checked }))));
-      for (const r of rows.filter((x) => x.c && x.offered.checked && x.c.mandatory !== x.mandatory.checked)) {
-        must(await db.from('classes').update({ mandatory: r.mandatory.checked }).eq('id', r.c.id));
+      if (adding.length) must(await db.from('classes').insert(adding.map((r) => ({ year_id: year.id, grade_id: r.g.id, subject_id: saved.id, mandatory: r.mandatory.checked, teacher_id: teacherOf.get(r) || null }))));
+      for (const r of rows.filter((x) => x.c && x.offered.checked && (x.c.mandatory !== x.mandatory.checked || (x.c.teacher_id || '') !== teacherOf.get(x)))) {
+        must(await db.from('classes').update({ mandatory: r.mandatory.checked, teacher_id: teacherOf.get(r) || null }).eq('id', r.c.id));
+        // The timetable plan follows, so periods placed from now on carry the new teacher.
+        must(await db.from('timetable_plan').update({ teacher_id: teacherOf.get(r) || null }).eq('year_id', year.id).eq('grade_id', r.g.id).eq('subject_id', saved.id));
       }
       if (removing.length) {
         const termIds = (await getTerms(year.id)).map((t) => t.id);
@@ -154,14 +161,16 @@ export function subjectForm(s, { year, grades, subjects, classes }, onDone) {
   });
 }
 
+const activeTeachers = async () => (await getStaff()).filter((x) => x.role === 'teacher' && x.status !== 'inactive');
+
 export async function openSubjectForm(s, onDone) {
   const year = await getCurrentYear();
   const [grades, subjects, classes] = await Promise.all([
     getGrades(),
     db.from('subjects').select('*').order('position').then(must),
-    db.from('classes').select('id, grade_id, subject_id, mandatory').eq('year_id', year.id).then(must),
+    db.from('classes').select('id, grade_id, subject_id, mandatory, teacher_id').eq('year_id', year.id).then(must),
   ]);
-  subjectForm(s, { year, grades, subjects, classes }, onDone);
+  subjectForm(s, { year, grades, subjects, classes, teachers: await activeTeachers() }, onDone);
 }
 
 // Subjects: which grades offer each subject this year, and which are mandatory.
@@ -172,11 +181,12 @@ async function subjectsPage(ctx) {
   const [grades, subjects, classes] = await Promise.all([
     getGrades(),
     db.from('subjects').select('*').order('position').then(must),
-    db.from('classes').select('id, grade_id, subject_id, mandatory').eq('year_id', year.id).then(must),
+    db.from('classes').select('id, grade_id, subject_id, mandatory, teacher_id').eq('year_id', year.id).then(must),
   ]);
   const classFor = (s, g) => classes.find((c) => c.subject_id === s.id && c.grade_id === g.id);
 
-  const edit = (s) => subjectForm(s, { year, grades, subjects, classes }, () => subjectsPage(ctx));
+  const teachers = await activeTeachers();
+  const edit = (s) => subjectForm(s, { year, grades, subjects, classes, teachers }, () => subjectsPage(ctx));
 
   const gradesCell = (s) => {
     const on = grades.filter((g) => classFor(s, g));

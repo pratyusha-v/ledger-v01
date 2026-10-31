@@ -1,6 +1,7 @@
 // Permissions (admin): staff directory, roles and permissions, school settings.
 import { db, must, h, mount, param, go, getYears, getGrades, getSubjects, getCurrentYear, getClasses, className, btn, card, table, tabs, tag,
   pageHead, emptyState, input, select, field, checkbox, modal, toast, busy, confirmBox, downloadCSV } from '../lib.js';
+import { classPicker, classTeacherField, confirmClassTeacher, saveAssignments } from './assign.js';
 
 export const STATUS_TAG = { active: ['Active', 'ok'], invited: ['Invited', 'warn'], inactive: ['Inactive', 'bad'] };
 export const setupNote = (email) => h('p', { class: 'small', style: 'margin: 0; line-height: 1.5' },
@@ -25,11 +26,20 @@ async function staffPage(ctx) {
     const name = input({ placeholder: 'e.g. Ms. Lakshmi' });
     const email = input({ type: 'email', placeholder: 'name@school.org' });
     const role = select([['teacher', 'Teacher'], ['admin', 'Admin']], 'teacher');
-    modal('Invite staff', [h('div', { class: 'grid2' }, field('Name', name), field('Email', email), field('Role', role))], {
+    // Teachers can be given their classes and homeroom grade straight away.
+    const picker = classPicker(classes, [], null);
+    const homeroom = classTeacherField(grades, '');
+    const teacherBits = h('div', { class: 'stack' }, field('Classes', picker), homeroom);
+    role.addEventListener('change', () => { teacherBits.style.display = role.value === 'teacher' ? '' : 'none'; });
+    modal('Invite staff', [h('div', { class: 'grid2' }, field('Name', name), field('Email', email), field('Role', role)), teacherBits], {
       submit: 'Invite',
       onSubmit: async () => {
         if (!name.value.trim() || !email.value.trim()) throw new Error('Name and email are required.');
-        must(await db.from('staff').insert({ name: name.value.trim(), email: email.value.trim().toLowerCase(), role: role.value, status: 'invited' }));
+        const isTeacher = role.value === 'teacher';
+        const gradeId = isTeacher ? homeroom.gradeId : '';
+        if (gradeId && !(await confirmClassTeacher(grades, gradeId, null, name.value.trim()))) throw new Error('Not invited yet. Change the class teacher choice or confirm the replacement.');
+        const added = must(await db.from('staff').insert({ name: name.value.trim(), email: email.value.trim().toLowerCase(), role: role.value, status: 'invited' }).select().single());
+        if (isTeacher) await saveAssignments({ staffId: added.id, classes, picked: picker.picked, grades, gradeId });
         staffPage(ctx);
         modal('Invitation added', setupNote(email.value.trim()), { submit: 'Done' });
       },

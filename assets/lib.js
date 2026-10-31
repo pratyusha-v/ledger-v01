@@ -71,6 +71,8 @@ export async function signOut() {
 // ---------- Cached lookups ----------
 const cache = {};
 function once(key, fn) { return (cache[key] ||= fn()); }
+// Forget cached lookups after saving changes to them, so the next read is fresh.
+export const clearCache = () => Object.keys(cache).forEach((k) => delete cache[k]);
 
 export const getSettings = () => once('settings', async () => must(await db.from('school_settings').select('*').eq('id', 1).maybeSingle()) || { pass_mark: 35, absent_counts: 'zero' });
 export const getYears = () => once('years', async () => must(await db.from('academic_years').select('*').order('starts_on', { ascending: false })));
