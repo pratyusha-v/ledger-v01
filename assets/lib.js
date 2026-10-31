@@ -395,6 +395,10 @@ export function gradebook(evals, students, marks, settings) {
   return { rows, totalMax, totalWeight, avg, hi, lo, passed, scoredCount: scored.length, passMark };
 }
 
+// Letter grade for a percentage (CBSE-style bands).
+const GRADE_BANDS = [[91, 'A1'], [81, 'A2'], [71, 'B1'], [61, 'B2'], [51, 'C1'], [41, 'C2'], [33, 'D'], [0, 'E']];
+export const letterGrade = (p) => (p === null || p === undefined || Number.isNaN(p) ? '—' : GRADE_BANDS.find(([min]) => p >= min)[1]);
+
 // Stats for one evaluation's marks.
 export function testStats(evaluation, roster, marks) {
   const max = Number(evaluation.max_marks) || 0;

@@ -68,7 +68,7 @@ export async function render(ctx) {
   const [att, docs, health] = ids.length ? await Promise.all([
     db.from('attendance').select('student_id, status').in('student_id', ids).gte('on_date', year.starts_on).lte('on_date', year.ends_on).then(must),
     flags.includes('docs') ? db.from('student_documents').select('student_id').eq('submitted', false).in('student_id', ids).then(must) : [],
-    flags.includes('health') ? db.from('health_records').select('student_id, remarks').in('student_id', ids).then(must) : [],
+    flags.includes('health') ? db.from('health_years').select('student_id, health_issues').eq('year_id', year.id).in('student_id', ids).then(must) : [],
   ]) : [[], [], []];
   const attPct = new Map();
   ids.forEach((id) => { const a = att.filter((x) => x.student_id === id); attPct.set(id, a.length ? (a.filter((x) => x.status !== 'A').length / a.length) * 100 : null); });
@@ -77,8 +77,8 @@ export async function render(ctx) {
   if (p.promo) rows = rows.filter((r) => (p.promo === 'Promoted' ? r.profile?.final?.promotion === 'Promoted' : r.profile?.final?.promotion !== 'Promoted'));
   if (flags.includes('docs')) { const s = new Set(docs.map((d) => d.student_id)); rows = rows.filter((r) => s.has(r.id)); }
   if (flags.includes('health')) {
-    const s = new Set(health.filter((x) => x.remarks).map((x) => x.student_id));
-    rows = rows.filter((r) => s.has(r.id) || (r.profile?.health_issues && r.profile.health_issues !== '—'));
+    const s = new Set(health.filter((x) => x.health_issues?.trim()).map((x) => x.student_id));
+    rows = rows.filter((r) => s.has(r.id));
   }
 
   const sort = p.sort || 'name';

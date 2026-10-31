@@ -1,40 +1,69 @@
-// Student Profile: everything about one student. Admins can edit every section.
-import { db, must, h, mount, param, go, getGrades, getCurrentYear, getClasses, fmtDMY, ageOn, n1, pct, btn, card, stat, tag,
-  pageHead, backLink, emptyState, studentName, input, select, field, textarea, checkbox, modal, toast, busy, uploadDocument,
-  openDocument, logActivity } from '../lib.js';
+// Student Profile: everything about one student. Admins edit each section with
+// its own Edit button; any staff member can add health notes.
+import { db, must, h, mount, param, getGrades, getYears, getCurrentYear, getClasses, getSettings, fmtDate, fmtDMY, ageOn, n1, pct, letterGrade, btn,
+  stat, tag, tabs, backLink, emptyState, studentName, input, select, field, textarea, checkbox, modal, toast, uploadDocument,
+  openDocument, confirmBox } from '../lib.js';
 import { classSidebar } from './common.js';
 
 const SECTIONS = [['personal', 'Personal'], ['family', 'Family & Contact'], ['health', 'Health'], ['attendance', 'Attendance'],
-  ['academics', 'Academics'], ['skills', 'Skills & Conduct'], ['feedback', 'Teacher Feedback'], ['cocurricular', 'Co-Curricular'],
-  ['documents', 'Documents & Admin'], ['final', 'Final Assessment']];
+  ['subjects', 'Subjects'], ['cocurricular', 'Co-Curricular'], ['documents', 'Documents & Admin']];
 const MONTH_ORDER = [6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4];
 const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const kv = (pairs) => h('dl', { class: 'kv' }, pairs.map(([k, v]) => h('div', {}, h('dt', {}, k), h('dd', {}, v === null || v === undefined || v === '' ? '—' : v))));
+const longText = (t) => (t ? h('span', { style: 'white-space: pre-wrap' }, t) : '');
 const yesNo = (arr, n = 4) => Array.from({ length: n }, (_, i) => (arr?.[i] ? 'Yes' : 'No')).join(' ');
 const simpleTable = (head, rows, opts = {}) => h('div', { class: 'tbx', style: 'overflow-x: auto' }, h('table', { class: 'tt' },
   h('thead', {}, h('tr', {}, head.map((x, i) => h('th', { class: i && opts.num ? 'num' : '' }, x)))),
   h('tbody', {}, rows.length ? rows.map((r) => h('tr', {}, r.map((c, i) => h(i ? 'td' : 'th', { class: i && opts.num ? 'num' : i ? 'wrap' : '', scope: i ? undefined : 'row' }, c ?? '—'))))
     : h('tr', {}, h('td', { colspan: head.length, class: 'muted' }, opts.empty || 'Not recorded')))));
 
-// A modal that edits a list of rows with fixed columns.
-function rowsEditor(title, columns, rows, onSave) {
-  const list = h('div', { class: 'scroll' });
-  const draft = rows.map((r) => [...r]);
+// Editable rows with fixed columns; edits land in draft.
+function rowsField(columns, draft) {
+  const list = h('div', { class: 'stack', style: 'gap: 8px' });
   const draw = () => mount(list, draft.map((r, i) => h('div', { class: 'row', style: 'flex-wrap: nowrap; align-items: flex-end' },
     columns.map((c, j) => field(c, input({ value: r[j] ?? '', oninput: (e) => { r[j] = e.target.value; } }), { style: 'flex: 1' })),
     btn('Remove', { small: true, danger: true, onclick: () => { draft.splice(i, 1); draw(); } }))),
-  btn('Add row', { small: true, icon: 'plus', onclick: () => { draft.push(columns.map(() => '')); draw(); } }));
+  h('div', {}, btn('Add row', { small: true, icon: 'plus', onclick: () => { draft.push(columns.map(() => '')); draw(); } })));
   draw();
-  modal(title, list, { onSubmit: () => onSave(draft.filter((r) => r.some((x) => String(x).trim()))) });
+  return list;
+}
+const filled = (rows) => rows.filter((r) => r.some((x) => String(x ?? '').trim()));
+
+// One student's marks in a class, with the subject percentage to date (weighted,
+// following School Settings for absences) and its letter grade.
+function classResult(cls, evals, marks, settings) {
+  const ev = evals.filter((e) => e.class_id === cls.id);
+  const mk = new Map(marks.map((m) => [m.evaluation_id, m]));
+  const excluded = settings?.absent_counts === 'excluded';
+  let raw = 0, max = 0, adj = 0, w = 0, entered = 0;
+  const cells = ev.map((e) => {
+    const m = mk.get(e.id);
+    if (!m || (!m.absent && m.marks === null)) return { e, state: 'none' };
+    entered++;
+    if (m.absent) { if (!excluded) { w += Number(e.weight || 0); max += Number(e.max_marks); } return { e, state: 'absent' }; }
+    const v = Number(m.marks);
+    raw += v; max += Number(e.max_marks);
+    adj += (v / Number(e.max_marks)) * Number(e.weight || 0); w += Number(e.weight || 0);
+    return { e, state: 'mark', value: v };
+  });
+  const p = !entered ? null : w ? (adj / w) * 100 : max ? (raw / max) * 100 : null;
+  return { ev, cells, raw: entered ? raw : null, max, pct: p };
 }
 
-// A modal that edits named text fields.
-function fieldsEditor(title, defs, onSave) {
-  const els = defs.map(([key, label, value, type]) => [key, type === 'long' ? textarea({ value: value ?? '' }) : input({ value: value ?? '' }), label]);
-  modal(title, h('div', { class: 'grid2' }, els.map(([, el, label]) => field(label, el))), {
-    onSubmit: () => onSave(Object.fromEntries(els.map(([k, el]) => [k, el.value]))),
-  });
+// The gradebook layout for one student: a column per test, then total, % and grade.
+function marksTable(r, testHref) {
+  if (!r.ev.length) return h('p', { class: 'muted', style: 'margin: 0' }, 'No tests yet this year.');
+  return h('div', { style: 'overflow-x: auto' }, h('table', { class: 'tbl compact' },
+    h('thead', {}, h('tr', {}, r.ev.map((e) => h('th', { class: 'ev', scope: 'col' },
+      h('div', {}, h('a', { class: 'evl', href: testHref(e) }, e.name)), h('div', { class: 'dt' }, fmtDate(e.held_on)),
+      h('div', { class: 'sub' }, `Max ${n1(Number(e.max_marks))} · Wt. ${n1(Number(e.weight || 0))}%`))),
+    h('th', { class: 'gap' }), h('th', { class: 'sum first' }, 'Total'), h('th', { class: 'sum' }, '%'), h('th', { class: 'sum' }, 'Grade'))),
+    h('tbody', {}, h('tr', {}, r.cells.map((c) => h('td', {}, c.state === 'absent' ? h('span', { class: 'ab' }, 'Ab') : c.state === 'mark' ? n1(c.value) : h('span', { class: 'muted' }, '–'))),
+      h('td', { class: 'gap' }),
+      h('td', { class: 'sum first' }, r.raw === null ? '–' : `${n1(r.raw)} / ${n1(r.max)}`),
+      h('td', { class: 'sum' }, h('span', { class: 'big' }, r.pct === null ? '–' : pct(r.pct))),
+      h('td', { class: 'sum' }, h('span', { class: 'big' }, letterGrade(r.pct)))))));
 }
 
 export async function render(ctx) {
@@ -43,25 +72,30 @@ export async function render(ctx) {
   await classSidebar(ctx, {});
   if (!s) { mount(ctx.main, emptyState('Student not found', 'Search for the student by name or admission number.', btn(ctx.isAdmin ? 'Current Students' : 'Student Search', { href: ctx.link('SearchStart') }), 'search')); return; }
 
-  const year = await getCurrentYear();
-  const [guardians, health, docs, enrol, att, grades] = await Promise.all([
+  const [year, years, settings] = await Promise.all([getCurrentYear(), getYears(), getSettings()]);
+  const profile = s.profile || {};
+  const [guardians, healthRows, healthYears, notes, docs, enrol, att, grades, siblings] = await Promise.all([
     db.from('guardians').select('*').eq('student_id', id).order('position').then(must),
     db.from('health_records').select('*').eq('student_id', id).order('term_no').then(must),
+    db.from('health_years').select('*').eq('student_id', id).then(must),
+    db.from('health_notes').select('*').eq('student_id', id).order('noted_on', { ascending: false }).then(must),
     db.from('student_documents').select('*').eq('student_id', id).order('position').then(must),
     db.from('enrollments').select('class_id').eq('student_id', id).then(must),
     db.from('attendance').select('on_date, status').eq('student_id', id).gte('on_date', year.starts_on).lte('on_date', year.ends_on).then(must),
     getGrades(),
+    profile.sibling_ids?.length ? db.from('students').select('id, full_name, status, grade:grade_levels(name)').in('id', profile.sibling_ids).then(must) : [],
   ]);
   const classes = (await getClasses(year.id)).filter((c) => enrol.some((e) => e.class_id === c.id)).sort((a, b) => a.subject.position - b.subject.position);
   const evals = classes.length ? must(await db.from('evaluations').select('*').in('class_id', classes.map((c) => c.id)).order('held_on')) : [];
   const marks = evals.length ? must(await db.from('marks').select('*').eq('student_id', id).in('evaluation_id', evals.map((e) => e.id))) : [];
-  const profile = s.profile || {};
   const admin = ctx.isAdmin;
   const reload = () => render(ctx);
   const saveProfile = async (patch) => { must(await db.from('students').update({ profile: { ...profile, ...patch } }).eq('id', id)); toast('Saved'); reload(); };
-  const editBtn = (onclick) => (admin ? btn('Edit', { small: true, icon: 'edit', onclick }) : null);
+  const editBtn = (onclick, label = 'Edit') => (admin ? btn(label, { small: true, icon: 'edit', onclick }) : null);
   const section = (key, title, extra, ...body) => h('section', { class: 'card', id: key },
     h('div', { class: 'sh' }, h('span', {}, title), h('span', { class: 'row' }, extra)), ...body);
+  const testHref = (e) => ctx.link('TestDetail', { test: e.id });
+  const classHref = (c) => ctx.link(admin || c.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: c.id });
 
   // Attendance by month.
   const byMonth = new Map(MONTH_ORDER.map((m) => [m, { days: 0, present: 0, absent: 0 }]));
@@ -69,34 +103,90 @@ export async function render(ctx) {
   const totals = [...byMonth.values()].reduce((t, m) => ({ days: t.days + m.days, present: t.present + m.present, absent: t.absent + m.absent }), { days: 0, present: 0, absent: 0 });
   const attPct = totals.days ? (totals.present / totals.days) * 100 : null;
 
-  // Academics: subjects × test names.
-  const names = [];
-  evals.forEach((e) => { if (!names.includes(e.name)) names.push(e.name); });
-  const mk = new Map(marks.map((m) => [m.evaluation_id, m]));
-  const cell = (c, name) => {
-    const e = evals.find((x) => x.class_id === c.id && x.name === name);
-    if (!e) return null;
-    const m = mk.get(e.id);
-    return { e, m, text: !m ? '–' : m.absent ? 'Ab' : m.marks === null ? '–' : n1(Number(m.marks)) };
-  };
-  const colTotals = names.map((name) => {
-    let got = 0, max = 0, any = false, allAbsent = true;
-    classes.forEach((c) => { const x = cell(c, name); if (!x?.m) return; any = true; if (x.m.absent) return; allAbsent = false; got += Number(x.m.marks || 0); max += Number(x.e.max_marks); });
-    return { got, max, any, allAbsent };
-  });
-  const latestIdx = colTotals.map((t, i) => (t.any && !t.allAbsent ? i : -1)).filter((i) => i >= 0).pop();
-  const latest = latestIdx !== undefined ? { name: names[latestIdx], pct: (colTotals[latestIdx].got / colTotals[latestIdx].max) * 100 } : null;
+  // Subjects (academic classes) and the overall percentage to date.
+  const academic = classes.filter((c) => c.subject.academic !== false);
+  const extras = classes.filter((c) => c.subject.academic === false);
+  const results = new Map(classes.map((c) => [c.id, classResult(c, evals, marks, settings)]));
+  const scored = academic.map((c) => results.get(c.id).pct).filter((x) => x !== null);
+  const overall = scored.length ? scored.reduce((a, x) => a + x, 0) / scored.length : null;
 
-  const final = profile.final || {};
-  const headTags = [s.grade?.name, s.admission_no && `Adm. No ${s.admission_no}`, s.residential, s.family_status, `Academic Year ${year.name}`,
+  const headTags = [s.grade?.name, s.admission_no && `Adm. No ${s.admission_no}`, s.residential, `Academic Year ${year.name}`,
     s.status !== 'active' && s.status[0].toUpperCase() + s.status.slice(1)].filter(Boolean);
-
   const actions = admin ? [
     btn('Documents', { href: '#documents' }),
     s.status === 'active' ? btn('Start Transfer', { href: `AdminNewTransfer.html?student=${id}` }) : null,
     s.status === 'active' ? btn('Withdraw', { href: `AdminWithdrawals.html?student=${id}` }) : null,
-    btn('Edit Biodata', { primary: true, icon: 'edit', onclick: () => editBiodata(s, grades, reload) }),
   ] : [btn('Download Record', { icon: 'download', onclick: () => window.print() })];
+
+  // Health: this year's table; earlier years and notes open from See Health Notes.
+  const thisYearHealth = healthRows.filter((r) => r.year_id === year.id);
+  const healthNow = healthYears.find((r) => r.year_id === year.id) || {};
+  const termCell = (rows, t, k) => { const r = rows.find((x) => x.term_no === t); return k === 'remarks' ? r?.remarks || '—' : n1(r?.[k] ?? null); };
+  const healthTable = (rows) => simpleTable(['Details', 'Term 1', 'Term 2', 'Term 3'], [
+    ['Height (cm)', ...[1, 2, 3].map((t) => termCell(rows, t, 'height_cm'))],
+    ['Weight (kg)', ...[1, 2, 3].map((t) => termCell(rows, t, 'weight_kg'))],
+    ['Remarks', ...[1, 2, 3].map((t) => termCell(rows, t, 'remarks'))]]);
+  const seeNotes = () => healthNotes(ctx, s, notes, years.filter((y) => y.id !== year.id && (healthRows.some((r) => r.year_id === y.id) || healthYears.some((r) => r.year_id === y.id))),
+    healthRows, healthYears, healthTable, reload);
+
+  // Siblings at school link to their profiles.
+  const siblingLinks = siblings.length
+    ? h('span', { class: 'row', style: 'gap: 6px 14px' }, siblings.map((x) => h('a', { href: ctx.link('Student', { id: x.id }) }, x.full_name, h('span', { class: 'muted small' }, ` · ${x.grade?.name || x.status}`))))
+    : profile.sibling_at_school || '';
+
+  // Subject tabs.
+  const subjectBox = h('div', { class: 'stack' });
+  const subjectNotes = (c) => profile.subjects?.[c.subject_id] || {};
+  const drawSubject = (cid) => {
+    const c = academic.find((x) => x.id === cid);
+    const r = results.get(c.id);
+    const n = subjectNotes(c);
+    mount(subjectBox,
+      tabs(academic.map((x) => [x.id, x.subject.name]), cid, (k) => drawSubject(k)),
+      h('div', { class: 'spread', style: 'align-items: center' },
+        h('div', { class: 'row' }, h('b', {}, c.subject.name), h('span', { class: 'muted small' }, `Teacher: ${c.teacher?.name || 'Not assigned'}`),
+          tag(r.pct === null ? 'No marks yet' : `${pct(r.pct)} · ${letterGrade(r.pct)}`, r.pct === null ? '' : 'ok')),
+        h('span', { class: 'row' }, btn('Open gradebook', { small: true, href: classHref(c) }), editBtn(() => editSubjectNotes(c, n, profile, saveProfile), 'Edit skills & feedback'))),
+      marksTable(r, testHref),
+      h('div', { class: 'grid2', style: 'align-items: start' },
+        h('div', { class: 'stack', style: 'gap: 8px' }, h('b', {}, 'Skills & Conduct'), simpleTable(['Particulars', 'Grade'], n.skills || [])),
+        h('div', { class: 'stack', style: 'gap: 8px' }, h('b', {}, 'Feedback'),
+          h('dl', { class: 'kv', style: 'grid-template-columns: 1fr' },
+            [['Teacher feedback on student', n.teacher_feedback], ['Student feedback on teacher', n.student_feedback]]
+              .map(([k, v]) => h('div', {}, h('dt', {}, k), h('dd', {}, v ? longText(v) : '—')))))));
+  };
+
+  // Co-curricular tabs: extracurricular classes plus activities recorded on the profile.
+  const activities = profile.activities || [];
+  const activityTabs = [
+    ...extras.map((c) => ({ key: 'c' + c.id, name: c.subject.name, cls: c, rec: activities.find((a) => a.name?.toLowerCase() === c.subject.name.toLowerCase()) })),
+    ...activities.filter((a) => !extras.some((c) => c.subject.name.toLowerCase() === a.name?.toLowerCase())).map((a) => ({ key: 'a' + activities.indexOf(a), name: a.name, rec: a })),
+  ];
+  const activityBox = h('div', { class: 'stack' });
+  const saveActivity = (old, rec) => {
+    const list = old ? activities.map((a) => (a === old ? rec : a)) : [...activities, rec];
+    return saveProfile({ activities: list });
+  };
+  const drawActivity = (key) => {
+    if (!activityTabs.length) { mount(activityBox, h('p', { class: 'muted', style: 'margin: 0' }, 'No activities recorded yet.')); return; }
+    const t = activityTabs.find((x) => x.key === key) || activityTabs[0];
+    const rec = t.rec || {};
+    const r = t.cls ? results.get(t.cls.id) : null;
+    mount(activityBox,
+      tabs(activityTabs.map((x) => [x.key, x.name]), t.key, (k) => drawActivity(k)),
+      h('div', { class: 'spread', style: 'align-items: center' },
+        h('div', { class: 'row' }, h('b', {}, t.name), t.cls ? h('span', { class: 'muted small' }, `Teacher: ${t.cls.teacher?.name || 'Not assigned'}`) : null,
+          r && r.pct !== null ? tag(`${pct(r.pct)} · ${letterGrade(r.pct)}`, 'ok') : null),
+        h('span', { class: 'row' }, t.cls ? btn('Open gradebook', { small: true, href: classHref(t.cls) }) : null,
+          editBtn(() => editActivity(t, (v) => saveActivity(t.rec, v))),
+          admin && !t.cls ? btn('Remove', { small: true, danger: true, onclick: async () => {
+            if (!(await confirmBox(`Remove ${t.name}?`, 'Its competitions, participation and awards are removed from this profile.', 'Remove'))) return;
+            saveProfile({ activities: activities.filter((a) => a !== t.rec) });
+          } }) : null)),
+      t.cls ? marksTable(r, testHref) : null,
+      kv([['Level / grade', rec.level], ['Remarks', longText(rec.remarks)], ['Competitions', longText(rec.competitions)],
+        ['Participation details', longText(rec.participation)], ['Awards', longText(rec.awards)]]));
+  };
 
   const docRow = (d) => [d.name,
     admin ? checkbox(d.submitted ? 'Yes' : 'No', d.submitted, { onchange: async (e) => {
@@ -125,76 +215,39 @@ export async function render(ctx) {
     h('section', { class: 'stats' },
       stat(ageOn(s.dob), `Age · DOB ${fmtDMY(s.dob)}`),
       stat(pct(attPct), `Attendance · ${totals.present} / ${totals.days} days`),
-      stat(latest ? pct(latest.pct) : '—', latest ? `Latest test (${latest.name})` : 'Latest test'),
-      stat(s.blood_group || '—', 'Blood group'),
-      stat(final.promotion || '—', 'Final assessment')),
+      stat(overall === null ? '—' : `${pct(overall)} · ${letterGrade(overall)}`, overall === null ? 'Overall · no marks yet' : `Overall to date · ${scored.length} subject${scored.length === 1 ? '' : 's'}`)),
     h('nav', { class: 'row no-print', 'aria-label': 'Sections' }, SECTIONS.map(([k, l]) => h('a', { href: '#' + k, class: 'tag' }, l))),
 
-    section('personal', 'Personal & Identity', null, kv([
-      ['Admission No.', s.admission_no], ['Class', s.grade?.name], ['Repeating class', s.repeating ? 'Yes' : 'No'],
+    section('personal', 'Personal & Identity', editBtn(() => editPersonal(s, grades, reload)), kv([
+      ['Admission No.', s.admission_no], ['Class', s.grade?.name], ['Roll No.', s.roll_no], ['Repeating class', s.repeating ? 'Yes' : 'No'],
       ['Date of birth', fmtDMY(s.dob)], ['Age', ageOn(s.dob)], ['Residential status', s.residential],
       ['Aadhaar No.', s.aadhaar_last4 ? `XXXX XXXX ${s.aadhaar_last4}` : ''], ['APAAR ID', s.apaar_id], ['PEN No.', s.pen],
       ['Gender', s.gender], ['Location', s.location], ['State', s.state]])),
 
-    section('family', 'Family & Contact', [h('span', { class: 'muted small' }, `Student status: ${s.family_status || '—'}`), editBtn(() => rowsEditor('Family & contact',
-      ['Relation', 'Name', 'Occupation', 'Contact'], guardians.map((g) => [g.relation, g.name, g.occupation, g.phone]), async (rows) => {
-        must(await db.from('guardians').delete().eq('student_id', id));
-        if (rows.length) must(await db.from('guardians').insert(rows.map((r, i) => ({ student_id: id, relation: r[0] || 'Guardian', name: r[1], occupation: r[2], phone: r[3], position: i + 1 }))));
-        toast('Saved'); reload();
-      }))],
-    simpleTable(['Relation', 'Name', 'Occupation', 'Contact'], guardians.map((g) => [g.relation, g.name || '—', g.occupation || '—', g.phone || '—'])),
-    h('div', { class: 'spread', style: 'align-items: flex-start' }, kv([['Parents’ health status', profile.parents_health], ['Siblings', profile.siblings],
-      ['Sibling at school', profile.sibling_at_school], ['Parent / guardian behaviour', profile.guardian_behaviour]]),
-    editBtn(() => fieldsEditor('Family details', [['parents_health', 'Parents’ health status', profile.parents_health], ['siblings', 'Siblings', profile.siblings],
-      ['sibling_at_school', 'Sibling at school', profile.sibling_at_school], ['guardian_behaviour', 'Parent / guardian behaviour', profile.guardian_behaviour]], saveProfile)))),
+    section('family', 'Family & Contact', editBtn(() => editFamily(ctx, s, guardians, profile, siblings, reload)),
+      simpleTable(['Relation', 'Name', 'Occupation', 'Contact'], guardians.map((g) => [g.relation, g.name || '—', g.occupation || '—', g.phone || '—'])),
+      kv([['Parents’ health status', profile.parents_health], ['Siblings', profile.siblings], ['Sibling at school', siblingLinks],
+        ['Parent / guardian behaviour', profile.guardian_behaviour]])),
 
-    section('health', 'Health', editBtn(() => editHealth(s, health, profile, reload)),
-      simpleTable(['Details', 'Term 1', 'Term 2', 'Term 3'], [
-        ['Height (cm)', ...[1, 2, 3].map((t) => n1(health.find((x) => x.term_no === t)?.height_cm ?? null))],
-        ['Weight (kg)', ...[1, 2, 3].map((t) => n1(health.find((x) => x.term_no === t)?.weight_kg ?? null))],
-        ['Remarks', ...[1, 2, 3].map((t) => health.find((x) => x.term_no === t)?.remarks || '—')]]),
-      kv([['Blood group', s.blood_group], ['Eyesight', profile.eyesight], ['Other health issues', profile.health_issues], ['Warden remarks', profile.warden_remarks]])),
+    section('health', 'Health', [btn('See Health Notes', { small: true, onclick: seeNotes }), editBtn(() => editHealth(s, year, thisYearHealth, healthNow, reload))],
+      h('div', { class: 'muted small' }, `This academic year (${year.name})`),
+      healthTable(thisYearHealth),
+      kv([['Eyesight', healthNow.eyesight], ['Other health issues', longText(healthNow.health_issues)]])),
 
-    section('attendance', 'Attendance', h('span', { class: 'muted small' }, `Total: ${totals.present} of ${totals.days} working days · ${totals.absent} absent · ${pct(attPct)}`),
-      h('div', { class: 'tbx', style: 'overflow-x: auto' }, h('table', { class: 'tt' },
-        h('thead', {}, h('tr', {}, h('th', {}, 'Month'), MONTH_ORDER.map((m) => h('th', { class: 'num' }, MONTH_NAMES[m])), h('th', { class: 'num' }, 'Total'))),
-        h('tbody', {}, [['Working days', 'days'], ['Present', 'present'], ['Absent', 'absent']].map(([label, k]) => h('tr', {}, h('th', { scope: 'row' }, label),
-          MONTH_ORDER.map((m) => h('td', { class: 'num' }, byMonth.get(m).days ? byMonth.get(m)[k] : '—')), h('td', { class: 'num' }, h('b', {}, totals[k]))))))),
-      h('div', { class: 'spread', style: 'align-items: flex-start' }, kv([['Attendance remarks', profile.attendance_remarks], ['PTM attendance (I · II · III · IV)', yesNo(profile.ptm)]]),
-        editBtn(() => fieldsEditor('Attendance notes', [['attendance_remarks', 'Attendance remarks', profile.attendance_remarks], ['ptm', 'PTM attended (e.g. Yes No No No)', yesNo(profile.ptm)]],
-          (v) => saveProfile({ attendance_remarks: v.attendance_remarks, ptm: v.ptm.split(/\s+/).map((x) => /^y/i.test(x)) }))))),
+    section('attendance', 'Attendance', [h('span', { class: 'muted small' }, `Total: ${totals.present} of ${totals.days} working days · ${totals.absent} absent · ${pct(attPct)}`),
+      editBtn(() => editFields('Attendance notes', [['attendance_remarks', 'Attendance remarks', profile.attendance_remarks, 'long'], ['ptm', 'PTM attended (e.g. Yes No No No)', yesNo(profile.ptm)]],
+        (v) => saveProfile({ attendance_remarks: v.attendance_remarks, ptm: v.ptm.split(/\s+/).map((x) => /^y/i.test(x)) })))],
+    h('div', { class: 'tbx', style: 'overflow-x: auto' }, h('table', { class: 'tt' },
+      h('thead', {}, h('tr', {}, h('th', {}, 'Month'), MONTH_ORDER.map((m) => h('th', { class: 'num' }, MONTH_NAMES[m])), h('th', { class: 'num' }, 'Total'))),
+      h('tbody', {}, [['Working days', 'days'], ['Present', 'present'], ['Absent', 'absent']].map(([label, k]) => h('tr', {}, h('th', { scope: 'row' }, label),
+        MONTH_ORDER.map((m) => h('td', { class: 'num' }, byMonth.get(m).days ? byMonth.get(m)[k] : '—')), h('td', { class: 'num' }, h('b', {}, totals[k]))))))),
+    kv([['Attendance remarks', longText(profile.attendance_remarks)], ['PTM attendance (I · II · III · IV)', yesNo(profile.ptm)]])),
 
-    section('academics', 'Academics — Subject-wise Test Marks', h('span', { class: 'muted small' }, 'Ab = Absent · – = not entered'),
-      classes.length && names.length ? h('div', { class: 'tbx', style: 'overflow-x: auto' }, h('table', { class: 'tt' },
-        h('thead', {}, h('tr', {}, h('th', {}, 'Subject'), names.map((n) => h('th', { class: 'num' }, n)))),
-        h('tbody', {},
-          classes.map((c) => h('tr', {}, h('th', { scope: 'row' }, h('a', { href: ctx.link(ctx.isAdmin || c.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: c.id }) }, c.subject.name)),
-            names.map((n) => { const x = cell(c, n); return h('td', { class: 'num' }, x ? (x.text === 'Ab' ? h('span', { class: 'ab' }, 'Ab') : x.text) : ''); }))),
-          h('tr', {}, h('th', { scope: 'row' }, 'Total'), colTotals.map((t) => h('td', { class: 'num' }, h('b', {}, !t.any ? '–' : t.allAbsent ? 'Ab' : n1(t.got))))),
-          h('tr', {}, h('th', { scope: 'row' }, 'Percentage'), colTotals.map((t) => h('td', { class: 'num' }, !t.any ? '–' : t.allAbsent ? 'Ab' : pct((t.got / t.max) * 100)))))))
-        : h('p', { class: 'muted', style: 'margin: 0' }, 'No marks recorded this year.')),
+    section('subjects', 'Subjects', h('span', { class: 'row' }, h('span', { class: 'muted small' }, 'Total to date'),
+      h('b', {}, overall === null ? '—' : `${pct(overall)} · Grade ${letterGrade(overall)}`)),
+    academic.length ? subjectBox : h('p', { class: 'muted', style: 'margin: 0' }, 'Not enrolled in any subjects this year.')),
 
-    section('skills', 'Skills & Conduct', [h('span', { class: 'muted small' }, 'Grades by subject'), editBtn(() => {
-      const cols = profile.skills?.columns || ['Tel', 'Hin', 'Eng', 'Math', 'Phy', 'Bio', 'Soc'];
-      rowsEditor('Skills & conduct', ['Particulars', ...cols], profile.skills?.rows || [], (rows) => saveProfile({ skills: { columns: cols, rows } }));
-    })],
-    simpleTable(['Particulars', ...(profile.skills?.columns || ['Tel', 'Hin', 'Eng', 'Math', 'Phy', 'Bio', 'Soc'])], profile.skills?.rows || [])),
-
-    section('feedback', 'Teacher Feedback', editBtn(() => rowsEditor('Teacher feedback', ['Subject', 'Feedback on student'], profile.feedback || [], (rows) => saveProfile({ feedback: rows }))),
-      simpleTable(['Subject', 'Feedback on student'], profile.feedback || []),
-      h('div', { class: 'spread', style: 'align-items: flex-start' }, kv([['Student feedback on teachers', profile.student_feedback]]),
-        editBtn(() => fieldsEditor('Student feedback', [['student_feedback', 'Student feedback on teachers', profile.student_feedback, 'long']], saveProfile)))),
-
-    section('cocurricular', 'Co-Curricular Activities', null,
-      h('div', { class: 'spread' }, h('b', {}, 'Sports & Martial Arts'), editBtn(() => rowsEditor('Sports & martial arts', ['Activity', 'Details'], profile.sports || [], (rows) => saveProfile({ sports: rows })))),
-      simpleTable(['Activity', 'Details'], profile.sports || []),
-      h('div', { class: 'spread' }, h('b', {}, 'Spiritual & Cultural'), editBtn(() => rowsEditor('Spiritual & cultural', ['Activity', 'Grade', 'Remarks'], profile.spiritual || [], (rows) => saveProfile({ spiritual: rows })))),
-      simpleTable(['Activity', 'Grade', 'Remarks'], profile.spiritual || []),
-      h('div', { class: 'spread', style: 'align-items: flex-start' }, kv([['Competitions', profile.competitions], ['Seva (I · II · III · IV)', yesNo(profile.seva)], ['Participation details', profile.participation],
-        ['Physical activities', profile.physical], ['Dance', profile.dance]]),
-      editBtn(() => fieldsEditor('Competitions & service', [['competitions', 'Competitions', profile.competitions], ['seva', 'Seva done (e.g. Yes No No No)', yesNo(profile.seva)],
-        ['participation', 'Participation details', profile.participation, 'long'], ['physical', 'Physical activities', profile.physical], ['dance', 'Dance', profile.dance]],
-      (v) => saveProfile({ ...v, seva: v.seva.split(/\s+/).map((x) => /^y/i.test(x)) }))))),
+    section('cocurricular', 'Co-Curricular Activities', editBtn(() => editActivity(null, (v) => saveActivity(null, v)), 'Add activity'), activityBox),
 
     section('documents', 'Documents & Admin', [h('span', { class: 'muted small' }, `Checked by admin in-charge: ${profile.documents_checked || '—'}`),
       admin ? btn('Add document', { small: true, icon: 'plus', onclick: () => {
@@ -204,18 +257,22 @@ export async function render(ctx) {
           must(await db.from('student_documents').insert({ student_id: id, name: nm.value.trim(), position: docs.length + 1 })); reload();
         } });
       } }) : null],
-    simpleTable(['Document', 'Submitted', 'Handled by', 'File'], docs.map(docRow), { empty: 'No documents listed.' })),
+    simpleTable(['Document', 'Submitted', 'Handled by', 'File'], docs.map(docRow), { empty: 'No documents listed.' }))));
 
-    section('final', 'Final Assessment', editBtn(() => fieldsEditor('Final assessment', [['promotion', 'Promotion to next standard', final.promotion], ['decision', 'Final decision by management', final.decision],
-      ['remarks', 'Overall remarks by management', final.remarks, 'long'], ['open_school', 'Parents’ willingness for open school', final.open_school],
-      ['checked_by', 'Checked by', final.checked_by], ['designation', 'Designation', final.designation]], (v) => saveProfile({ final: v }))),
-    kv([['Promotion to next standard', final.promotion], ['Final decision by management', final.decision], ['Overall remarks by management', final.remarks],
-      ['Parents’ willingness for open school', final.open_school], ['Checked by', final.checked_by], ['Designation', final.designation]]))));
-
+  if (academic.length) drawSubject(academic[0].id);
+  drawActivity(activityTabs[0]?.key);
   if (location.hash) document.querySelector(location.hash)?.scrollIntoView();
 }
 
-function editBiodata(s, grades, reload) {
+// A modal that edits named text fields.
+function editFields(title, defs, onSave) {
+  const els = defs.map(([key, label, value, type]) => [key, type === 'long' ? textarea({ value: value ?? '', rows: 4 }) : input({ value: value ?? '' }), label, type]);
+  modal(title, h('div', { class: 'grid2' }, els.map(([, el, label, type]) => field(label, el, type === 'long' ? { style: 'grid-column: span 2' } : {}))), {
+    onSubmit: () => onSave(Object.fromEntries(els.map(([k, el]) => [k, el.value]))),
+  });
+}
+
+function editPersonal(s, grades, reload) {
   const f = {
     full_name: input({ value: s.full_name }), display_name: input({ value: s.display_name || '' }),
     admission_no: input({ value: s.admission_no || '' }), grade_id: select(grades.map((g) => [g.id, g.name]), s.grade_id),
@@ -223,41 +280,136 @@ function editBiodata(s, grades, reload) {
     dob: input({ type: 'date', value: s.dob || '' }), gender: select(['', 'Female', 'Male', 'Other'], s.gender || ''),
     aadhaar_last4: input({ value: s.aadhaar_last4 || '', maxlength: 4, placeholder: 'Last 4 digits only' }), apaar_id: input({ value: s.apaar_id || '' }),
     pen: input({ value: s.pen || '' }), location: input({ value: s.location || '' }), state: input({ value: s.state || '' }),
-    family_status: input({ value: s.family_status || '' }), blood_group: input({ value: s.blood_group || '' }),
   };
   const repeating = checkbox('Repeating this class', s.repeating);
   const labels = { full_name: 'Full name', display_name: 'Short name', admission_no: 'Admission no.', grade_id: 'Class', roll_no: 'Roll no.', residential: 'Residential',
-    dob: 'Date of birth', gender: 'Gender', aadhaar_last4: 'Aadhaar (last 4)', apaar_id: 'APAAR ID', pen: 'PEN', location: 'Location', state: 'State',
-    family_status: 'Family status', blood_group: 'Blood group' };
-  modal('Edit biodata', h('div', { class: 'scroll' }, h('div', { class: 'grid2' }, Object.entries(f).map(([k, el]) => field(labels[k], el))), repeating), {
+    dob: 'Date of birth', gender: 'Gender', aadhaar_last4: 'Aadhaar (last 4)', apaar_id: 'APAAR ID', pen: 'PEN', location: 'Location', state: 'State' };
+  modal('Edit personal & identity', h('div', { class: 'scroll' }, h('div', { class: 'grid2' }, Object.entries(f).map(([k, el]) => field(labels[k], el))), repeating), {
     onSubmit: async () => {
       if (!f.full_name.value.trim()) throw new Error('Full name is required.');
       const patch = Object.fromEntries(Object.entries(f).map(([k, el]) => [k, el.value === '' ? null : el.value]));
       patch.grade_id = Number(patch.grade_id); patch.roll_no = patch.roll_no === null ? null : Number(patch.roll_no);
       patch.repeating = repeating.querySelector('input').checked;
       must(await db.from('students').update(patch).eq('id', s.id));
-      toast('Biodata saved'); reload();
+      toast('Saved'); reload();
     },
   });
 }
 
-function editHealth(s, health, profile, reload) {
+// Guardians, family details and siblings at school in one form.
+async function editFamily(ctx, s, guardians, profile, siblings, reload) {
+  const others = must(await db.from('students').select('id, full_name, admission_no, grade:grade_levels(name)').eq('status', 'active').neq('id', s.id).order('full_name'));
+  const draft = guardians.map((g) => [g.relation, g.name, g.occupation, g.phone]);
+  const text = (v, long) => (long ? textarea({ value: v ?? '', rows: 2 }) : input({ value: v ?? '' }));
+  const parents = text(profile.parents_health), sibs = text(profile.siblings), behaviour = text(profile.guardian_behaviour, true);
+  const picked = [...siblings.map((x) => x.id)];
+  const label = (x) => `${x.full_name} · ${x.grade?.name || '—'} · Adm. ${x.admission_no || '—'}`;
+  const chips = h('div', { class: 'row', style: 'gap: 6px' });
+  const drawChips = () => mount(chips, picked.length ? picked.map((pid) => {
+    const x = others.find((o) => o.id === pid) || siblings.find((o) => o.id === pid);
+    return h('span', { class: 'tag' }, x?.full_name || 'Student', ' ', h('button', { type: 'button', style: 'border: 0; background: none; cursor: pointer; padding: 0 2px; font: inherit', 'aria-label': `Remove ${x?.full_name}`, onclick: () => { picked.splice(picked.indexOf(pid), 1); drawChips(); } }, '×'));
+  }) : h('span', { class: 'muted small' }, 'No siblings at this school linked.'));
+  drawChips();
+  const find = input({ list: 'sibling-options', placeholder: 'Type a name or admission no.', autocomplete: 'off' });
+  find.addEventListener('change', () => {
+    const x = others.find((o) => label(o) === find.value);
+    if (x && !picked.includes(x.id)) { picked.push(x.id); drawChips(); }
+    find.value = '';
+  });
+  modal('Edit family & contact', h('div', { class: 'scroll stack' },
+    h('b', {}, 'Parents & guardians'), rowsField(['Relation', 'Name', 'Occupation', 'Contact'], draft),
+    h('div', { class: 'grid2' }, field('Parents’ health status', parents), field('Siblings', sibs),
+      field('Parent / guardian behaviour', behaviour, { style: 'grid-column: span 2' })),
+    field('Sibling at school', h('div', { class: 'stack', style: 'gap: 8px' }, chips, find,
+      h('datalist', { id: 'sibling-options' }, others.map((o) => h('option', { value: label(o) })))))), {
+    onSubmit: async () => {
+      const rows = filled(draft);
+      must(await db.from('guardians').delete().eq('student_id', s.id));
+      if (rows.length) must(await db.from('guardians').insert(rows.map((r, i) => ({ student_id: s.id, relation: r[0] || 'Guardian', name: r[1] || '', occupation: r[2] || '', phone: r[3] || '', position: i + 1 }))));
+      must(await db.from('students').update({ profile: { ...profile, parents_health: parents.value, siblings: sibs.value, guardian_behaviour: behaviour.value, sibling_ids: picked } }).eq('id', s.id));
+      toast('Saved'); reload();
+    },
+  });
+}
+
+function editHealth(s, year, rows, now, reload) {
   const terms = [1, 2, 3].map((t) => {
-    const r = health.find((x) => x.term_no === t) || {};
+    const r = rows.find((x) => x.term_no === t) || {};
     return { t, h: input({ type: 'number', step: 'any', value: r.height_cm ?? '' }), w: input({ type: 'number', step: 'any', value: r.weight_kg ?? '' }), r: input({ value: r.remarks || '' }) };
   });
-  const blood = input({ value: s.blood_group || '' });
-  const eyes = input({ value: profile.eyesight || '' });
-  const issues = input({ value: profile.health_issues || '' });
-  const warden = input({ value: profile.warden_remarks || '' });
-  modal('Health', h('div', { class: 'scroll' },
+  const eyes = input({ value: now.eyesight || '' });
+  const issues = textarea({ value: now.health_issues || '', rows: 6, placeholder: 'One per line, e.g.\nAsthma — inhaler kept with the warden\nAllergic to peanuts' });
+  modal(`Health · ${year.name}`, h('div', { class: 'scroll' },
     terms.map((x) => h('div', { class: 'grid3', style: 'gap: 10px' }, field(`Term ${x.t} height (cm)`, x.h), field('Weight (kg)', x.w), field('Remarks', x.r))),
-    h('div', { class: 'grid2' }, field('Blood group', blood), field('Eyesight', eyes), field('Other health issues', issues), field('Warden remarks', warden))), {
+    field('Eyesight', eyes), field('Other health issues', issues)), {
     onSubmit: async () => {
-      const rows = terms.filter((x) => x.h.value || x.w.value || x.r.value).map((x) => ({ student_id: s.id, term_no: x.t, height_cm: x.h.value || null, weight_kg: x.w.value || null, remarks: x.r.value }));
-      if (rows.length) must(await db.from('health_records').upsert(rows));
-      must(await db.from('students').update({ blood_group: blood.value, profile: { ...profile, eyesight: eyes.value, health_issues: issues.value, warden_remarks: warden.value } }).eq('id', s.id));
+      const list = terms.filter((x) => x.h.value || x.w.value || x.r.value)
+        .map((x) => ({ student_id: s.id, year_id: year.id, term_no: x.t, height_cm: x.h.value || null, weight_kg: x.w.value || null, remarks: x.r.value }));
+      if (list.length) must(await db.from('health_records').upsert(list, { onConflict: 'student_id,year_id,term_no' }));
+      must(await db.from('health_years').upsert({ student_id: s.id, year_id: year.id, eyesight: eyes.value, health_issues: issues.value }, { onConflict: 'student_id,year_id' }));
       toast('Saved'); reload();
+    },
+  });
+}
+
+// Ongoing health notes (any staff member can add) and earlier years' health records.
+function healthNotes(ctx, s, notes, pastYears, healthRows, healthYears, healthTable, reload) {
+  const note = textarea({ rows: 3, placeholder: 'e.g. Fever in the morning; sent to the sick room and parents informed.' });
+  const date = input({ type: 'date', value: new Date().toISOString().slice(0, 10) });
+  const canDelete = (n) => ctx.isAdmin || n.author_id === ctx.me.id;
+  const list = notes.length ? h('div', { class: 'stack', style: 'gap: 10px' }, notes.map((n) => h('div', { class: 'item', style: 'align-items: flex-start' },
+    h('div', { class: 'it' }, h('b', {}, `${fmtDMY(n.noted_on)} · ${n.author_name || 'Staff'}`), h('span', { style: 'white-space: pre-wrap' }, n.note)),
+    canDelete(n) ? btn('Delete', { small: true, danger: true, onclick: async () => {
+      if (!(await confirmBox('Delete this note?', 'It can’t be undone.', 'Delete'))) return;
+      must(await db.from('health_notes').delete().eq('id', n.id)); document.querySelector('dialog.modal')?.close(); toast('Note deleted'); reload();
+    } }) : null)))
+    : h('p', { class: 'muted small', style: 'margin: 0' }, 'No health notes yet.');
+  const past = pastYears.length ? pastYears.map((y) => {
+    const hy = healthYears.find((r) => r.year_id === y.id) || {};
+    return h('div', { class: 'stack', style: 'gap: 8px' }, h('b', {}, y.name), healthTable(healthRows.filter((r) => r.year_id === y.id)),
+      kv([['Eyesight', hy.eyesight], ['Other health issues', longText(hy.health_issues)]]));
+  }) : h('p', { class: 'muted small', style: 'margin: 0' }, 'No records from earlier years.');
+  modal(`Health notes · ${studentName(s)}`, h('div', { class: 'scroll stack' },
+    h('div', { class: 'grid2' }, field('Date', date), h('div')), field('New note', note),
+    h('b', {}, 'Ongoing notes'), list,
+    h('b', {}, 'Earlier years'), past), {
+    submit: 'Add Note',
+    onSubmit: async () => {
+      if (!note.value.trim()) throw new Error('Write the note first.');
+      must(await db.from('health_notes').insert({ student_id: s.id, noted_on: date.value || undefined, note: note.value.trim(), author_id: ctx.me.id, author_name: ctx.me.name }));
+      toast('Note added'); reload();
+    },
+  });
+}
+
+// Skills & conduct grades and feedback for one subject.
+function editSubjectNotes(c, n, profile, saveProfile) {
+  const draft = (n.skills || []).map((r) => [...r]);
+  const teacher = textarea({ value: n.teacher_feedback || '', rows: 3 });
+  const student = textarea({ value: n.student_feedback || '', rows: 3 });
+  modal(`${c.subject.name} · skills & feedback`, h('div', { class: 'scroll stack' },
+    h('b', {}, 'Skills & Conduct'), rowsField(['Particulars', 'Grade'], draft),
+    field('Teacher feedback on student', teacher), field('Student feedback on teacher', student)), {
+    onSubmit: () => saveProfile({ subjects: { ...(profile.subjects || {}), [c.subject_id]: { skills: filled(draft), teacher_feedback: teacher.value, student_feedback: student.value } } }),
+  });
+}
+
+// One co-curricular activity: level, remarks, competitions, participation and awards.
+function editActivity(t, onSave) {
+  const rec = t?.rec || {};
+  const name = input({ value: t?.name || '', placeholder: 'e.g. Karate', disabled: !!t?.cls });
+  const long = (v, ph) => textarea({ value: v || '', rows: 3, placeholder: ph });
+  const level = input({ value: rec.level || '', placeholder: 'e.g. Black belt, Grade O' });
+  const remarks = long(rec.remarks), comp = long(rec.competitions, 'e.g. District karate championship, Jan 2026');
+  const part = long(rec.participation, 'e.g. Annual day performance'), awards = long(rec.awards, 'e.g. Gold medal, inter-school meet');
+  modal(t ? `Edit ${t.name}` : 'Add activity', h('div', { class: 'scroll' }, h('div', { class: 'grid2' },
+    field('Activity', name), field('Level / grade', level),
+    field('Competitions', comp, { style: 'grid-column: span 2' }), field('Participation details', part, { style: 'grid-column: span 2' }),
+    field('Awards', awards, { style: 'grid-column: span 2' }), field('Remarks', remarks, { style: 'grid-column: span 2' }))), {
+    submit: t ? 'Save' : 'Add Activity',
+    onSubmit: () => {
+      if (!name.value.trim()) throw new Error('Name the activity.');
+      return onSave({ name: name.value.trim(), level: level.value, remarks: remarks.value, competitions: comp.value, participation: part.value, awards: awards.value });
     },
   });
 }
