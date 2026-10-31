@@ -53,25 +53,28 @@ async function detail(ctx) {
   const [notes, grades, year] = await Promise.all([
     db.from('application_notes').select('*').eq('application_id', id).order('created_at').then(must), getGrades(), getCurrentYear()]);
   const reload = () => detail(ctx);
-  const setStatus = async (status, note) => {
-    must(await db.from('applications').update({ status }).eq('id', id));
+  const setStatus = async (status, note, extra = {}) => {
+    must(await db.from('applications').update({ status, ...extra }).eq('id', id));
     if (note) must(await db.from('application_notes').insert({ application_id: id, author_name: ctx.me.name, body: note }));
     await logActivity(ctx.me, 'Admission', a.full_name, note || `Marked ${APP_STATUS[status][0].toLowerCase()}`);
     toast(`Application ${APP_STATUS[status][0].toLowerCase()}`); reload();
   };
-  const requestInfo = () => {
-    const msg = textarea({ placeholder: 'What do you need from the family? e.g. the TC from the previous school' });
-    modal('Request info', field('Note', msg), { submit: 'Save request', onSubmit: async () => {
-      if (!msg.value.trim()) throw new Error('Say what is needed.');
-      await setStatus('in_review', `Requested info: ${msg.value.trim()}`);
-    } });
+  // Rejecting keeps the application on record with the reason.
+  const reject = () => {
+    const why = textarea({ rows: 3, placeholder: 'e.g. No seats left in Grade 7 this year' });
+    modal(`Reject ${a.full_name}?`, [h('p', { class: 'muted small', style: 'margin: 0' }, 'The application stays on record as rejected, with this reason.'), field('Reason', why)], {
+      submit: 'Reject', danger: true,
+      onSubmit: async () => {
+        if (!why.value.trim()) throw new Error('Give the reason for rejecting.');
+        await setStatus('rejected', `Rejected: ${why.value.trim()}`, { reject_reason: why.value.trim() });
+      },
+    });
   };
   const open = ['new', 'in_review'].includes(a.status);
   const actions = [
-    open ? btn('Request Info', { onclick: requestInfo }) : null,
-    open ? btn('Reject', { danger: true, onclick: async () => { if (await confirmBox(`Reject ${a.full_name}?`, 'The application stays on record as rejected.', 'Reject')) setStatus('rejected'); } }) : null,
+    open ? btn('Reject', { danger: true, onclick: reject }) : null,
     open ? btn('Accept', { primary: true, onclick: () => setStatus('accepted') }) : null,
-    a.status === 'rejected' ? btn('Reopen', { onclick: () => setStatus('in_review') }) : null,
+    a.status === 'rejected' ? btn('Reopen', { onclick: () => setStatus('in_review', null, { reject_reason: '' }) }) : null,
     a.status === 'enrolled' && a.student_id ? btn('Open Profile', { primary: true, href: `AdminStudent.html?id=${a.student_id}` }) : null,
   ];
 
@@ -105,13 +108,19 @@ async function detail(ctx) {
   // Mandatory classes are enrolled automatically (migration 009), so they stay ticked.
   const drawClasses = () => mount(classBox, classes.filter((c) => c.grade_id === +gradeSel.value).map((c) => checkbox(className(c) + (c.mandatory ? ' · mandatory' : ''), true, { value: c.id, disabled: c.mandatory }))
     .concat(classes.some((c) => c.grade_id === +gradeSel.value) ? [] : [h('p', { class: 'muted small', style: 'margin: 0' }, 'No classes set up for this grade this year.')]));
-  gradeSel.addEventListener('change', drawClasses);
-  drawClasses();
-  const enroll = btn('Enroll & Create Profile', { primary: true, disabled: a.status !== 'accepted', onclick: () => busy(enroll, async () => {
+  // Roll numbers follow on from the last student in the grade.
+  const existing = must(await db.from('students').select('admission_no, roll_no, grade_id'));
+  const nextRollIn = (gradeId) => Math.max(0, ...existing.filter((s) => s.grade_id === gradeId).map((s) => s.roll_no || 0)) + 1;
+  const rollOut = h('dd', {});
+  const drawRoll = () => { rollOut.textContent = `${nextRollIn(+gradeSel.value)} (next in ${grades.find((g) => g.id === +gradeSel.value)?.name || 'the grade'})`; };
+  gradeSel.addEventListener('change', () => { drawClasses(); drawRoll(); });
+  drawClasses(); drawRoll();
+  const canEnroll = !['enrolled', 'rejected'].includes(a.status);
+  const enroll = btn('Enroll & Create Profile', { primary: true, disabled: !canEnroll, onclick: () => busy(enroll, async () => {
     const gradeId = +gradeSel.value;
-    const existing = must(await db.from('students').select('admission_no, roll_no, grade_id'));
-    const nextAdm = Math.max(0, ...existing.map((s) => Number(s.admission_no) || 0)) + 1;
-    const nextRoll = Math.max(0, ...existing.filter((s) => s.grade_id === gradeId).map((s) => s.roll_no || 0)) + 1;
+    const latest = must(await db.from('students').select('admission_no, roll_no, grade_id'));
+    const nextAdm = Math.max(0, ...latest.map((s) => Number(s.admission_no) || 0)) + 1;
+    const nextRoll = Math.max(0, ...latest.filter((s) => s.grade_id === gradeId).map((s) => s.roll_no || 0)) + 1;
     const student = must(await db.from('students').insert({
       admission_no: String(nextAdm), full_name: a.full_name, display_name: a.full_name, grade_id: gradeId, roll_no: nextRoll,
       residential: a.residential === 'Hostler' ? 'Hostler' : 'Day scholar', dob: a.dob, gender: a.gender, aadhaar_last4: a.aadhaar_last4, status: 'active',
@@ -132,6 +141,7 @@ async function detail(ctx) {
   mount(ctx.main, h('div', { class: 'stack' },
     backLink('Back to admissions', 'AdminAdmissions.html'),
     pageHead(h('span', { class: 'row' }, a.full_name, appTag(a.status)), `Application no. ${a.app_no || '—'} · Applied ${fmtDMY(a.applied_on)} for ${a.grade?.name || '—'}`, actions),
+    a.status === 'rejected' ? h('div', { class: 'note' }, h('b', {}, 'Rejected. '), a.reject_reason || 'No reason recorded.') : null,
     h('div', { class: 'cols' },
       h('div', { class: 'stack' },
         card('Applicant', h('dl', { class: 'kv', style: 'grid-template-columns: repeat(2, minmax(0, 1fr))' }, [['Full name', a.full_name], ['Date of birth', fmtDMY(a.dob)], ['Gender', a.gender],
@@ -143,8 +153,9 @@ async function detail(ctx) {
       h('div', { class: 'stack' },
         card('Notes', notes.length ? notes.map((n) => h('div', { class: 'item' }, h('div', { class: 'it' }, h('span', {}, `${n.author_name} · ${fmtDMY(n.created_at)}`), h('b', { style: 'font-weight: 400' }, n.body))))
           : h('p', { class: 'muted small', style: 'margin: 0' }, 'No notes yet.'), noteIn, h('div', {}, addNote)),
-        card(h('span', {}, 'Enroll ', a.status === 'accepted' ? null : h('small', {}, a.status === 'enrolled' ? 'Done' : 'Available after Accept')),
-          field('Assign grade', gradeSel), h('div', { class: 'fl' }, 'Classes', classBox), h('div', {}, enroll),
+        card(h('span', {}, 'Enroll ', a.status === 'enrolled' ? h('small', {}, 'Done') : a.status === 'rejected' ? h('small', {}, 'Reopen the application to enroll') : null),
+          field('Assign grade', gradeSel), h('dl', { class: 'kv', style: 'margin: 0' }, h('div', {}, h('dt', {}, 'Roll number'), rollOut)),
+          h('div', { class: 'fl' }, 'Classes', classBox), h('div', {}, enroll),
           h('p', { class: 'muted small', style: 'margin: 0' }, 'Creates a Student Profile and adds the student to each ticked class roster.'))))));
 }
 
