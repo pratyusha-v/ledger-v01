@@ -3,6 +3,7 @@ import { db, must, h, mount, param, go, getGrades, getCurrentYear, getClasses, c
   pageHead, backLink, emptyState, input, select, field, textarea, checkbox, modal, toast, busy, confirmBox, downloadCSV,
   uploadDocument, openDocument, logActivity } from '../lib.js';
 import { APP_STATUS, appTag } from './enrollment.js';
+import { siblingPicker } from './assign.js';
 
 const DOCS = [['birth', 'Birth certificate'], ['tc', 'Transfer certificate (TC)'], ['aadhaar', 'Aadhaar (masked)'], ['report', 'Previous report card']];
 const docState = (v) => (!v || v === 'missing' ? 'missing' : 'uploaded');
@@ -46,12 +47,91 @@ async function list(ctx) {
       : emptyState('No applications yet', 'New applications from parents or the office will appear here.', btn('New Application', { primary: true, icon: 'plus', href: 'AdminNewApplication.html' }))));
 }
 
+// The applicant's details, laid out like the student profile's Personal &
+// Identity, Family & Contact and Health sections so enrolling carries them over.
+const RELATIONS = ['Father', 'Mother', 'Guardian', 'Grandparent', 'Sibling', 'Other'];
+function applicantForm(a, grades, students) {
+  const v = (x) => ({ value: x || '' });
+  const f = {
+    full_name: input(v(a.full_name)), display_name: input({ ...v(a.display_name), placeholder: 'Name used in class lists' }),
+    dob: input({ type: 'date', ...v(a.dob) }), gender: select([['', 'Select'], 'Female', 'Male', 'Other'], a.gender || ''),
+    grade_id: select([['', 'Select grade'], ...grades.map((g) => [g.id, g.name])], a.grade_id || ''),
+    residential: select(['Day scholar', 'Hostler'], a.residential || 'Day scholar'),
+    aadhaar_last4: input({ ...v(a.aadhaar_last4), maxlength: 4, placeholder: 'Last 4 digits only' }),
+    apaar_id: input(v(a.apaar_id)), pen: input(v(a.pen)), location: input(v(a.location)), state: input(v(a.state)),
+    previous_school: input(v(a.previous_school)),
+  };
+  const fam = a.family || {};
+  const family = { parents_health: input(v(fam.parents_health)), siblings: input({ ...v(fam.siblings), placeholder: 'e.g. 1 younger sister' }),
+    guardian_behaviour: textarea({ rows: 2, value: fam.guardian_behaviour || '' }) };
+  const siblings = siblingPicker(students, fam.sibling_ids || []);
+  const health = textarea({ rows: 5, value: a.health_issues || '', placeholder: 'One per line, e.g.\nAsthma — carries an inhaler\nAllergic to peanuts' });
+
+  // Guardians: as many as needed; one is the primary contact.
+  const radioName = 'primary-' + Math.random().toString(36).slice(2);
+  const gRow = (g = {}) => ({ relation: select(RELATIONS, g.relation || 'Father'), name: input(v(g.name)), occupation: input(v(g.occupation)),
+    phone: input({ type: 'tel', ...v(g.phone) }), email: input({ type: 'email', ...v(g.email) }), primary: h('input', { type: 'radio', name: radioName, checked: !!g.primary }) });
+  const gs = (a.guardians?.length ? a.guardians : [{}]).map(gRow);
+  if (!gs.some((g) => g.primary.checked)) gs[0].primary.checked = true;
+  const gBox = h('div', { class: 'stack' });
+  const drawGuardians = () => mount(gBox, gs.map((g, i) => h('div', { class: 'stack', style: 'gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--hairline)' },
+    h('div', { class: 'spread', style: 'align-items: center' }, h('b', {}, `Parent / guardian ${i + 1}`),
+      h('span', { class: 'row' }, h('label', { class: 'ck' }, g.primary, 'Primary contact'),
+        i ? btn('Remove', { small: true, danger: true, onclick: () => { const was = g.primary.checked; gs.splice(i, 1); if (was) gs[0].primary.checked = true; drawGuardians(); } }) : null)),
+    h('div', { class: 'grid2' }, field('Relation', g.relation), field(`Name${i ? '' : ' *'}`, g.name), field('Occupation', g.occupation),
+      field(`Phone${i ? '' : ' *'}`, g.phone), field('Email', g.email)))),
+  h('div', {}, btn('Add parent / guardian', { small: true, icon: 'plus', onclick: () => { gs.push(gRow({ relation: 'Mother' })); drawGuardians(); } })));
+  drawGuardians();
+
+  const cards = [
+    card('Personal & Identity', h('div', { class: 'grid2' }, field('Full name *', f.full_name), field('Short name', f.display_name), field('Date of birth *', f.dob),
+      field('Gender', f.gender), field('Grade applying for *', f.grade_id), field('Residential status', f.residential), field('Aadhaar no. (last 4)', f.aadhaar_last4),
+      field('APAAR ID', f.apaar_id), field('PEN no.', f.pen), field('Location', f.location), field('State', f.state), field('Previous school', f.previous_school))),
+    card('Family & Contact', gBox, h('div', { class: 'grid2' }, field('Parents’ health status', family.parents_health), field('Siblings', family.siblings),
+      field('Sibling at school', siblings, { style: 'grid-column: span 2' }), field('Parent / guardian behaviour', family.guardian_behaviour, { style: 'grid-column: span 2' }))),
+    card('Health', field('Other health issues', health), h('p', { class: 'muted small', style: 'margin: 0' }, 'Shown under Health › Other health issues on the student’s profile once enrolled.')),
+  ];
+
+  // The application row; strict checks the fields needed to submit or enrol.
+  const read = (strict) => {
+    if (!f.full_name.value.trim()) throw new Error('Full name is required.');
+    const guardians = gs.map((g) => ({ relation: g.relation.value, name: g.name.value.trim(), occupation: g.occupation.value.trim(), phone: g.phone.value.trim(),
+      email: g.email.value.trim(), primary: g.primary.checked })).filter((g) => g.name || g.phone);
+    if (strict) {
+      if (!f.dob.value) throw new Error('Date of birth is required.');
+      if (!f.grade_id.value) throw new Error('Choose the grade applying for.');
+      if (!guardians[0]?.name || !guardians[0]?.phone) throw new Error('The first parent / guardian needs a name and phone.');
+      const primary = guardians.find((g) => g.primary);
+      if (!primary?.phone) throw new Error('The primary contact needs a phone number.');
+    }
+    return {
+      full_name: f.full_name.value.trim(), display_name: f.display_name.value.trim(), dob: f.dob.value || null, gender: f.gender.value || null,
+      grade_id: f.grade_id.value ? +f.grade_id.value : null, residential: f.residential.value, aadhaar_last4: f.aadhaar_last4.value.trim(),
+      apaar_id: f.apaar_id.value.trim(), pen: f.pen.value.trim(), location: f.location.value.trim(), state: f.state.value.trim(),
+      previous_school: f.previous_school.value.trim(), health_issues: health.value.trim(), guardians,
+      family: { parents_health: family.parents_health.value.trim(), siblings: family.siblings.value.trim(), guardian_behaviour: family.guardian_behaviour.value.trim(), sibling_ids: siblings.picked },
+    };
+  };
+  return { cards, read };
+}
+const activeStudents = () => db.from('students').select('id, full_name, admission_no, grade:grade_levels(name)').eq('status', 'active').order('full_name').then(must);
+
 async function detail(ctx) {
   const id = Number(param('id'));
   const a = id ? must(await db.from('applications').select('*, grade:grade_levels(id, name)').eq('id', id).maybeSingle()) : null;
   if (!a) { mount(ctx.main, emptyState('Application not found', null, btn('Admissions', { href: 'AdminAdmissions.html' }))); return; }
-  const [notes, grades, year] = await Promise.all([
-    db.from('application_notes').select('*').eq('application_id', id).order('created_at').then(must), getGrades(), getCurrentYear()]);
+  const [notes, grades, year, students] = await Promise.all([
+    db.from('application_notes').select('*').eq('application_id', id).order('created_at').then(must), getGrades(), getCurrentYear(), activeStudents()]);
+  const form = applicantForm(a, grades, students);
+  const editable = !['enrolled', 'rejected'].includes(a.status);
+  if (!editable) form.cards.forEach((c) => c.querySelectorAll('input, select, textarea, button').forEach((el) => { el.disabled = true; }));
+  // Save Application keeps the edits; a new application moves to accepted.
+  const saveApp = async () => {
+    const row = form.read(true);
+    const status = ['new', 'in_review'].includes(a.status) ? 'accepted' : a.status;
+    must(await db.from('applications').update({ ...row, status }).eq('id', id));
+    return row;
+  };
   const reload = () => detail(ctx);
   const setStatus = async (status, note, extra = {}) => {
     must(await db.from('applications').update({ status, ...extra }).eq('id', id));
@@ -70,10 +150,10 @@ async function detail(ctx) {
       },
     });
   };
-  const open = ['new', 'in_review'].includes(a.status);
+  const open = ['new', 'in_review', 'accepted'].includes(a.status);
   const actions = [
     open ? btn('Reject', { danger: true, onclick: reject }) : null,
-    open ? btn('Accept', { primary: true, onclick: () => setStatus('accepted') }) : null,
+    editable ? (() => { const b = btn('Save Application', { primary: true, onclick: () => busy(b, async () => { await saveApp(); toast('Application saved'); reload(); }).catch(() => {}) }); return b; })() : null,
     a.status === 'rejected' ? btn('Reopen', { onclick: () => setStatus('in_review', null, { reject_reason: '' }) }) : null,
     a.status === 'enrolled' && a.student_id ? btn('Open Profile', { primary: true, href: `AdminStudent.html?id=${a.student_id}` }) : null,
   ];
@@ -108,25 +188,24 @@ async function detail(ctx) {
   // Mandatory classes are enrolled automatically (migration 009), so they stay ticked.
   const drawClasses = () => mount(classBox, classes.filter((c) => c.grade_id === +gradeSel.value).map((c) => checkbox(className(c) + (c.mandatory ? ' · mandatory' : ''), true, { value: c.id, disabled: c.mandatory }))
     .concat(classes.some((c) => c.grade_id === +gradeSel.value) ? [] : [h('p', { class: 'muted small', style: 'margin: 0' }, 'No classes set up for this grade this year.')]));
-  // Roll numbers follow on from the last student in the grade.
-  const existing = must(await db.from('students').select('admission_no, roll_no, grade_id'));
-  const nextRollIn = (gradeId) => Math.max(0, ...existing.filter((s) => s.grade_id === gradeId).map((s) => s.roll_no || 0)) + 1;
-  const rollOut = h('dd', {});
-  const drawRoll = () => { rollOut.textContent = `${nextRollIn(+gradeSel.value)} (next in ${grades.find((g) => g.id === +gradeSel.value)?.name || 'the grade'})`; };
-  gradeSel.addEventListener('change', () => { drawClasses(); drawRoll(); });
-  drawClasses(); drawRoll();
+  gradeSel.addEventListener('change', drawClasses);
+  drawClasses();
   const canEnroll = !['enrolled', 'rejected'].includes(a.status);
   const enroll = btn('Enroll & Create Profile', { primary: true, disabled: !canEnroll, onclick: () => busy(enroll, async () => {
     const gradeId = +gradeSel.value;
+    const app = await saveApp();
     const latest = must(await db.from('students').select('admission_no, roll_no, grade_id'));
     const nextAdm = Math.max(0, ...latest.map((s) => Number(s.admission_no) || 0)) + 1;
     const nextRoll = Math.max(0, ...latest.filter((s) => s.grade_id === gradeId).map((s) => s.roll_no || 0)) + 1;
     const student = must(await db.from('students').insert({
-      admission_no: String(nextAdm), full_name: a.full_name, display_name: a.full_name, grade_id: gradeId, roll_no: nextRoll,
-      residential: a.residential === 'Hostler' ? 'Hostler' : 'Day scholar', dob: a.dob, gender: a.gender, aadhaar_last4: a.aadhaar_last4, status: 'active',
+      admission_no: String(nextAdm), full_name: app.full_name, display_name: app.display_name || app.full_name, grade_id: gradeId, roll_no: nextRoll,
+      residential: app.residential === 'Hostler' ? 'Hostler' : 'Day scholar', dob: app.dob, gender: app.gender, aadhaar_last4: app.aadhaar_last4,
+      apaar_id: app.apaar_id || null, pen: app.pen || null, location: app.location || null, state: app.state || null, status: 'active',
+      profile: { parents_health: app.family.parents_health, siblings: app.family.siblings, sibling_ids: app.family.sibling_ids, guardian_behaviour: app.family.guardian_behaviour },
     }).select().single());
-    const gs = (a.guardians || []).filter((g) => g.name);
-    if (gs.length) must(await db.from('guardians').insert(gs.map((g, i) => ({ student_id: student.id, relation: g.relation || 'Guardian', name: g.name, occupation: g.occupation || '', phone: g.phone || '', email: g.email || '', position: i + 1 }))));
+    const gs = app.guardians.filter((g) => g.name);
+    if (gs.length) must(await db.from('guardians').insert(gs.map((g, i) => ({ student_id: student.id, relation: g.relation || 'Guardian', name: g.name, occupation: g.occupation || '', phone: g.phone || '', email: g.email || '', position: i + 1, is_primary: !!g.primary }))));
+    if (app.health_issues) must(await db.from('health_years').upsert({ student_id: student.id, year_id: year.id, health_issues: app.health_issues }, { onConflict: 'student_id,year_id' }));
     const picked = [...classBox.querySelectorAll('input:checked')].map((x) => ({ class_id: +x.value, student_id: student.id }));
     if (picked.length) must(await db.from('enrollments').upsert(picked, { onConflict: 'class_id,student_id', ignoreDuplicates: true }));
     // The new student already has the required documents (migration 013); mark what the application brought.
@@ -134,7 +213,7 @@ async function detail(ctx) {
       handled_by: ctx.me.name, file_path: a.documents?.[key] && !['uploaded', 'missing'].includes(a.documents[key]) ? a.documents[key] : null, position: i + 1 }));
     must(await db.from('student_documents').upsert(docRows, { onConflict: 'student_id,name' }));
     must(await db.from('applications').update({ status: 'enrolled', student_id: student.id, grade_id: gradeId }).eq('id', id));
-    await logActivity(ctx.me, 'Admission', a.full_name, `Enrolled in ${grades.find((g) => g.id === gradeId).name}`);
+    await logActivity(ctx.me, 'Admission', app.full_name, `Enrolled in ${grades.find((g) => g.id === gradeId).name}`);
     go(`AdminStudent.html?id=${student.id}`);
   }).catch(() => {}) });
 
@@ -144,54 +223,26 @@ async function detail(ctx) {
     a.status === 'rejected' ? h('div', { class: 'note' }, h('b', {}, 'Rejected. '), a.reject_reason || 'No reason recorded.') : null,
     h('div', { class: 'cols' },
       h('div', { class: 'stack' },
-        card('Applicant', h('dl', { class: 'kv', style: 'grid-template-columns: repeat(2, minmax(0, 1fr))' }, [['Full name', a.full_name], ['Date of birth', fmtDMY(a.dob)], ['Gender', a.gender],
-          ['Grade applied', a.grade?.name], ['Residential', a.residential], ['Previous school', a.previous_school], ['Aadhaar', a.aadhaar_last4 ? `XXXX XXXX ${a.aadhaar_last4}` : '']]
-          .map(([k, v]) => h('div', {}, h('dt', {}, k), h('dd', {}, v || '—'))))),
-        card('Guardians', (a.guardians || []).length ? a.guardians.map((g) => h('div', { class: 'item' }, h('div', { class: 'it' }, h('b', {}, `${g.relation} · ${g.name || '—'}`),
-          h('span', {}, [g.occupation, g.phone, g.email].filter(Boolean).join(' · ') || 'No contact details')))) : h('p', { class: 'muted', style: 'margin: 0' }, 'No guardians recorded.')),
+        ...form.cards,
         card('Documents', docRows)),
       h('div', { class: 'stack' },
         card('Notes', notes.length ? notes.map((n) => h('div', { class: 'item' }, h('div', { class: 'it' }, h('span', {}, `${n.author_name} · ${fmtDMY(n.created_at)}`), h('b', { style: 'font-weight: 400' }, n.body))))
           : h('p', { class: 'muted small', style: 'margin: 0' }, 'No notes yet.'), noteIn, h('div', {}, addNote)),
         card(h('span', {}, 'Enroll ', a.status === 'enrolled' ? h('small', {}, 'Done') : a.status === 'rejected' ? h('small', {}, 'Reopen the application to enroll') : null),
-          field('Assign grade', gradeSel), h('dl', { class: 'kv', style: 'margin: 0' }, h('div', {}, h('dt', {}, 'Roll number'), rollOut)),
+          field('Assign grade', gradeSel),
           h('div', { class: 'fl' }, 'Classes', classBox), h('div', {}, enroll),
-          h('p', { class: 'muted small', style: 'margin: 0' }, 'Creates a Student Profile and adds the student to each ticked class roster.'))))));
+          h('p', { class: 'muted small', style: 'margin: 0' }, 'Saves the application, creates the Student Profile with the next roll number in the grade, and adds the student to each ticked class.'))))));
 }
 
 async function newApplication(ctx) {
-  const grades = await getGrades();
+  const [grades, students] = await Promise.all([getGrades(), activeStudents()]);
   const id = Number(param('id'));
   const a = id ? must(await db.from('applications').select('*').eq('id', id).maybeSingle()) : {};
-  const f = {
-    full_name: input({ value: a.full_name || '', required: true }), dob: input({ type: 'date', value: a.dob || '' }),
-    gender: select([['', 'Select'], 'Female', 'Male', 'Other'], a.gender || ''),
-    grade_id: select([['', 'Select grade'], ...grades.map((g) => [g.id, g.name])], a.grade_id || ''),
-    residential: select(['Day scholar', 'Hostler'], a.residential || 'Day scholar'),
-    previous_school: input({ value: a.previous_school || '' }), aadhaar_last4: input({ value: a.aadhaar_last4 || '', maxlength: 4, placeholder: 'Last 4 digits only' }),
-  };
-  const guardianForm = (g = {}) => ({ name: input({ value: g.name || '' }), relation: select(['Father', 'Mother', 'Guardian'], g.relation || 'Father'),
-    occupation: input({ value: g.occupation || '' }), phone: input({ value: g.phone || '', type: 'tel' }), email: input({ value: g.email || '', type: 'email' }) });
-  const guardians = (a.guardians?.length ? a.guardians : [{}]).map(guardianForm);
-  const gBox = h('div', { class: 'stack' });
-  const drawGuardians = () => mount(gBox, guardians.map((g, i) => h('div', { class: 'grid2' },
-    field(`Guardian ${i + 1} name${i ? '' : ' *'}`, g.name), field('Relation', g.relation), field('Occupation', g.occupation), field(`Phone${i ? '' : ' *'}`, g.phone), field('Email', g.email))),
-  guardians.length < 2 ? btn('Add second guardian', { small: true, icon: 'plus', onclick: () => { guardians.push(guardianForm({ relation: 'Mother' })); drawGuardians(); } }) : null);
-  drawGuardians();
+  const form = applicantForm(a, grades, students);
   const files = Object.fromEntries(DOCS.map(([k]) => [k, h('input', { type: 'file' })]));
 
   const save = (status) => async () => {
-    if (!f.full_name.value.trim()) throw new Error('Full name is required.');
-    if (status === 'new') {
-      if (!f.dob.value) throw new Error('Date of birth is required.');
-      if (!f.grade_id.value) throw new Error('Choose the grade applying for.');
-      if (!guardians[0].name.value.trim() || !guardians[0].phone.value.trim()) throw new Error('Guardian name and phone are required.');
-    }
-    const row = {
-      full_name: f.full_name.value.trim(), dob: f.dob.value || null, gender: f.gender.value || null, grade_id: f.grade_id.value ? +f.grade_id.value : null,
-      residential: f.residential.value, previous_school: f.previous_school.value, aadhaar_last4: f.aadhaar_last4.value, status,
-      guardians: guardians.map((g) => ({ name: g.name.value, relation: g.relation.value, occupation: g.occupation.value, phone: g.phone.value, email: g.email.value })).filter((g) => g.name),
-    };
+    const row = { ...form.read(status === 'new'), status };
     const year = await getCurrentYear();
     const saved = id
       ? must(await db.from('applications').update(row).eq('id', id).select().single())
@@ -210,9 +261,7 @@ async function newApplication(ctx) {
   mount(ctx.main, h('div', { class: 'stack', style: 'max-width: 960px' },
     backLink('Back to admissions', 'AdminAdmissions.html'),
     pageHead(id ? `Application · ${a.full_name}` : 'New Application', 'Enter the applicant’s details. Required fields are marked *.', [btn('Cancel', { href: 'AdminAdmissions.html' }), draftBtn, submitBtn]),
-    card('Applicant', h('div', { class: 'grid2' }, field('Full name *', f.full_name), field('Date of birth *', f.dob), field('Gender', f.gender),
-      field('Grade applying for *', f.grade_id), field('Residential', f.residential), field('Previous school', f.previous_school), field('Aadhaar no. (last 4)', f.aadhaar_last4))),
-    card('Guardian', gBox),
+    ...form.cards,
     card('Documents', h('div', { class: 'grid2' }, DOCS.map(([k, label]) => field(label + (a.documents?.[k] && a.documents[k] !== 'missing' ? ' · uploaded' : ''), files[k]))),
       h('p', { class: 'muted small', style: 'margin: 0' }, 'Documents can also be added later from the application.'))));
 }

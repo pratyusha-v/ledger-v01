@@ -102,3 +102,27 @@ export async function saveAssignments({ staffId, classes, picked, grades, gradeI
   if (was.length) must(await db.from('grade_levels').update({ class_teacher_id: null }).in('id', was));
   if (gradeId) must(await db.from('grade_levels').update({ class_teacher_id: staffId }).eq('id', gradeId));
 }
+
+// Students at the school, picked by typing a name or admission no.; .picked holds their ids.
+export function siblingPicker(students, picked) {
+  const id = 'siblings-' + ++uid;
+  const chosen = [...picked];
+  const label = (x) => `${x.full_name} · ${x.grade?.name || '—'} · Adm. ${x.admission_no || '—'}`;
+  const chips = h('div', { class: 'row', style: 'gap: 6px' });
+  const draw = () => mount(chips, chosen.length ? chosen.map((sid) => {
+    const x = students.find((o) => o.id === sid);
+    return h('span', { class: 'tag' }, x?.full_name || 'Student', ' ',
+      h('button', { type: 'button', style: 'border: 0; background: none; cursor: pointer; padding: 0 2px; font: inherit', 'aria-label': `Remove ${x?.full_name}`,
+        onclick: () => { chosen.splice(chosen.indexOf(sid), 1); draw(); } }, '×'));
+  }) : h('span', { class: 'muted small' }, 'No siblings at this school linked.'));
+  draw();
+  const find = input({ list: id, placeholder: 'Type a name or admission no.', autocomplete: 'off' });
+  find.addEventListener('change', () => {
+    const x = students.find((o) => label(o) === find.value);
+    if (x && !chosen.includes(x.id)) { chosen.push(x.id); draw(); }
+    if (x) find.value = '';
+  });
+  const wrap = h('div', { class: 'stack', style: 'gap: 8px' }, chips, find, h('datalist', { id }, students.map((o) => h('option', { value: label(o) }))));
+  wrap.picked = chosen;
+  return wrap;
+}

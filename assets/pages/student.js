@@ -4,6 +4,7 @@ import { db, must, h, mount, param, subjectResult, getGrades, getYears, getCurre
   stat, tag, tabs, backLink, emptyState, studentName, input, select, field, textarea, checkbox, modal, toast, uploadDocument,
   openDocument, confirmBox } from '../lib.js';
 import { classSidebar } from './common.js';
+import { siblingPicker } from './assign.js';
 
 const SECTIONS = [['personal', 'Personal'], ['family', 'Family & Contact'], ['health', 'Health'], ['attendance', 'Attendance'],
   ['subjects', 'Subjects'], ['cocurricular', 'Co-Curricular'], ['documents', 'Documents & Admin']];
@@ -203,7 +204,8 @@ export async function render(ctx) {
       ['Gender', s.gender], ['Location', s.location], ['State', s.state]])),
 
     section('family', 'Family & Contact', editBtn(() => editFamily(ctx, s, guardians, profile, siblings, reload)),
-      simpleTable(['Relation', 'Name', 'Occupation', 'Contact'], guardians.map((g) => [g.relation, g.name || '—', g.occupation || '—', g.phone || '—'])),
+      simpleTable(['Relation', 'Name', 'Occupation', 'Contact'], guardians.map((g) => [g.relation, g.name || '—', g.occupation || '—',
+        h('span', { class: 'row', style: 'gap: 8px' }, g.phone || '—', g.is_primary ? tag('★ Primary contact', 'warn') : null)])),
       kv([['Parents’ health status', profile.parents_health], ['Siblings', profile.siblings], ['Sibling at school', siblingLinks],
         ['Parent / guardian behaviour', profile.guardian_behaviour]])),
 
@@ -280,31 +282,31 @@ async function editFamily(ctx, s, guardians, profile, siblings, reload) {
   const draft = guardians.map((g) => [g.relation, g.name, g.occupation, g.phone]);
   const text = (v, long) => (long ? textarea({ value: v ?? '', rows: 2 }) : input({ value: v ?? '' }));
   const parents = text(profile.parents_health), sibs = text(profile.siblings), behaviour = text(profile.guardian_behaviour, true);
-  const picked = [...siblings.map((x) => x.id)];
-  const label = (x) => `${x.full_name} · ${x.grade?.name || '—'} · Adm. ${x.admission_no || '—'}`;
-  const chips = h('div', { class: 'row', style: 'gap: 6px' });
-  const drawChips = () => mount(chips, picked.length ? picked.map((pid) => {
-    const x = others.find((o) => o.id === pid) || siblings.find((o) => o.id === pid);
-    return h('span', { class: 'tag' }, x?.full_name || 'Student', ' ', h('button', { type: 'button', style: 'border: 0; background: none; cursor: pointer; padding: 0 2px; font: inherit', 'aria-label': `Remove ${x?.full_name}`, onclick: () => { picked.splice(picked.indexOf(pid), 1); drawChips(); } }, '×'));
-  }) : h('span', { class: 'muted small' }, 'No siblings at this school linked.'));
-  drawChips();
-  const find = input({ list: 'sibling-options', placeholder: 'Type a name or admission no.', autocomplete: 'off' });
-  find.addEventListener('change', () => {
-    const x = others.find((o) => label(o) === find.value);
-    if (x && !picked.includes(x.id)) { picked.push(x.id); drawChips(); }
-    find.value = '';
-  });
+  const sibs2 = siblingPicker(others, siblings.map((x) => x.id));
+  // Primary contact: picked from the guardians as typed.
+  let primaryIdx = Math.max(0, guardians.findIndex((g) => g.is_primary));
+  const primary = select([], '');
+  const fillPrimary = () => {
+    const opts = draft.map((r, i) => [i, [r[0], r[1]].filter(Boolean).join(' · ') || `Row ${i + 1}`]);
+    mount(primary, opts.map(([v, l]) => h('option', { value: v }, l)));
+    primary.value = String(Math.min(primaryIdx, Math.max(0, draft.length - 1)));
+  };
+  primary.addEventListener('focus', fillPrimary);
+  primary.addEventListener('change', () => { primaryIdx = +primary.value; });
+  fillPrimary();
   modal('Edit family & contact', h('div', { class: 'scroll stack' },
     h('b', {}, 'Parents & guardians'), rowsField(['Relation', 'Name', 'Occupation', 'Contact'], draft),
+    field('Primary contact', primary),
     h('div', { class: 'grid2' }, field('Parents’ health status', parents), field('Siblings', sibs),
       field('Parent / guardian behaviour', behaviour, { style: 'grid-column: span 2' })),
-    field('Sibling at school', h('div', { class: 'stack', style: 'gap: 8px' }, chips, find,
-      h('datalist', { id: 'sibling-options' }, others.map((o) => h('option', { value: label(o) })))))), {
+    field('Sibling at school', sibs2)), {
     onSubmit: async () => {
-      const rows = filled(draft);
+      const keep = draft.map((r, i) => [r, i]).filter(([r]) => r.some((x) => String(x ?? '').trim()));
+      const rows = keep.map(([r]) => r);
+      const primaryRow = keep.findIndex(([, i]) => i === primaryIdx);
       must(await db.from('guardians').delete().eq('student_id', s.id));
-      if (rows.length) must(await db.from('guardians').insert(rows.map((r, i) => ({ student_id: s.id, relation: r[0] || 'Guardian', name: r[1] || '', occupation: r[2] || '', phone: r[3] || '', position: i + 1 }))));
-      must(await db.from('students').update({ profile: { ...profile, parents_health: parents.value, siblings: sibs.value, guardian_behaviour: behaviour.value, sibling_ids: picked } }).eq('id', s.id));
+      if (rows.length) must(await db.from('guardians').insert(rows.map((r, i) => ({ student_id: s.id, relation: r[0] || 'Guardian', name: r[1] || '', occupation: r[2] || '', phone: r[3] || '', position: i + 1, is_primary: i === Math.max(0, primaryRow) }))));
+      must(await db.from('students').update({ profile: { ...profile, parents_health: parents.value, siblings: sibs.value, guardian_behaviour: behaviour.value, sibling_ids: sibs2.picked } }).eq('id', s.id));
       toast('Saved'); reload();
     },
   });
