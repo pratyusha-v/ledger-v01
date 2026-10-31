@@ -189,22 +189,20 @@ export async function render(ctx) {
         ['Participation details', longText(rec.participation)], ['Awards', longText(rec.awards)]]));
   };
 
+  // Documents: uploaded ones open with View; the rest show Upload (admins).
+  const uploadInput = (d) => h('input', { type: 'file', hidden: true, onchange: async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const path = await uploadDocument(`students/${id}/${d.id}-${f.name}`, f);
+      must(await db.from('student_documents').update({ file_path: path, submitted: true, handled_by: ctx.me.name }).eq('id', d.id));
+      toast('Uploaded'); reload();
+    } catch (x) { toast(x.message, true); }
+  } });
   const docRow = (d) => [d.name,
-    admin ? checkbox(d.submitted ? 'Yes' : 'No', d.submitted, { onchange: async (e) => {
-      must(await db.from('student_documents').update({ submitted: e.target.checked, handled_by: ctx.me.name }).eq('id', d.id)); toast('Saved'); reload();
-    } }) : d.submitted ? 'Yes' : 'No',
-    d.handled_by || '—',
-    h('span', { class: 'row' },
-      d.file_path ? btn('View', { small: true, onclick: () => openDocument(d.file_path).catch((e) => toast(e.message, true)) }) : null,
-      admin ? h('label', { class: 'btn s', style: 'cursor: pointer' }, d.file_path ? 'Replace' : 'Upload',
-        h('input', { type: 'file', hidden: true, onchange: async (e) => {
-          const f = e.target.files[0]; if (!f) return;
-          try {
-            const path = await uploadDocument(`students/${id}/${d.id}-${f.name}`, f);
-            must(await db.from('student_documents').update({ file_path: path, submitted: true, handled_by: ctx.me.name }).eq('id', d.id));
-            toast('Uploaded'); reload();
-          } catch (x) { toast(x.message, true); }
-        } })) : null)];
+    d.submitted || d.file_path ? tag('Submitted', 'ok') : tag('Not submitted', 'warn'),
+    d.submitted || d.file_path
+      ? btn('View', { small: true, onclick: () => (d.file_path ? openDocument(d.file_path).catch((e) => toast(e.message, true)) : toast('No file stored for this document yet.', true)) })
+      : admin ? h('label', { class: 'btn s', style: 'cursor: pointer' }, 'Upload', uploadInput(d)) : h('span', { class: 'muted small' }, 'Not uploaded')];
 
   mount(ctx.main, h('div', { class: 'stack' },
     backLink(ctx.isAdmin ? 'Back to Current Students' : 'Back to student search', ctx.link('SearchStart')),
@@ -258,7 +256,7 @@ export async function render(ctx) {
           must(await db.from('student_documents').insert({ student_id: id, name: nm.value.trim(), position: docs.length + 1 })); reload();
         } });
       } }) : null],
-    simpleTable(['Document', 'Submitted', 'Handled by', 'File'], docs.map(docRow), { empty: 'No documents listed.' }))));
+    simpleTable(['Document', 'Status', 'File'], docs.map(docRow), { empty: 'No documents listed.' }))));
 
   if (academic.length) drawSubject(academic[0].id);
   drawActivity(activityTabs[0]?.key);

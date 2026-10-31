@@ -120,9 +120,10 @@ async function detail(ctx) {
     if (gs.length) must(await db.from('guardians').insert(gs.map((g, i) => ({ student_id: student.id, relation: g.relation || 'Guardian', name: g.name, occupation: g.occupation || '', phone: g.phone || '', email: g.email || '', position: i + 1 }))));
     const picked = [...classBox.querySelectorAll('input:checked')].map((x) => ({ class_id: +x.value, student_id: student.id }));
     if (picked.length) must(await db.from('enrollments').upsert(picked, { onConflict: 'class_id,student_id', ignoreDuplicates: true }));
-    const docRowsToAdd = DOCS.map(([key, label], i) => ({ student_id: student.id, name: label, submitted: docState(a.documents?.[key]) === 'uploaded',
+    // The new student already has the required documents (migration 013); mark what the application brought.
+    const docRows = DOCS.map(([key, label], i) => ({ student_id: student.id, name: label, submitted: docState(a.documents?.[key]) === 'uploaded',
       handled_by: ctx.me.name, file_path: a.documents?.[key] && !['uploaded', 'missing'].includes(a.documents[key]) ? a.documents[key] : null, position: i + 1 }));
-    must(await db.from('student_documents').insert(docRowsToAdd));
+    must(await db.from('student_documents').upsert(docRows, { onConflict: 'student_id,name' }));
     must(await db.from('applications').update({ status: 'enrolled', student_id: student.id, grade_id: gradeId }).eq('id', id));
     await logActivity(ctx.me, 'Admission', a.full_name, `Enrolled in ${grades.find((g) => g.id === gradeId).name}`);
     go(`AdminStudent.html?id=${student.id}`);
