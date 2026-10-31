@@ -2,7 +2,7 @@
 // Editable for the class's teacher and for admins; read-only for everyone else.
 import {
   db, must, h, mount, param, go, redirect, getClass, getCurrentYear, getClasses, getRoster, getSettings, getGrades,
-  className, gradebook, n1, pct, fmtDate, stat, btn, pageHead, emptyState, studentName, select,
+  className, gradebook, n1, pct, fmtDate, stat, btn, pageHead, emptyState, studentName, select, input, checkbox, modal, toast,
 } from '../lib.js';
 import { classSidebar, classTabs, searchBack } from './common.js';
 
@@ -34,7 +34,7 @@ export async function gradebookSection(ctx, cls, { compact = false } = {}) {
     stat(gb.scoredCount ? pct((gb.passed / gb.scoredCount) * 100) : '—', `Pass percentage · ${gb.passed} of ${gb.scoredCount} passed (pass mark ${gb.passMark})`));
 
   if (!roster.length) {
-    return h('div', { class: 'stack' }, emptyState('No students on this roster', ctx.isAdmin ? 'Students are added when they enrol in this class’s grade.' : 'The school office adds students to class rosters.', null, 'users'));
+    return h('div', { class: 'stack' }, emptyState('No students on this roster', ctx.isAdmin ? 'Students are added when they enrol in this class’s grade.' : editable ? 'Use Add Students to pick students for this class.' : 'The class teacher adds students to this roster.', null, 'users'));
   }
 
   const head = h('tr', {},
@@ -64,6 +64,49 @@ export async function gradebookSection(ctx, cls, { compact = false } = {}) {
         editable ? btn('Add Test', { primary: true, icon: 'plus', href: ctx.link(addTestPage(cls), { class: cls.id }) }) : null));
 }
 
+// Teachers tick students from the class's grade to add them to the roster in one go.
+async function addStudents(ctx, cls, roster) {
+  const onRoster = new Set(roster.map((s) => s.id));
+  const pool = must(await db.from('students').select('id, full_name, display_name, roll_no').eq('grade_id', cls.grade_id).eq('status', 'active')
+    .not('roll_no', 'is', null).order('roll_no')).filter((s) => !onRoster.has(s.id));
+  if (!pool.length) { toast(`Every student in ${cls.grade.name} is already in this class`); return; }
+  const picked = new Set();
+  const search = input({ placeholder: 'Search by name or roll no.', 'aria-label': 'Search students' });
+  const all = h('input', { type: 'checkbox', 'aria-label': 'Select all shown' });
+  const count = h('span', { class: 'muted small' });
+  const list = h('div', { style: 'display: flex; flex-direction: column; gap: 4px; max-height: 320px; overflow-y: auto; padding: 4px 0' });
+  const shown = () => { const q = search.value.trim().toLowerCase(); return pool.filter((s) => !q || studentName(s).toLowerCase().includes(q) || s.full_name.toLowerCase().includes(q) || String(s.roll_no) === q); };
+  const draw = () => {
+    const rows = shown();
+    mount(list, rows.length ? rows.map((s) => checkbox(`${s.roll_no} · ${studentName(s)}`, picked.has(s.id), {
+      onchange: (e) => { e.target.checked ? picked.add(s.id) : picked.delete(s.id); sync(); },
+    })) : h('p', { class: 'muted small', style: 'margin: 0' }, 'No students match.'));
+    sync();
+  };
+  const sync = () => {
+    const rows = shown();
+    all.checked = rows.length > 0 && rows.every((s) => picked.has(s.id));
+    count.textContent = `${picked.size} selected`;
+  };
+  search.addEventListener('input', draw);
+  all.addEventListener('change', () => { shown().forEach((s) => (all.checked ? picked.add(s.id) : picked.delete(s.id))); draw(); });
+  draw();
+  modal(`Add students to ${className(cls)}`, [
+    h('p', { class: 'muted small', style: 'margin: 0' }, `Students in ${cls.grade.name} who aren’t in this class yet. Their profiles update automatically.`),
+    search,
+    h('div', { class: 'spread' }, h('label', { class: 'ck' }, all, 'Select all'), count),
+    list,
+  ], {
+    submit: 'Add Students',
+    onSubmit: async () => {
+      if (!picked.size) throw new Error('Tick at least one student.');
+      must(await db.from('enrollments').insert([...picked].map((sid) => ({ class_id: cls.id, student_id: sid }))));
+      toast(`${picked.size} student${picked.size > 1 ? 's' : ''} added to ${className(cls)}`);
+      render(ctx);
+    },
+  });
+}
+
 // Extracurricular classes grade differently, so Add Test opens their own template.
 const addTestPage = (cls) => (cls.subject?.academic === false ? 'AddExtraTest' : 'AddTest');
 
@@ -88,6 +131,7 @@ export async function render(ctx) {
 
   const [roster, evalCount] = await Promise.all([getRoster(id), db.from('evaluations').select('id', { count: 'exact', head: true }).eq('class_id', id)]);
   const actions = [];
+  if (editable && !ctx.isAdmin) actions.push(btn('Add Students', { icon: 'plus', onclick: () => addStudents(ctx, cls, roster) }));
   if (editable) actions.push(btn('Add Test', { primary: true, icon: 'plus', href: ctx.link(addTestPage(cls), { class: id }) }));
 
   const notice = cls.year?.closed
