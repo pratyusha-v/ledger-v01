@@ -93,7 +93,7 @@ async function termsPage(ctx) {
 
 // The add / edit subject form, shared by the Subjects tab and the timetable's
 // Add subject button. onDone gets the saved subject.
-export function subjectForm(s, { year, grades, subjects, classes, teachers }, onDone) {
+export function subjectForm(s, { year, grades, subjects, classes, teachers, plan }, onDone) {
   s = s || {};
   const classFor = (x, g) => classes.find((c) => c.subject_id === x.id && c.grade_id === g.id);
   const name = input({ value: s.name || '', placeholder: 'e.g. Computer Science' });
@@ -104,22 +104,27 @@ export function subjectForm(s, { year, grades, subjects, classes, teachers }, on
     const offered = h('input', { type: 'checkbox', checked: !!c, 'aria-label': `Offer in ${g.name}` });
     const mandatory = h('input', { type: 'checkbox', checked: !!c?.mandatory, disabled: !c, 'aria-label': `Mandatory in ${g.name}` });
     const teacher = teacherPicker(teachers, c?.teacher_id || '', { 'aria-label': `Teacher for ${g.name}`, style: 'height: 34px; min-width: 180px' });
-    const sync = () => { mandatory.disabled = !offered.checked; if (!offered.checked) mandatory.checked = false; teacher.style.display = offered.checked ? '' : 'none'; };
+    const p = s.id ? plan.find((x) => x.grade_id === g.id && x.subject_id === s.id) : null;
+    const weekly = input({ type: 'number', min: 0, max: 48, step: 1, value: p?.periods_per_week ?? 5, 'aria-label': `Classes per week in ${g.name}`, style: 'height: 34px; width: 72px' });
+    const sync = () => {
+      mandatory.disabled = !offered.checked; if (!offered.checked) mandatory.checked = false;
+      teacher.style.display = weekly.style.display = offered.checked ? '' : 'none';
+    };
     offered.addEventListener('change', () => { sync(); syncAll(); });
     sync();
-    return { g, c, offered, mandatory, teacher, sync };
+    return { g, c, offered, mandatory, teacher, weekly, sync };
   });
   const all = h('input', { type: 'checkbox' });
   const syncAll = () => { all.checked = rows.every((r) => r.offered.checked); };
   all.addEventListener('change', () => rows.forEach((r) => { r.offered.checked = all.checked; r.sync(); }));
   syncAll();
   const gradeTable = h('div', { class: 'tbx' }, h('table', { class: 'tt' },
-    h('thead', {}, h('tr', {}, h('th', {}, 'Grade'), h('th', {}, 'Offered'), h('th', {}, 'Mandatory'), h('th', {}, 'Teacher'))),
+    h('thead', {}, h('tr', {}, h('th', {}, 'Grade'), h('th', {}, 'Offered'), h('th', {}, 'Mandatory'), h('th', {}, 'Teacher'), h('th', {}, 'Classes / week'))),
     h('tbody', {},
-      h('tr', {}, h('th', { scope: 'row' }, 'All grades'), h('td', {}, all), h('td', {}), h('td', {})),
-      rows.map((r) => h('tr', {}, h('th', { scope: 'row' }, r.g.name), h('td', {}, r.offered), h('td', {}, r.mandatory), h('td', {}, r.teacher))))));
+      h('tr', {}, h('th', { scope: 'row' }, 'All grades'), h('td', {}, all), h('td', {}), h('td', {}), h('td', {})),
+      rows.map((r) => h('tr', {}, h('th', { scope: 'row' }, r.g.name), h('td', {}, r.offered), h('td', {}, r.mandatory), h('td', {}, r.teacher), h('td', {}, r.weekly))))));
 
-  modal(s.id ? `Edit ${s.name}` : 'Add subject', [
+  const dlg = modal(s.id ? `Edit ${s.name}` : 'Add subject', [
     h('div', { class: 'grid2' }, field('Subject', name), field('Short name', short), field('Type', type, { style: 'grid-column: span 2' })),
     h('p', { class: 'muted small', style: 'margin: 0' }, 'Extracurricular subjects use their own grading template when adding tests.'),
     gradeTable,
@@ -131,6 +136,10 @@ export function subjectForm(s, { year, grades, subjects, classes, teachers }, on
       if (!nm) throw new Error('Name the subject.');
       if (subjects.some((x) => x.id !== s.id && x.name.toLowerCase() === nm.toLowerCase())) throw new Error(`${nm} already exists.`);
       const teacherOf = new Map(rows.filter((r) => r.offered.checked).map((r) => [r, r.teacher.teacherId]));
+      for (const r of rows.filter((x) => x.offered.checked)) {
+        const n = Number(r.weekly.value);
+        if (r.weekly.value === '' || !Number.isInteger(n) || n < 0 || n > 48) throw new Error(`Classes per week for ${r.g.name} must be a whole number from 0 to 48.`);
+      }
       const removing = rows.filter((r) => r.c && !r.offered.checked);
       if (removing.length) {
         const used = must(await db.from('evaluations').select('class_id').in('class_id', removing.map((r) => r.c.id)));
@@ -145,8 +154,12 @@ export function subjectForm(s, { year, grades, subjects, classes, teachers }, on
       if (adding.length) must(await db.from('classes').insert(adding.map((r) => ({ year_id: year.id, grade_id: r.g.id, subject_id: saved.id, mandatory: r.mandatory.checked, teacher_id: teacherOf.get(r) || null }))));
       for (const r of rows.filter((x) => x.c && x.offered.checked && (x.c.mandatory !== x.mandatory.checked || (x.c.teacher_id || '') !== teacherOf.get(x)))) {
         must(await db.from('classes').update({ mandatory: r.mandatory.checked, teacher_id: teacherOf.get(r) || null }).eq('id', r.c.id));
-        // The timetable plan follows, so periods placed from now on carry the new teacher.
-        must(await db.from('timetable_plan').update({ teacher_id: teacherOf.get(r) || null }).eq('year_id', year.id).eq('grade_id', r.g.id).eq('subject_id', saved.id));
+      }
+      // The timetable plan follows: Edit Timetable offers this many periods a week to place, with this teacher.
+      const offeredRows = rows.filter((r) => r.offered.checked);
+      if (offeredRows.length) {
+        must(await db.from('timetable_plan').upsert(offeredRows.map((r) => ({ year_id: year.id, grade_id: r.g.id, subject_id: saved.id,
+          teacher_id: teacherOf.get(r) || null, periods_per_week: Number(r.weekly.value) })), { onConflict: 'year_id,grade_id,subject_id' }));
       }
       if (removing.length) {
         const termIds = (await getTerms(year.id)).map((t) => t.id);
@@ -158,7 +171,8 @@ export function subjectForm(s, { year, grades, subjects, classes, teachers }, on
       toast(s.id ? 'Subject saved' : `${nm} added${adding.length ? ' · it’s waiting in Unplaced subjects' : ''}`);
       onDone(saved);
     },
-  });
+  });  dlg.style.width = 'min(860px, 96vw)';
+  dlg.style.maxWidth = 'none';
 }
 
 const activeTeachers = async () => (await getStaff()).filter((x) => x.role === 'teacher' && x.status !== 'inactive');
@@ -170,7 +184,8 @@ export async function openSubjectForm(s, onDone) {
     db.from('subjects').select('*').order('position').then(must),
     db.from('classes').select('id, grade_id, subject_id, mandatory, teacher_id').eq('year_id', year.id).then(must),
   ]);
-  subjectForm(s, { year, grades, subjects, classes, teachers: await activeTeachers() }, onDone);
+  const plan = must(await db.from('timetable_plan').select('grade_id, subject_id, periods_per_week').eq('year_id', year.id));
+  subjectForm(s, { year, grades, subjects, classes, teachers: await activeTeachers(), plan }, onDone);
 }
 
 // Subjects: which grades offer each subject this year, and which are mandatory.
@@ -185,8 +200,8 @@ async function subjectsPage(ctx) {
   ]);
   const classFor = (s, g) => classes.find((c) => c.subject_id === s.id && c.grade_id === g.id);
 
-  const teachers = await activeTeachers();
-  const edit = (s) => subjectForm(s, { year, grades, subjects, classes, teachers }, () => subjectsPage(ctx));
+  const [teachers, plan] = await Promise.all([activeTeachers(), db.from('timetable_plan').select('grade_id, subject_id, periods_per_week').eq('year_id', year.id).then(must)]);
+  const edit = (s) => subjectForm(s, { year, grades, subjects, classes, teachers, plan }, () => subjectsPage(ctx));
 
   const gradesCell = (s) => {
     const on = grades.filter((g) => classFor(s, g));
