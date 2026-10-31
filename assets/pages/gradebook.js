@@ -1,8 +1,8 @@
 // Class gradebook: students × evaluations with totals and weighted marks.
 // Editable for the class's teacher and for admins; read-only for everyone else.
 import {
-  db, must, h, mount, param, go, redirect, getClass, getCurrentYear, getClasses, getRoster, getSettings, getStaff, getGrades,
-  className, gradebook, n1, pct, fmtDate, stat, btn, pageHead, emptyState, studentName, modal, select, field, checkbox, toast,
+  db, must, h, mount, param, go, redirect, getClass, getCurrentYear, getClasses, getRoster, getSettings, getGrades,
+  className, gradebook, n1, pct, fmtDate, stat, btn, pageHead, emptyState, studentName, select,
 } from '../lib.js';
 import { classSidebar, classTabs, searchBack } from './common.js';
 
@@ -13,40 +13,6 @@ async function pickClassId(ctx) {
   const classes = await getClasses(year.id);
   const own = classes.find((c) => c.teacher_id === ctx.me.id);
   return (own || (ctx.isAdmin ? classes[0] : null))?.id || null;
-}
-
-function assignTeacher(cls, onDone) {
-  return async () => {
-    const staff = (await getStaff()).filter((s) => s.role === 'teacher' && s.status !== 'inactive');
-    const pick = select([['', 'No teacher'], ...staff.map((s) => [s.id, s.name])], cls.teacher_id || '');
-    modal(`Assign teacher · ${className(cls)}`, field('Teacher', pick), {
-      onSubmit: async () => {
-        must(await db.from('classes').update({ teacher_id: pick.value || null }).eq('id', cls.id));
-        toast('Teacher assigned');
-        onDone();
-      },
-    });
-  };
-}
-
-function manageRoster(cls, roster, onDone) {
-  return async () => {
-    const all = must(await db.from('students').select('id, full_name, display_name, roll_no, grade_id').eq('status', 'active').order('roll_no'));
-    const onRoster = new Set(roster.map((s) => s.id));
-    const sameGrade = all.filter((s) => s.grade_id === cls.grade_id || onRoster.has(s.id));
-    const boxes = sameGrade.map((s) => ({ s, el: checkbox(`${studentName(s)}${s.roll_no ? ` · Roll ${s.roll_no}` : ''}`, onRoster.has(s.id)) }));
-    modal(`Manage roster · ${className(cls)}`, h('div', { class: 'scroll' }, h('p', { class: 'muted small', style: 'margin: 0' }, `Students in ${cls.grade.name}. Ticked students are on this class's roster.`), boxes.map((b) => b.el)), {
-      onSubmit: async () => {
-        const want = new Set(boxes.filter((b) => b.el.querySelector('input').checked).map((b) => b.s.id));
-        const add = [...want].filter((id) => !onRoster.has(id)).map((id) => ({ class_id: cls.id, student_id: id }));
-        const remove = [...onRoster].filter((id) => !want.has(id));
-        if (add.length) must(await db.from('enrollments').insert(add));
-        if (remove.length) must(await db.from('enrollments').delete().eq('class_id', cls.id).in('student_id', remove));
-        toast('Roster updated');
-        onDone();
-      },
-    });
-  };
 }
 
 // The gradebook table on its own, reused by the All Classes search page.
@@ -68,7 +34,7 @@ export async function gradebookSection(ctx, cls, { compact = false } = {}) {
     stat(gb.scoredCount ? pct((gb.passed / gb.scoredCount) * 100) : '—', `Pass percentage · ${gb.passed} of ${gb.scoredCount} passed (pass mark ${gb.passMark})`));
 
   if (!roster.length) {
-    return h('div', { class: 'stack' }, emptyState('No students on this roster', ctx.isAdmin ? 'Use Manage Roster to add students to this class.' : 'The school office adds students to class rosters.', null, 'users'));
+    return h('div', { class: 'stack' }, emptyState('No students on this roster', ctx.isAdmin ? 'Students are added when they enrol in this class’s grade.' : 'The school office adds students to class rosters.', null, 'users'));
   }
 
   const head = h('tr', {},
@@ -121,11 +87,7 @@ export async function render(ctx) {
   await classSidebar(ctx, { classId: id, browse });
 
   const [roster, evalCount] = await Promise.all([getRoster(id), db.from('evaluations').select('id', { count: 'exact', head: true }).eq('class_id', id)]);
-  const reload = () => render(ctx);
   const actions = [];
-  if (ctx.isAdmin && !cls.year?.closed) {
-    actions.push(btn('Assign Teacher', { onclick: assignTeacher(cls, reload) }), btn('Manage Roster', { onclick: manageRoster(cls, roster, reload) }));
-  }
   if (editable) actions.push(btn('Add Test', { primary: true, icon: 'plus', href: ctx.link(addTestPage(cls), { class: id }) }));
 
   const notice = cls.year?.closed

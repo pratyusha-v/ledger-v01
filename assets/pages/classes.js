@@ -70,7 +70,7 @@ async function browse(ctx) {
   const clear = btn('Clear', { onclick: () => { gradeSel.value = ''; subjIn.value = ''; teachIn.value = ''; draw(); } });
 
   mount(ctx.main, h('div', { class: 'stack' },
-    ctx.isAdmin ? pageHead('Current Classes', `Every class in the school this year (${current.name}). Open a subject to edit the class, assign a teacher or manage its roster.`)
+    ctx.isAdmin ? pageHead('Current Classes', `Every class in the school this year (${current.name}). Open a subject to see its gradebook.`)
       : pageHead('All Classes', `Every class in the school this year (${current.name}). Other teachers\u2019 classes are view only.`),
     card('Search', h('div', { style: 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px 20px; align-items: end' },
       field('Grade', gradeSel), field('Subject', subjIn), field('Teacher', teachIn), h('div', { class: 'row' }, clear)), subjList, teachList),
