@@ -9,7 +9,7 @@ export async function render(ctx) {
   const p = Object.fromEntries(params);
   const res = params.getAll('res');
   const flags = params.getAll('flag');
-  const filtered = ['q', 'grade', 'subject', 'att', 'promo'].some((k) => p[k]) || res.length || flags.length || p.former;
+  const filtered = ['q', 'grade', 'subject'].some((k) => p[k]) || res.length || flags.length || p.former;
   // Admins see every current student until they search or filter.
   const hasQuery = filtered || ctx.isAdmin;
   const title = ctx.isAdmin ? 'Current Students' : 'Student Search';
@@ -27,10 +27,8 @@ export async function render(ctx) {
       field('Subject', select([['', 'All subjects'], ...subjects.map((x) => [x.id, x.name])], p.subject || '', { name: 'subject' })),
       h('fieldset', { class: 'fl', style: 'border: none; margin: 0; padding: 0' }, h('legend', { style: 'padding: 0 0 6px' }, 'Residential status'),
         checkbox('Hostler', res.includes('Hostler'), { name: 'res', value: 'Hostler' }), checkbox('Day scholar', res.includes('Day scholar'), { name: 'res', value: 'Day scholar' })),
-      field('Attendance', select([['', 'Any'], ['90', 'Below 90%'], ['75', 'Below 75%']], p.att || '', { name: 'att' })),
-      field('Promotion status', select([['', 'Any'], ['Promoted', 'Promoted'], ['undecided', 'Not decided']], p.promo || '', { name: 'promo' })),
       h('fieldset', { class: 'fl', style: 'border: none; margin: 0; padding: 0' }, h('legend', { style: 'padding: 0 0 6px' }, 'Flags'),
-        checkbox('Pending documents', flags.includes('docs'), { name: 'flag', value: 'docs' }), checkbox('Health notes', flags.includes('health'), { name: 'flag', value: 'health' }),
+        checkbox('Pending documents', flags.includes('docs'), { name: 'flag', value: 'docs' }),
         ctx.isAdmin ? checkbox('Include former students', !!p.former, { name: 'former', value: '1' }) : null),
       btn('Apply Filters', { type: 'submit', primary: true }));
     mount(ctx.aside, form);
@@ -47,7 +45,7 @@ export async function render(ctx) {
     mount(ctx.main, h('div', { class: 'stack' }, pageHead(title, null, actions), bar,
       emptyState('Start searching for a student', 'Type in the search box, or choose filters on the left. Results will show up here.',
         h('div', { class: 'grid3', style: 'text-align: left; max-width: 640px' },
-          [['By name', 'Even part of a name works, e.g. “Lakshmi”.'], ['By ID', 'Admission no., APAAR ID or PEN.'], ['By filters', 'Grade, subject, residence, attendance.']]
+          [['By name', 'Even part of a name works, e.g. “Lakshmi”.'], ['By ID', 'Admission no., APAAR ID or PEN.'], ['By filters', 'Grade, subject, residence.']]
             .map(([t, d], i) => h('div', {}, h('b', {}, `${i + 1}. ${t}`), h('p', { class: 'small', style: 'margin: 4px 0 0' }, d)))), 'search')));
     return;
   }
@@ -66,11 +64,10 @@ export async function render(ctx) {
 
   const ids = rows.map((r) => r.id);
   const year = await getCurrentYear();
-  const [att, docs, health] = ids.length ? await Promise.all([
+  const [att, docs] = ids.length ? await Promise.all([
     db.from('attendance').select('student_id, status').in('student_id', ids).gte('on_date', year.starts_on).lte('on_date', year.ends_on).then(must),
     flags.includes('docs') ? db.from('student_documents').select('student_id').eq('submitted', false).in('student_id', ids).then(must) : [],
-    flags.includes('health') ? db.from('health_years').select('student_id, health_issues').eq('year_id', year.id).in('student_id', ids).then(must) : [],
-  ]) : [[], [], []];
+  ]) : [[], []];
   // The subject filter and each student's total percentage to date
   // (the average of their academic subjects, as on the student page).
   const total = new Map();
@@ -94,13 +91,7 @@ export async function render(ctx) {
   const attPct = new Map();
   ids.forEach((id) => { const a = att.filter((x) => x.student_id === id); attPct.set(id, a.length ? (a.filter((x) => x.status !== 'A').length / a.length) * 100 : null); });
 
-  if (p.att) rows = rows.filter((r) => attPct.get(r.id) !== null && attPct.get(r.id) < Number(p.att));
-  if (p.promo) rows = rows.filter((r) => (p.promo === 'Promoted' ? r.profile?.final?.promotion === 'Promoted' : r.profile?.final?.promotion !== 'Promoted'));
   if (flags.includes('docs')) { const s = new Set(docs.map((d) => d.student_id)); rows = rows.filter((r) => s.has(r.id)); }
-  if (flags.includes('health')) {
-    const s = new Set(health.filter((x) => x.health_issues?.trim()).map((x) => x.student_id));
-    rows = rows.filter((r) => s.has(r.id));
-  }
 
   const sort = p.sort || 'name';
   const gradePos = (r) => grades.find((g) => g.id === r.grade_id)?.position ?? 999;
@@ -109,8 +100,8 @@ export async function render(ctx) {
     : sort === 'total' ? (total.get(b.id) ?? -1) - (total.get(a.id) ?? -1)
     : sort === 'att' ? (attPct.get(a.id) ?? 101) - (attPct.get(b.id) ?? 101) : a.full_name.localeCompare(b.full_name));
   const chips = [p.q && `“${p.q}”`, p.grade && `Grade: ${grades.find((g) => g.id === +p.grade)?.name}`,
-    p.subject && `Subject: ${subjects.find((x) => x.id === +p.subject)?.name}`, ...res, p.att && `Attendance below ${p.att}%`,
-    p.promo && (p.promo === 'Promoted' ? 'Promoted' : 'Not decided'), flags.includes('docs') && 'Pending documents', flags.includes('health') && 'Health notes', p.former && 'Including former'].filter(Boolean);
+    p.subject && `Subject: ${subjects.find((x) => x.id === +p.subject)?.name}`, ...res,
+    flags.includes('docs') && 'Pending documents', p.former && 'Including former'].filter(Boolean);
   // Export the list as filtered and sorted on screen; the file name says which filters were on.
   const slug = (x) => String(x).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   exportRows = () => downloadCSV(['current-students', ...chips.map(slug)].filter(Boolean).join('_').slice(0, 120) + '.csv', [['Adm. No.', 'Student', 'Grade', 'Roll No.', 'Residential', 'Attendance', 'Total %', 'Grade (letter)', 'Status'],
