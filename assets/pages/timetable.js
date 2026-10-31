@@ -3,7 +3,7 @@
 // unplaced tray, flags clashes, and publishes to every teacher's My Schedule.
 import { db, must, h, mount, param, go, getCurrentYear, getTerms, getPeriods, getGrades, getSubjects, getStaff, getSettings,
   fmtDMY, btn, card, tag, pageHead, emptyState, input, select, field, modal, toast, busy, confirmBox } from '../lib.js';
-import { DAYS, currentTerm } from './scheduling.js';
+import { DAYS, currentTerm, openSubjectForm } from './scheduling.js';
 
 const short = (name) => (name || '').replace(/^(Ms|Mr|Mrs|Dr)\.?\s+/i, '');
 const gradeShort = (g) => (g ? g.name.replace('Grade ', 'G') : '?');
@@ -132,29 +132,35 @@ export async function render(ctx) {
     mount(gridBox, h('div', { class: 'tbx', style: 'overflow-x: auto' }, table));
   }
 
+  // Teacher, room and periods per week for a subject already in the plan.
   function editPlan(p) {
-    const isNew = !p;
-    p = p || {};
-    const g = select(grades.map((x) => [x.id, x.name]), p.grade_id ?? (by === 'grade' ? target : grades[0].id), { disabled: !isNew });
-    const subj = select(subjects.map((x) => [x.id, x.name + (x.academic ? '' : ' (extra-curricular)')]), p.subject_id ?? subjects[0].id, { disabled: !isNew });
-    const t = select([['', 'No teacher'], ...teachers.map((x) => [x.id, x.name])], p.teacher_id ?? (by === 'teacher' ? target : ''));
-    const r = select([['', 'No room'], ...rooms.map((x) => [x.id, x.name])], p.room_id ?? (by === 'room' ? target : ''));
+    const t = select([['', 'No teacher'], ...teachers.map((x) => [x.id, x.name])], p.teacher_id ?? '');
+    const r = select([['', 'No room'], ...rooms.map((x) => [x.id, x.name])], p.room_id ?? '');
     const n = input({ type: 'number', min: 0, max: 48, value: p.periods_per_week ?? 4 });
-    modal(isNew ? 'Add subject to the timetable' : `${gradeOf(p.grade_id).name} · ${subjectOf(p.subject_id).name}`,
-      [h('div', { class: 'grid2' }, field('Grade', g), field('Subject', subj), field('Teacher', t), field('Room', r), field('Periods per week', n)),
-        h('p', { class: 'muted small', style: 'margin: 0' }, isNew ? 'It appears under Unplaced subjects until you drag its periods into the week.' : 'Teacher and room apply to periods you place from now on.')], {
-      submit: isNew ? 'Add' : 'Save',
+    modal(`${gradeOf(p.grade_id).name} · ${subjectOf(p.subject_id).name}`,
+      [h('div', { class: 'grid2' }, field('Teacher', t), field('Room', r), field('Periods per week', n)),
+        h('p', { class: 'muted small', style: 'margin: 0' }, 'Teacher and room apply to periods you place from now on.')], {
       onSubmit: async () => {
         const per = Number(n.value);
         if (!Number.isInteger(per) || per < 0) throw new Error('Periods per week must be a whole number.');
-        const row = { year_id: year.id, grade_id: +g.value, subject_id: +subj.value, teacher_id: t.value || null, room_id: r.value ? +r.value : null, periods_per_week: per };
-        const saved = must(await db.from('timetable_plan').upsert(row, { onConflict: 'year_id,grade_id,subject_id' }).select().single());
+        const saved = must(await db.from('timetable_plan').update({ teacher_id: t.value || null, room_id: r.value ? +r.value : null, periods_per_week: per }).eq('id', p.id).select().single());
         plan = [...plan.filter((x) => x.id !== saved.id), saved];
-        toast(isNew ? 'Subject added to Unplaced subjects' : 'Saved');
+        toast('Saved');
         draw();
       },
     });
   }
+
+  // Add subject opens the same form as Terms and Periods › Subjects; the grades it
+  // is offered in arrive as unplaced subjects. Unsaved moves on the grid are kept.
+  const addSubject = () => openSubjectForm(null, async () => {
+    const [fresh, freshPlan] = await Promise.all([
+      db.from('subjects').select('*').order('position').then(must),
+      db.from('timetable_plan').select('*').eq('year_id', year.id).then(must)]);
+    subjects.splice(0, subjects.length, ...fresh);
+    plan = freshPlan;
+    draw();
+  });
 
   function drawTray() {
     const items = unplaced();
@@ -177,7 +183,7 @@ export async function render(ctx) {
     dropTarget(tray, (what) => { if (what.kind === 'slot') unplace(what.uid); });
     mount(trayBox, card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' },
       h('span', {}, 'Unplaced subjects ', h('span', { class: 'count tag' }, total)),
-      btn('Add subject', { small: true, icon: 'plus', onclick: () => editPlan(null) })),
+      btn('Add subject', { small: true, icon: 'plus', onclick: addSubject })),
     h('p', { class: 'muted small', style: 'margin: 0' }, 'Drag a subject into a period, or click it and then click a period. Drag a placed period back here to unplace it.'), tray));
   }
 
@@ -225,6 +231,64 @@ export async function render(ctx) {
     if (dirty && !(await confirmBox('Discard your changes?', 'Everything moved since the last publish goes back to how it was.', 'Discard'))) return;
     dirty = false; go(url({ edit: '' }));
   } });
+  // Export the current view as a landscape A4 PDF that fits on one sheet.
+  const exportBtn = btn('Export PDF', { icon: 'download', onclick: () => busy(exportBtn, async () => {
+    const [{ jsPDF }, { applyPlugin }] = await Promise.all([
+      import('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm'), import('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/+esm')]);
+    const FILL = ['#FFE7CC', '#EBE3F0', '#DCEBF5', '#E0F0E6', '#F7E1E7', '#FFF4C2', '#DDF1F0'];
+    const fillOf = (sl) => (colour(sl) === 'extra' ? '#EFEDE9' : FILL[+colour(sl).slice(1)]);
+    const lineFor = (sl) => {
+      const subj = subjectOf(sl.subject_id);
+      const teacher = short(staffOf(sl.teacher_id)?.name) || 'No teacher';
+      const room = roomOf(sl.room_id)?.name || 'No room';
+      if (by === 'school') return `${gradeShort(gradeOf(sl.grade_id))} ${subj?.short_name || subj?.name} · ${teacher}`;
+      if (by === 'grade') return `${subj?.name}\n${teacher} · ${room}`;
+      if (by === 'teacher') return `${gradeOf(sl.grade_id)?.name} ${subj?.name}\n${room}`;
+      return `${gradeOf(sl.grade_id)?.name} ${subj?.name}\n${teacher}`;
+    };
+    const visible = working.filter(inView);
+    const at = (day, pid) => visible.filter((x) => x.day === day && x.period_id === pid).sort((a, b) => gradeOf(a.grade_id).position - gradeOf(b.grade_id).position);
+    // Shrink the type until every line fits the sheet, then stretch rows to fill it.
+    const linesIn = (p) => Math.max(2, ...days.map((_, i) => at(i + 1, p.id).reduce((m, x) => m + lineFor(x).split('\n').length, 0)));
+    const classRows = periods.filter((p) => p.kind !== 'break');
+    const breakH = 7;
+    const usable = 210 - 24 - 8 - 8 - (periods.length - classRows.length) * breakH; // page minus title, bottom margin, header row, breaks
+    const lines = classRows.reduce((n, p) => n + linesIn(p), 0);
+    const fontSize = Math.max(4, Math.min(10, (usable - classRows.length * 2.2) / (lines * 0.3528 * 1.18)));
+    const rowH = usable / Math.max(1, classRows.length);
+    const body = periods.map((p) => {
+      const time = [p.starts_at, p.ends_at].filter(Boolean).map((t) => String(t).slice(0, 5)).join('–');
+      if (p.kind === 'break') {
+        return [{ content: p.name, styles: { fontStyle: 'bold', textColor: '#6E5A70', minCellHeight: breakH, valign: 'middle' } },
+          { content: time, colSpan: days.length, styles: { fillColor: '#F6F2EE', halign: 'center', valign: 'middle', textColor: '#6E5A70' } }];
+      }
+      return [{ content: `${p.name}\n${time}`, styles: { minCellHeight: rowH } },
+        ...days.map((_, i) => {
+          const items = at(i + 1, p.id);
+          return { content: items.map(lineFor).join('\n'), styles: items.length === 1 ? { fillColor: fillOf(items[0]) } : {} };
+        })];
+    });
+
+    const viewName = by === 'school' ? 'Whole school' : by === 'grade' ? gradeOf(+target)?.name : by === 'teacher' ? staffOf(target)?.name : roomOf(+target)?.name;
+    const term = terms.find((t) => t.id === termId);
+    applyPlugin(jsPDF);
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor('#2E2430');
+    doc.text(`Timetable · ${viewName}`, 10, 14);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor('#6E5A70');
+    doc.text(`${term?.name || ''} · ${year.name} · ${status?.published ? 'Published ' + fmtDMY(status.published_at) : 'Draft, not published'}${dirty ? ' · includes unsaved changes' : ''}`, 10, 20);
+    doc.text(`Exported ${fmtDMY(new Date().toISOString())}`, 287, 20, { align: 'right' });
+    doc.autoTable({
+      startY: 24, margin: { top: 10, right: 10, bottom: 8, left: 10 }, theme: 'grid', pageBreak: 'avoid', rowPageBreak: 'avoid',
+      head: [['', ...days]], body,
+      styles: { font: 'helvetica', fontSize, cellPadding: 1.1, lineColor: '#D9D2CC', lineWidth: 0.2, textColor: '#2E2430', valign: 'top', overflow: 'linebreak' },
+      headStyles: { fillColor: '#2E2430', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', fontSize: Math.max(fontSize, 8) },
+      columnStyles: { 0: { cellWidth: 20, fontStyle: 'bold', fillColor: '#F6F2EE' }, ...Object.fromEntries(days.map((_, i) => [i + 1, { cellWidth: (297 - 20 - 20) / days.length }])) },
+    });
+    const slug = (x) => String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    doc.save(`timetable_${slug(viewName)}_${slug(term?.name)}.pdf`);
+  }).catch(() => {}) });
+
   addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
   const legend = h('div', { class: 'row small muted' }, grades.map((g, i) => h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: `swatch g${i % 7}` }), g.name)),
@@ -234,7 +298,7 @@ export async function render(ctx) {
   mount(ctx.main, h('div', { class: 'stack' },
     pageHead(editing ? 'Edit Timetable' : 'Timetable',
       editing ? 'Drag subjects into periods. Publishing updates every teacher’s My Schedule.' : 'The whole school’s week. Filter to see one grade, teacher or room.',
-      editing ? [discard, save] : [btn('Edit Timetable', { primary: true, icon: 'edit', href: url({ edit: '1' }) })]),
+      editing ? [discard, save] : [exportBtn, btn('Edit Timetable', { primary: true, icon: 'edit', href: url({ edit: '1' }) })]),
     h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'View'), bySel, targetSel, h('span', { class: 'muted small' }, 'Term'), termSel,
       status?.published ? tag(`Published ${fmtDMY(status.published_at)}`, 'ok') : tag('Draft · not published', 'warn'), changes),
     legend,
