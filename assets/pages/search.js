@@ -23,9 +23,8 @@ export async function render(ctx) {
       p.q ? h('input', { type: 'hidden', name: 'q', value: p.q }) : null,
       p.in ? h('input', { type: 'hidden', name: 'in', value: p.in }) : null,
       h('div', { class: 'spread', style: 'align-items: baseline' }, h('h2', { style: 'margin: 0; font-size: 15px' }, 'Filters'), h('a', { href: ctx.link('SearchStart'), style: 'font-size: 13px' }, 'Clear all')),
-      ctx.isAdmin ? field('Grade', select([['', 'All grades'], ...grades.map((g) => [g.id, g.name])], p.grade || '', { name: 'grade' }))
-        : field('Class', select([['', 'All classes'], ...grades.map((g) => [g.id, g.name])], p.grade || '', { name: 'grade' })),
-      ctx.isAdmin ? field('Subject', select([['', 'All subjects'], ...subjects.map((x) => [x.id, x.name])], p.subject || '', { name: 'subject' })) : null,
+      field('Grade', select([['', 'All grades'], ...grades.map((g) => [g.id, g.name])], p.grade || '', { name: 'grade' })),
+      field('Subject', select([['', 'All subjects'], ...subjects.map((x) => [x.id, x.name])], p.subject || '', { name: 'subject' })),
       h('fieldset', { class: 'fl', style: 'border: none; margin: 0; padding: 0' }, h('legend', { style: 'padding: 0 0 6px' }, 'Residential status'),
         checkbox('Hostler', res.includes('Hostler'), { name: 'res', value: 'Hostler' }), checkbox('Day scholar', res.includes('Day scholar'), { name: 'res', value: 'Day scholar' })),
       field('Attendance', select([['', 'Any'], ['90', 'Below 90%'], ['75', 'Below 75%']], p.att || '', { name: 'att' })),
@@ -48,7 +47,7 @@ export async function render(ctx) {
     mount(ctx.main, h('div', { class: 'stack' }, pageHead(title, null, actions), bar,
       emptyState('Start searching for a student', 'Type in the search box, or choose filters on the left. Results will show up here.',
         h('div', { class: 'grid3', style: 'text-align: left; max-width: 640px' },
-          [['By name', 'Even part of a name works, e.g. “Lakshmi”.'], ['By ID', 'Admission no., APAAR ID or PEN.'], ['By filters', 'Class, residence, attendance.']]
+          [['By name', 'Even part of a name works, e.g. “Lakshmi”.'], ['By ID', 'Admission no., APAAR ID or PEN.'], ['By filters', 'Grade, subject, residence, attendance.']]
             .map(([t, d], i) => h('div', {}, h('b', {}, `${i + 1}. ${t}`), h('p', { class: 'small', style: 'margin: 4px 0 0' }, d)))), 'search')));
     return;
   }
@@ -72,10 +71,10 @@ export async function render(ctx) {
     flags.includes('docs') ? db.from('student_documents').select('student_id').eq('submitted', false).in('student_id', ids).then(must) : [],
     flags.includes('health') ? db.from('health_years').select('student_id, health_issues').eq('year_id', year.id).in('student_id', ids).then(must) : [],
   ]) : [[], [], []];
-  // Admins: the subject filter and each student's total percentage to date
+  // The subject filter and each student's total percentage to date
   // (the average of their academic subjects, as on the student page).
   const total = new Map();
-  if (ctx.isAdmin && ids.length) {
+  if (ids.length) {
     const [classes, settings] = await Promise.all([getClasses(year.id), getSettings()]);
     const enrol = classes.length ? must(await db.from('enrollments').select('class_id, student_id').in('class_id', classes.map((c) => c.id)).in('student_id', ids)) : [];
     if (p.subject) {
@@ -109,7 +108,7 @@ export async function render(ctx) {
     : sort === 'roll' ? gradePos(a) - gradePos(b) || (a.roll_no ?? 999) - (b.roll_no ?? 999)
     : sort === 'total' ? (total.get(b.id) ?? -1) - (total.get(a.id) ?? -1)
     : sort === 'att' ? (attPct.get(a.id) ?? 101) - (attPct.get(b.id) ?? 101) : a.full_name.localeCompare(b.full_name));
-  const chips = [p.q && `“${p.q}”`, p.grade && `${ctx.isAdmin ? 'Grade' : 'Class'}: ${grades.find((g) => g.id === +p.grade)?.name}`,
+  const chips = [p.q && `“${p.q}”`, p.grade && `Grade: ${grades.find((g) => g.id === +p.grade)?.name}`,
     p.subject && `Subject: ${subjects.find((x) => x.id === +p.subject)?.name}`, ...res, p.att && `Attendance below ${p.att}%`,
     p.promo && (p.promo === 'Promoted' ? 'Promoted' : 'Not decided'), flags.includes('docs') && 'Pending documents', flags.includes('health') && 'Health notes', p.former && 'Including former'].filter(Boolean);
   // Export the list as filtered and sorted on screen; the file name says which filters were on.
@@ -118,7 +117,7 @@ export async function render(ctx) {
     ...rows.map((r) => [r.admission_no, r.full_name, r.grade?.name, r.roll_no, r.residential, attPct.get(r.id) === null ? '' : pct(attPct.get(r.id)),
       total.get(r.id) == null ? '' : pct(total.get(r.id)), total.get(r.id) == null ? '' : letterGrade(total.get(r.id)), r.status])]);
 
-  const sortSel = select([['name', 'Name (A–Z)'], ['adm', 'Adm. No.'], ...(ctx.isAdmin ? [['roll', 'Roll No.'], ['total', 'Total %, high to low']] : []), ['att', 'Attendance']], sort, {
+  const sortSel = select([['name', 'Name (A–Z)'], ['adm', 'Adm. No.'], ['roll', 'Roll No.'], ['total', 'Total %, high to low'], ['att', 'Attendance']], sort, {
     style: 'width: auto; height: 32px', onchange: (e) => { const u = new URLSearchParams(location.search); u.set('sort', e.target.value); go(resultsPage + '?' + u); },
   });
 
@@ -139,9 +138,11 @@ export async function render(ctx) {
     ] : [
       { label: 'Student', th: true, render: (r) => h('a', { href: ctx.link('Student', { id: r.id }) }, r.full_name) },
       { label: 'Adm. No.', render: (r) => r.admission_no || '—' },
-      { label: 'Class', render: (r) => r.grade?.name || '—' },
+      { label: 'Grade', render: (r) => r.grade?.name || '—' },
+      { label: 'Roll No.', cls: 'num', render: (r) => r.roll_no ?? '—' },
       { label: 'Residential', render: (r) => r.residential || '—' },
       { label: 'Attendance', cls: 'num', render: (r) => pct(attPct.get(r.id)) },
+      { label: 'Total %', cls: 'num', render: totalText },
       ...(p.former ? [{ label: 'Status', render: (r) => r.status }] : []),
       { label: 'Action', render: (r) => btn('View profile', { small: true, href: ctx.link('Student', { id: r.id }) }) },
     ], rows, { empty: 'No students match. Try a shorter name or fewer filters.' })));
