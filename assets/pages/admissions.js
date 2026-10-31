@@ -1,7 +1,7 @@
 // Admissions (admin): applications list, application detail with enrolment, new application.
 import { db, must, h, mount, param, go, getGrades, getCurrentYear, getClasses, className, fmtDMY, isoDate, btn, card, table, tabs, tag,
   pageHead, backLink, emptyState, input, select, field, textarea, checkbox, modal, toast, busy, confirmBox, downloadCSV,
-  uploadDocument, openDocument, logActivity } from '../lib.js';
+  uploadDocument, openDocument, logActivity, readAadhaar } from '../lib.js';
 import { APP_STATUS, appTag } from './enrollment.js';
 import { siblingPicker } from './assign.js';
 
@@ -57,7 +57,7 @@ function applicantForm(a, grades, students) {
     dob: input({ type: 'date', ...v(a.dob) }), gender: select([['', 'Select'], 'Female', 'Male', 'Other'], a.gender || ''),
     grade_id: select([['', 'Select grade'], ...grades.map((g) => [g.id, g.name])], a.grade_id || ''),
     residential: select(['Day scholar', 'Hostler'], a.residential || 'Day scholar'),
-    aadhaar_last4: input({ ...v(a.aadhaar_last4), maxlength: 4, placeholder: 'Last 4 digits only' }),
+    aadhaar_no: input({ ...v(a.aadhaar_no), maxlength: 14, inputmode: 'numeric', placeholder: '12-digit number' }),
     apaar_id: input(v(a.apaar_id)), pen: input(v(a.pen)), location: input(v(a.location)), state: input(v(a.state)),
     previous_school: input(v(a.previous_school)),
   };
@@ -67,17 +67,25 @@ function applicantForm(a, grades, students) {
   const siblings = siblingPicker(students, fam.sibling_ids || []);
   const health = textarea({ rows: 5, value: a.health_issues || '', placeholder: 'One per line, e.g.\nAsthma — carries an inhaler\nAllergic to peanuts' });
 
-  // Guardians: as many as needed; one is the primary contact.
-  const radioName = 'primary-' + Math.random().toString(36).slice(2);
+  // Guardians: as many as needed. The primary phone and primary email can be different people's.
+  const tag2 = Math.random().toString(36).slice(2);
   const gRow = (g = {}) => ({ relation: select(RELATIONS, g.relation || 'Father'), name: input(v(g.name)), occupation: input(v(g.occupation)),
-    phone: input({ type: 'tel', ...v(g.phone) }), email: input({ type: 'email', ...v(g.email) }), primary: h('input', { type: 'radio', name: radioName, checked: !!g.primary }) });
+    phone: input({ type: 'tel', ...v(g.phone) }), email: input({ type: 'email', ...v(g.email) }),
+    primaryPhone: h('input', { type: 'radio', name: 'pphone-' + tag2, checked: !!(g.primary_phone ?? g.primary) }),
+    primaryEmail: h('input', { type: 'radio', name: 'pemail-' + tag2, checked: !!(g.primary_email ?? g.primary) }) });
   const gs = (a.guardians?.length ? a.guardians : [{}]).map(gRow);
-  if (!gs.some((g) => g.primary.checked)) gs[0].primary.checked = true;
+  if (!gs.some((g) => g.primaryPhone.checked)) gs[0].primaryPhone.checked = true;
+  if (!gs.some((g) => g.primaryEmail.checked)) gs[0].primaryEmail.checked = true;
   const gBox = h('div', { class: 'stack' });
   const drawGuardians = () => mount(gBox, gs.map((g, i) => h('div', { class: 'stack', style: 'gap: 10px; padding-bottom: 12px; border-bottom: 1px solid var(--hairline)' },
     h('div', { class: 'spread', style: 'align-items: center' }, h('b', {}, `Parent / guardian ${i + 1}`),
-      h('span', { class: 'row' }, h('label', { class: 'ck' }, g.primary, 'Primary contact'),
-        i ? btn('Remove', { small: true, danger: true, onclick: () => { const was = g.primary.checked; gs.splice(i, 1); if (was) gs[0].primary.checked = true; drawGuardians(); } }) : null)),
+      h('span', { class: 'row' }, h('label', { class: 'ck' }, g.primaryPhone, 'Primary phone'), h('label', { class: 'ck' }, g.primaryEmail, 'Primary email'),
+        i ? btn('Remove', { small: true, danger: true, onclick: () => {
+          gs.splice(i, 1);
+          if (!gs.some((x) => x.primaryPhone.checked)) gs[0].primaryPhone.checked = true;
+          if (!gs.some((x) => x.primaryEmail.checked)) gs[0].primaryEmail.checked = true;
+          drawGuardians();
+        } }) : null)),
     h('div', { class: 'grid2' }, field('Relation', g.relation), field(`Name${i ? '' : ' *'}`, g.name), field('Occupation', g.occupation),
       field(`Phone${i ? '' : ' *'}`, g.phone), field('Email', g.email)))),
   h('div', {}, btn('Add parent / guardian', { small: true, icon: 'plus', onclick: () => { gs.push(gRow({ relation: 'Mother' })); drawGuardians(); } })));
@@ -85,10 +93,10 @@ function applicantForm(a, grades, students) {
 
   const cards = [
     card('Personal & Identity', h('div', { class: 'grid2' }, field('Full name *', f.full_name), field('Short name', f.display_name), field('Date of birth *', f.dob),
-      field('Gender', f.gender), field('Grade applying for *', f.grade_id), field('Residential status', f.residential), field('Aadhaar no. (last 4)', f.aadhaar_last4),
+      field('Gender', f.gender), field('Grade applying for *', f.grade_id), field('Residential status', f.residential), field('Aadhaar no.', f.aadhaar_no),
       field('APAAR ID', f.apaar_id), field('PEN no.', f.pen), field('Location', f.location), field('State', f.state), field('Previous school', f.previous_school))),
     card('Family & Contact', gBox, h('div', { class: 'grid2' }, field('Parents’ health status', family.parents_health), field('Siblings', family.siblings),
-      field('Sibling at school', siblings, { style: 'grid-column: span 2' }), field('Parent / guardian behaviour', family.guardian_behaviour, { style: 'grid-column: span 2' }))),
+      field('Sibling at school', siblings, { style: 'grid-column: span 2' }), field('Parent / guardian notes', family.guardian_behaviour, { style: 'grid-column: span 2' }))),
     card('Health', field('Other health issues', health), h('p', { class: 'muted small', style: 'margin: 0' }, 'Shown under Health › Other health issues on the student’s profile once enrolled.')),
   ];
 
@@ -96,17 +104,17 @@ function applicantForm(a, grades, students) {
   const read = (strict) => {
     if (!f.full_name.value.trim()) throw new Error('Full name is required.');
     const guardians = gs.map((g) => ({ relation: g.relation.value, name: g.name.value.trim(), occupation: g.occupation.value.trim(), phone: g.phone.value.trim(),
-      email: g.email.value.trim(), primary: g.primary.checked })).filter((g) => g.name || g.phone);
+      email: g.email.value.trim(), primary_phone: g.primaryPhone.checked, primary_email: g.primaryEmail.checked })).filter((g) => g.name || g.phone || g.email);
     if (strict) {
       if (!f.dob.value) throw new Error('Date of birth is required.');
       if (!f.grade_id.value) throw new Error('Choose the grade applying for.');
       if (!guardians[0]?.name || !guardians[0]?.phone) throw new Error('The first parent / guardian needs a name and phone.');
-      const primary = guardians.find((g) => g.primary);
-      if (!primary?.phone) throw new Error('The primary contact needs a phone number.');
+      if (!guardians.find((g) => g.primary_phone)?.phone) throw new Error('The guardian marked Primary phone needs a phone number.');
+      if (guardians.some((g) => g.email) && !guardians.find((g) => g.primary_email)?.email) throw new Error('The guardian marked Primary email needs an email address.');
     }
     return {
       full_name: f.full_name.value.trim(), display_name: f.display_name.value.trim(), dob: f.dob.value || null, gender: f.gender.value || null,
-      grade_id: f.grade_id.value ? +f.grade_id.value : null, residential: f.residential.value, aadhaar_last4: f.aadhaar_last4.value.trim(),
+      grade_id: f.grade_id.value ? +f.grade_id.value : null, residential: f.residential.value, aadhaar_no: readAadhaar(f.aadhaar_no.value),
       apaar_id: f.apaar_id.value.trim(), pen: f.pen.value.trim(), location: f.location.value.trim(), state: f.state.value.trim(),
       previous_school: f.previous_school.value.trim(), health_issues: health.value.trim(), guardians,
       family: { parents_health: family.parents_health.value.trim(), siblings: family.siblings.value.trim(), guardian_behaviour: family.guardian_behaviour.value.trim(), sibling_ids: siblings.picked },
@@ -199,12 +207,12 @@ async function detail(ctx) {
     const nextRoll = Math.max(0, ...latest.filter((s) => s.grade_id === gradeId).map((s) => s.roll_no || 0)) + 1;
     const student = must(await db.from('students').insert({
       admission_no: String(nextAdm), full_name: app.full_name, display_name: app.display_name || app.full_name, grade_id: gradeId, roll_no: nextRoll,
-      residential: app.residential === 'Hostler' ? 'Hostler' : 'Day scholar', dob: app.dob, gender: app.gender, aadhaar_last4: app.aadhaar_last4,
+      residential: app.residential === 'Hostler' ? 'Hostler' : 'Day scholar', dob: app.dob, gender: app.gender, aadhaar_no: app.aadhaar_no || null,
       apaar_id: app.apaar_id || null, pen: app.pen || null, location: app.location || null, state: app.state || null, status: 'active',
       profile: { parents_health: app.family.parents_health, siblings: app.family.siblings, sibling_ids: app.family.sibling_ids, guardian_behaviour: app.family.guardian_behaviour },
     }).select().single());
     const gs = app.guardians.filter((g) => g.name);
-    if (gs.length) must(await db.from('guardians').insert(gs.map((g, i) => ({ student_id: student.id, relation: g.relation || 'Guardian', name: g.name, occupation: g.occupation || '', phone: g.phone || '', email: g.email || '', position: i + 1, is_primary: !!g.primary }))));
+    if (gs.length) must(await db.from('guardians').insert(gs.map((g, i) => ({ student_id: student.id, relation: g.relation || 'Guardian', name: g.name, occupation: g.occupation || '', phone: g.phone || '', email: g.email || '', position: i + 1, primary_phone: !!g.primary_phone, primary_email: !!g.primary_email && !!g.email }))));
     if (app.health_issues) must(await db.from('health_years').upsert({ student_id: student.id, year_id: year.id, health_issues: app.health_issues }, { onConflict: 'student_id,year_id' }));
     const picked = [...classBox.querySelectorAll('input:checked')].map((x) => ({ class_id: +x.value, student_id: student.id }));
     if (picked.length) must(await db.from('enrollments').upsert(picked, { onConflict: 'class_id,student_id', ignoreDuplicates: true }));

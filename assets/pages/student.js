@@ -2,7 +2,7 @@
 // its own Edit button; any staff member can add health notes.
 import { db, must, h, mount, param, subjectResult, getGrades, getYears, getCurrentYear, getClasses, getSettings, fmtDate, fmtDMY, ageOn, n1, pct, letterGrade, btn,
   stat, tag, tabs, backLink, emptyState, studentName, input, select, field, textarea, checkbox, modal, toast, uploadDocument,
-  openDocument, confirmBox } from '../lib.js';
+  openDocument, confirmBox, readAadhaar, fmtAadhaar } from '../lib.js';
 import { classSidebar } from './common.js';
 import { siblingPicker } from './assign.js';
 
@@ -200,14 +200,15 @@ export async function render(ctx) {
     section('personal', 'Personal & Identity', editBtn(() => editPersonal(s, grades, reload)), kv([
       ['Admission No.', s.admission_no], ['Class', s.grade?.name], ['Roll No.', s.roll_no], ['Repeating class', s.repeating ? 'Yes' : 'No'],
       ['Date of birth', fmtDMY(s.dob)], ['Age', ageOn(s.dob)], ['Residential status', s.residential],
-      ['Aadhaar No.', s.aadhaar_last4 ? `XXXX XXXX ${s.aadhaar_last4}` : ''], ['APAAR ID', s.apaar_id], ['PEN No.', s.pen],
+      ['Aadhaar No.', fmtAadhaar(s.aadhaar_no, !admin)], ['APAAR ID', s.apaar_id], ['PEN No.', s.pen],
       ['Gender', s.gender], ['Location', s.location], ['State', s.state]])),
 
     section('family', 'Family & Contact', editBtn(() => editFamily(ctx, s, guardians, profile, siblings, reload)),
-      simpleTable(['Relation', 'Name', 'Occupation', 'Contact'], guardians.map((g) => [g.relation, g.name || '—', g.occupation || '—',
-        h('span', { class: 'row', style: 'gap: 8px' }, g.phone || '—', g.is_primary ? tag('★ Primary contact', 'warn') : null)])),
+      simpleTable(['Relation', 'Name', 'Occupation', 'Phone', 'Email'], guardians.map((g) => [g.relation, g.name || '—', g.occupation || '—',
+        h('span', { class: 'row', style: 'gap: 8px' }, g.phone || '—', g.primary_phone ? tag('★ Primary', 'warn') : null),
+        h('span', { class: 'row', style: 'gap: 8px' }, g.email || '—', g.primary_email ? tag('★ Primary', 'warn') : null)])),
       kv([['Parents’ health status', profile.parents_health], ['Siblings', profile.siblings], ['Sibling at school', siblingLinks],
-        ['Parent / guardian behaviour', profile.guardian_behaviour]])),
+        ['Parent / guardian notes', profile.guardian_behaviour]])),
 
     section('health', 'Health', [btn('See Health Notes', { small: true, onclick: seeNotes }), editBtn(() => editHealth(s, year, thisYearHealth, healthNow, reload))],
       h('div', { class: 'muted small' }, `This academic year (${year.name})`),
@@ -258,17 +259,18 @@ function editPersonal(s, grades, reload) {
     admission_no: input({ value: s.admission_no || '' }), grade_id: select(grades.map((g) => [g.id, g.name]), s.grade_id),
     roll_no: input({ type: 'number', value: s.roll_no ?? '' }), residential: select(['Hostler', 'Day scholar'], s.residential || 'Day scholar'),
     dob: input({ type: 'date', value: s.dob || '' }), gender: select(['', 'Female', 'Male', 'Other'], s.gender || ''),
-    aadhaar_last4: input({ value: s.aadhaar_last4 || '', maxlength: 4, placeholder: 'Last 4 digits only' }), apaar_id: input({ value: s.apaar_id || '' }),
+    aadhaar_no: input({ value: fmtAadhaar(s.aadhaar_no), maxlength: 14, inputmode: 'numeric', placeholder: '12-digit number' }), apaar_id: input({ value: s.apaar_id || '' }),
     pen: input({ value: s.pen || '' }), location: input({ value: s.location || '' }), state: input({ value: s.state || '' }),
   };
   const repeating = checkbox('Repeating this class', s.repeating);
   const labels = { full_name: 'Full name', display_name: 'Short name', admission_no: 'Admission no.', grade_id: 'Class', roll_no: 'Roll no.', residential: 'Residential',
-    dob: 'Date of birth', gender: 'Gender', aadhaar_last4: 'Aadhaar (last 4)', apaar_id: 'APAAR ID', pen: 'PEN', location: 'Location', state: 'State' };
+    dob: 'Date of birth', gender: 'Gender', aadhaar_no: 'Aadhaar no.', apaar_id: 'APAAR ID', pen: 'PEN', location: 'Location', state: 'State' };
   modal('Edit personal & identity', h('div', { class: 'scroll' }, h('div', { class: 'grid2' }, Object.entries(f).map(([k, el]) => field(labels[k], el))), repeating), {
     onSubmit: async () => {
       if (!f.full_name.value.trim()) throw new Error('Full name is required.');
       const patch = Object.fromEntries(Object.entries(f).map(([k, el]) => [k, el.value === '' ? null : el.value]));
       patch.grade_id = Number(patch.grade_id); patch.roll_no = patch.roll_no === null ? null : Number(patch.roll_no);
+      patch.aadhaar_no = readAadhaar(f.aadhaar_no.value) || null;
       patch.repeating = repeating.querySelector('input').checked;
       must(await db.from('students').update(patch).eq('id', s.id));
       toast('Saved'); reload();
@@ -279,34 +281,38 @@ function editPersonal(s, grades, reload) {
 // Guardians, family details and siblings at school in one form.
 async function editFamily(ctx, s, guardians, profile, siblings, reload) {
   const others = must(await db.from('students').select('id, full_name, admission_no, grade:grade_levels(name)').eq('status', 'active').neq('id', s.id).order('full_name'));
-  const draft = guardians.map((g) => [g.relation, g.name, g.occupation, g.phone]);
+  const draft = guardians.map((g) => [g.relation, g.name, g.occupation, g.phone, g.email]);
   const text = (v, long) => (long ? textarea({ value: v ?? '', rows: 2 }) : input({ value: v ?? '' }));
-  const parents = text(profile.parents_health), sibs = text(profile.siblings), behaviour = text(profile.guardian_behaviour, true);
+  const parents = text(profile.parents_health), sibs = text(profile.siblings), notes = text(profile.guardian_behaviour, true);
   const sibs2 = siblingPicker(others, siblings.map((x) => x.id));
-  // Primary contact: picked from the guardians as typed.
-  let primaryIdx = Math.max(0, guardians.findIndex((g) => g.is_primary));
-  const primary = select([], '');
-  const fillPrimary = () => {
-    const opts = draft.map((r, i) => [i, [r[0], r[1]].filter(Boolean).join(' · ') || `Row ${i + 1}`]);
-    mount(primary, opts.map(([v, l]) => h('option', { value: v }, l)));
-    primary.value = String(Math.min(primaryIdx, Math.max(0, draft.length - 1)));
+  // Primary phone and primary email, each picked from the guardians as typed (they can be different people).
+  const primaryPicker = (flag) => {
+    let idx = Math.max(0, guardians.findIndex((g) => g[flag]));
+    const el = select([], '');
+    const fill = () => {
+      mount(el, draft.map((r, i) => h('option', { value: i }, [r[0], r[1]].filter(Boolean).join(' · ') || `Row ${i + 1}`)));
+      el.value = String(Math.min(idx, Math.max(0, draft.length - 1)));
+    };
+    el.addEventListener('focus', fill);
+    el.addEventListener('change', () => { idx = +el.value; });
+    fill();
+    return { el, get index() { return idx; } };
   };
-  primary.addEventListener('focus', fillPrimary);
-  primary.addEventListener('change', () => { primaryIdx = +primary.value; });
-  fillPrimary();
+  const pPhone = primaryPicker('primary_phone'), pEmail = primaryPicker('primary_email');
   modal('Edit family & contact', h('div', { class: 'scroll stack' },
-    h('b', {}, 'Parents & guardians'), rowsField(['Relation', 'Name', 'Occupation', 'Contact'], draft),
-    field('Primary contact', primary),
-    h('div', { class: 'grid2' }, field('Parents’ health status', parents), field('Siblings', sibs),
-      field('Parent / guardian behaviour', behaviour, { style: 'grid-column: span 2' })),
+    h('b', {}, 'Parents & guardians'), rowsField(['Relation', 'Name', 'Occupation', 'Phone', 'Email'], draft),
+    h('div', { class: 'grid2' }, field('Primary phone', pPhone.el), field('Primary email', pEmail.el),
+      field('Parents’ health status', parents), field('Siblings', sibs),
+      field('Parent / guardian notes', notes, { style: 'grid-column: span 2' })),
     field('Sibling at school', sibs2)), {
     onSubmit: async () => {
       const keep = draft.map((r, i) => [r, i]).filter(([r]) => r.some((x) => String(x ?? '').trim()));
-      const rows = keep.map(([r]) => r);
-      const primaryRow = keep.findIndex(([, i]) => i === primaryIdx);
+      const rowOf = (idx) => Math.max(0, keep.findIndex(([, i]) => i === idx));
+      const phoneRow = rowOf(pPhone.index), emailRow = rowOf(pEmail.index);
       must(await db.from('guardians').delete().eq('student_id', s.id));
-      if (rows.length) must(await db.from('guardians').insert(rows.map((r, i) => ({ student_id: s.id, relation: r[0] || 'Guardian', name: r[1] || '', occupation: r[2] || '', phone: r[3] || '', position: i + 1, is_primary: i === Math.max(0, primaryRow) }))));
-      must(await db.from('students').update({ profile: { ...profile, parents_health: parents.value, siblings: sibs.value, guardian_behaviour: behaviour.value, sibling_ids: sibs2.picked } }).eq('id', s.id));
+      if (keep.length) must(await db.from('guardians').insert(keep.map(([r], i) => ({ student_id: s.id, relation: r[0] || 'Guardian', name: r[1] || '', occupation: r[2] || '',
+        phone: r[3] || '', email: r[4] || '', position: i + 1, primary_phone: i === phoneRow, primary_email: i === emailRow && !!String(r[4] || '').trim() }))));
+      must(await db.from('students').update({ profile: { ...profile, parents_health: parents.value, siblings: sibs.value, guardian_behaviour: notes.value, sibling_ids: sibs2.picked } }).eq('id', s.id));
       toast('Saved'); reload();
     },
   });

@@ -418,6 +418,15 @@ export function subjectResult(cls, evals, marks, settings, studentId) {
   return { ev, cells, raw: entered ? raw : null, max, pct: p };
 }
 
+// Aadhaar numbers: stored as 12 digits, shown in groups of four.
+export function readAadhaar(text) {
+  const d = String(text || '').replace(/\D/g, '');
+  if (d && d.length !== 12) throw new Error('Aadhaar number must be 12 digits.');
+  return d;
+}
+export const fmtAadhaar = (d, masked = false) => (!d ? '' : d.length !== 12 ? d
+  : masked ? `XXXX XXXX ${d.slice(8)}` : `${d.slice(0, 4)} ${d.slice(4, 8)} ${d.slice(8)}`);
+
 // Letter grade for a percentage (CBSE-style bands).
 const GRADE_BANDS = [[91, 'A1'], [81, 'A2'], [71, 'B1'], [61, 'B2'], [51, 'C1'], [41, 'C2'], [33, 'D'], [0, 'E']];
 export const letterGrade = (p) => (p === null || p === undefined || Number.isNaN(p) ? '—' : GRADE_BANDS.find(([min]) => p >= min)[1]);
