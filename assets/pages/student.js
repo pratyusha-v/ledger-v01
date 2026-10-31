@@ -41,7 +41,7 @@ export async function render(ctx) {
   const id = Number(param('id'));
   const s = id ? must(await db.from('students').select('*, grade:grade_levels(id, name)').eq('id', id).maybeSingle()) : null;
   await classSidebar(ctx, {});
-  if (!s) { mount(ctx.main, emptyState('Student not found', 'Search for the student by name or admission number.', btn('Student Search', { href: ctx.link('SearchStart') }), 'search')); return; }
+  if (!s) { mount(ctx.main, emptyState('Student not found', 'Search for the student by name or admission number.', btn(ctx.isAdmin ? 'Current Students' : 'Student Search', { href: ctx.link('SearchStart') }), 'search')); return; }
 
   const year = await getCurrentYear();
   const [guardians, health, docs, enrol, att, grades] = await Promise.all([
@@ -116,7 +116,7 @@ export async function render(ctx) {
         } })) : null)];
 
   mount(ctx.main, h('div', { class: 'stack' },
-    backLink('Back to student search', ctx.link('SearchStart')),
+    backLink(ctx.isAdmin ? 'Back to Current Students' : 'Back to student search', ctx.link('SearchStart')),
     h('div', { class: 'spread', style: 'align-items: flex-start' },
       h('div', { class: 'row', style: 'align-items: flex-start; gap: 18px' },
         h('div', { style: 'width: 96px; height: 112px; border-radius: 12px; background: var(--mauve-light); display: flex; align-items: center; justify-content: center; color: var(--mauve); font-size: 36px; font-weight: 900', 'aria-label': 'Student photo' }, studentName(s).charAt(0)),

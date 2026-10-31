@@ -1,7 +1,7 @@
 // Class gradebook: students × evaluations with totals and weighted marks.
 // Editable for the class's teacher and for admins; read-only for everyone else.
 import {
-  db, must, h, mount, param, go, getClass, getCurrentYear, getClasses, getRoster, getSettings, getStaff, getGrades,
+  db, must, h, mount, param, go, redirect, getClass, getCurrentYear, getClasses, getRoster, getSettings, getStaff, getGrades,
   className, gradebook, n1, pct, fmtDate, stat, btn, pageHead, emptyState, studentName, modal, select, field, checkbox, toast,
 } from '../lib.js';
 import { classSidebar, classTabs, searchBack } from './common.js';
@@ -109,12 +109,12 @@ export async function render(ctx) {
     return;
   }
   const cls = await getClass(id);
-  if (!cls) { mount(ctx.main, emptyState('Class not found', 'It may have been removed.', btn('All Classes', { href: ctx.link('AllClassesStart') }))); return; }
+  if (!cls) { mount(ctx.main, emptyState('Class not found', 'It may have been removed.', btn(ctx.isAdmin ? 'Current Classes' : 'All Classes', { href: ctx.link('AllClassesStart') }))); return; }
 
   const own = cls.teacher_id === ctx.me.id;
   if (!ctx.isAdmin) {
-    if (ctx.page === 'Main' && !own) return go(`AllClasses.html?class=${id}`);
-    if (ctx.page === 'AllClasses' && own) return go(`Main.html?class=${id}`);
+    if (ctx.page === 'Main' && !own) return redirect(`AllClasses.html?class=${id}`);
+    if (ctx.page === 'AllClasses' && own) return redirect(`Main.html?class=${id}`);
   }
   const editable = (ctx.isAdmin || own) && !cls.year?.closed;
   const browse = !ctx.isAdmin && !own;

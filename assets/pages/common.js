@@ -1,14 +1,14 @@
 // Pieces shared by several pages: class side columns and class headers.
 import { h, mount, param, backLink, getCurrentYear, getClasses, getGrades, getStaff, getSubjects, select, field, className } from '../lib.js';
 
-// A teacher who opened a class from All Classes sees it full width, with a way back to their search.
+// A class opened from the All Classes list shows full width, with a way back to the search.
 export const SEARCH_KEY = 'ledger-class-search';
-export const fromSearch = (ctx) => !ctx.isAdmin && param('from') === 'search';
+export const fromSearch = () => param('from') === 'search';
 export function searchBack(ctx) {
   if (!fromSearch(ctx)) return null;
   let q = '';
   try { q = sessionStorage.getItem(SEARCH_KEY) || ''; } catch { /* storage off */ }
-  return backLink('Back to search', 'AllClassesStart.html' + q);
+  return backLink('Back to search', ctx.link('AllClassesStart') + q);
 }
 
 // Teacher side column: homeroom first, then own classes; or every class when browsing.

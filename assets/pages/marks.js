@@ -1,5 +1,5 @@
 // Add a test, or edit a test's details and marks. Stats update as marks are typed.
-import { db, must, h, mount, param, go, guardUnsaved, getClass, getRoster, className, testStats, n1, pct, isoDate, btn, card,
+import { db, must, h, mount, param, go, redirect, guardUnsaved, getClass, getRoster, className, testStats, n1, pct, isoDate, btn, card,
   pageHead, backLink, emptyState, studentName, select, field, input, textarea, tag, toast, busy, confirmBox } from '../lib.js';
 import { classSidebar } from './common.js';
 import { SORTS, sortRows, statsCard } from './test.js';
@@ -14,7 +14,7 @@ export async function render(ctx) {
 
   const cls = await getClass(classId);
   const editable = (ctx.isAdmin || cls.teacher_id === ctx.me.id) && !cls.year?.closed;
-  if (!editable) return go(test ? ctx.link('TestDetail', { test: test.id }) : ctx.link('AllClasses', { class: classId }));
+  if (!editable) return redirect(test ? ctx.link('TestDetail', { test: test.id }) : ctx.link('AllClasses', { class: classId }));
   await classSidebar(ctx, { classId });
 
   const roster = await getRoster(classId);

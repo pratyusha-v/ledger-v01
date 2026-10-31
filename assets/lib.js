@@ -17,6 +17,11 @@ export const params = new URLSearchParams(location.search);
 export const param = (k) => params.get(k);
 export const pageName = () => (location.pathname.split('/').pop() || 'index.html').replace(/\.html$/, '') || 'index';
 export const go = (href) => { location.href = href; };
+// Send someone on to the right page without leaving this one in the back trail.
+export const redirect = (href) => {
+  try { const t = JSON.parse(sessionStorage.getItem('ledger-trail')) || []; t.pop(); sessionStorage.setItem('ledger-trail', JSON.stringify(t)); } catch { /* storage off */ }
+  location.replace(href);
+};
 
 // Pages that exist in a teacher and an admin version.
 const SHARED = ['Dashboard', 'Main', 'TestDetail', 'Attendance', 'Marks', 'AddTest', 'AddExtraTest', 'NewTest', 'AllClassesStart',
@@ -177,7 +182,49 @@ export function pageHead(title, sub, actions = []) {
     h('div', {}, h('h1', {}, title), sub && h('p', {}, sub)),
     actions.length ? h('div', { class: 'row', style: 'flex-shrink: 0' }, actions) : null);
 }
-export const backLink = (label, href) => h('a', { class: 'back', href }, icon('back', 14), label);
+// Back links return to the page the person actually came from. Every page load
+// is recorded in a per-tab trail; filter or class changes on the same page
+// replace its entry, and form pages are skipped so a save never leads back
+// into the form. Without a trail (a fresh tab), the link's own target is used.
+const TRAIL = 'ledger-trail';
+const FORMS = ['AddTest', 'AddExtraTest', 'Marks', 'NewApplication', 'NewTransfer', 'Login', 'ForgotPassword'];
+const isForm = (path) => FORMS.includes(path.replace(/^Admin/, '').replace(/\.html$/, ''));
+const readTrail = () => { try { return JSON.parse(sessionStorage.getItem(TRAIL)) || []; } catch { return []; } };
+const here = () => (location.pathname.split('/').pop() || 'index.html') + location.search;
+export function recordVisit() {
+  const url = here(), path = url.split('?')[0];
+  const title = document.title.replace(/^Ledger( Admin)? – /, '').replace(/\s*\(.*\)$/, '');
+  const trail = readTrail();
+  let prev = trail.length - 2;
+  while (prev >= 0 && isForm(trail[prev].url.split('?')[0])) prev--;
+  if (prev >= 0 && trail[prev].url === url) trail.length = prev + 1; // went back (or saved a form and returned)
+  else if (trail.at(-1)?.url.split('?')[0] === path) trail[trail.length - 1] = { url, title };
+  else trail.push({ url, title });
+  try { sessionStorage.setItem(TRAIL, JSON.stringify(trail.slice(-30))); } catch { /* storage off */ }
+}
+// Pages that update their filters in place (history.replaceState) keep the trail's entry current.
+const replaceState = history.replaceState.bind(history);
+history.replaceState = (...args) => {
+  replaceState(...args);
+  const trail = readTrail();
+  if (trail.length) {
+    trail[trail.length - 1].url = here();
+    try { sessionStorage.setItem(TRAIL, JSON.stringify(trail)); } catch { /* storage off */ }
+  }
+};
+function previousPage() {
+  const trail = readTrail();
+  const path = here().split('?')[0];
+  for (let i = trail.length - 2; i >= 0; i--) {
+    const p = trail[i].url.split('?')[0];
+    if (p !== path && !isForm(p)) return trail[i];
+  }
+  return null;
+}
+export const backLink = (label, href) => {
+  const prev = previousPage();
+  return h('a', { class: 'back', href: prev ? prev.url : href }, icon('back', 14), prev ? `Back to ${prev.title}` : label);
+};
 export const stat = (value, label) => h('div', { class: 'stat' }, h('b', {}, value), h('span', {}, label));
 export const card = (title, ...body) => h('section', { class: 'card' }, title && h('div', { class: 'sh' }, title), ...body);
 export function emptyState(title, text, action, iconName = 'doc') {

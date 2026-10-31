@@ -1,6 +1,6 @@
 // Entry point for every Ledger page: checks the session, fills the header,
 // then hands the page's <main> (and side column) to that page's module.
-import { db, currentStaff, pageName, counterpart, makeLinker, signOut, initials, h, mount, errorBox, go } from './lib.js';
+import { db, currentStaff, recordVisit, pageName, counterpart, makeLinker, signOut, initials, h, mount, errorBox, go, redirect } from './lib.js';
 
 const MODULES = {
   Dashboard: 'dashboard', AdminDashboard: 'dashboard',
@@ -56,6 +56,7 @@ function noAccess(main, email) {
 
 async function start() {
   const page = pageName();
+  recordVisit();
   const main = document.querySelector('main');
   const aside = document.querySelector('aside');
   const mod = MODULES[page];
@@ -72,7 +73,7 @@ async function start() {
 
   const isAdmin = me.role === 'admin';
   const other = counterpart(page, isAdmin);
-  if (other && other !== page) { go(other + '.html' + location.search); return; }
+  if (other && other !== page) { redirect(other + '.html' + location.search); return; }
 
   fillHeader(me);
   const ctx = { page, me, isAdmin, db, main, aside, link: makeLinker(isAdmin) };
