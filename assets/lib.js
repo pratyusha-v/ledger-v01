@@ -397,6 +397,27 @@ export function gradebook(evals, students, marks, settings) {
   return { rows, totalMax, totalWeight, avg, hi, lo, passed, scoredCount: scored.length, passMark };
 }
 
+// One student's marks in a class, with the subject percentage to date (weighted,
+// following School Settings for absences) and its letter grade.
+export function subjectResult(cls, evals, marks, settings, studentId) {
+  const ev = evals.filter((e) => e.class_id === cls.id);
+  const mk = new Map(marks.filter((m) => !studentId || m.student_id === studentId).map((m) => [m.evaluation_id, m]));
+  const excluded = settings?.absent_counts === 'excluded';
+  let raw = 0, max = 0, adj = 0, w = 0, entered = 0;
+  const cells = ev.map((e) => {
+    const m = mk.get(e.id);
+    if (!m || (!m.absent && m.marks === null)) return { e, state: 'none' };
+    entered++;
+    if (m.absent) { if (!excluded) { w += Number(e.weight || 0); max += Number(e.max_marks); } return { e, state: 'absent' }; }
+    const v = Number(m.marks);
+    raw += v; max += Number(e.max_marks);
+    adj += (v / Number(e.max_marks)) * Number(e.weight || 0); w += Number(e.weight || 0);
+    return { e, state: 'mark', value: v };
+  });
+  const p = !entered ? null : w ? (adj / w) * 100 : max ? (raw / max) * 100 : null;
+  return { ev, cells, raw: entered ? raw : null, max, pct: p };
+}
+
 // Letter grade for a percentage (CBSE-style bands).
 const GRADE_BANDS = [[91, 'A1'], [81, 'A2'], [71, 'B1'], [61, 'B2'], [51, 'C1'], [41, 'C2'], [33, 'D'], [0, 'E']];
 export const letterGrade = (p) => (p === null || p === undefined || Number.isNaN(p) ? '—' : GRADE_BANDS.find(([min]) => p >= min)[1]);

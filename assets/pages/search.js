@@ -1,15 +1,15 @@
 // Student search with filters; results link to Student Profile.
-import { db, must, h, mount, params, go, redirect, getGrades, getCurrentYear, pct, btn, table, pageHead, emptyState, studentName,
-  input, select, field, checkbox, downloadCSV } from '../lib.js';
+import { db, must, h, mount, params, go, redirect, getGrades, getSubjects, getClasses, getSettings, getCurrentYear, subjectResult, letterGrade,
+  pct, btn, table, pageHead, emptyState, studentName, input, select, field, checkbox, downloadCSV } from '../lib.js';
 
 const FIELDS = [['all', 'All fields'], ['name', 'Name'], ['adm', 'Admission no.'], ['apaar', 'APAAR ID'], ['pen', 'PEN']];
 
 export async function render(ctx) {
-  const grades = await getGrades();
+  const [grades, subjects] = await Promise.all([getGrades(), getSubjects()]);
   const p = Object.fromEntries(params);
   const res = params.getAll('res');
   const flags = params.getAll('flag');
-  const filtered = ['q', 'grade', 'att', 'promo'].some((k) => p[k]) || res.length || flags.length || p.former;
+  const filtered = ['q', 'grade', 'subject', 'att', 'promo'].some((k) => p[k]) || res.length || flags.length || p.former;
   // Admins see every current student until they search or filter.
   const hasQuery = filtered || ctx.isAdmin;
   const title = ctx.isAdmin ? 'Current Students' : 'Student Search';
@@ -23,7 +23,9 @@ export async function render(ctx) {
       p.q ? h('input', { type: 'hidden', name: 'q', value: p.q }) : null,
       p.in ? h('input', { type: 'hidden', name: 'in', value: p.in }) : null,
       h('div', { class: 'spread', style: 'align-items: baseline' }, h('h2', { style: 'margin: 0; font-size: 15px' }, 'Filters'), h('a', { href: ctx.link('SearchStart'), style: 'font-size: 13px' }, 'Clear all')),
-      field('Class', select([['', 'All classes'], ...grades.map((g) => [g.id, g.name])], p.grade || '', { name: 'grade' })),
+      ctx.isAdmin ? field('Grade', select([['', 'All grades'], ...grades.map((g) => [g.id, g.name])], p.grade || '', { name: 'grade' }))
+        : field('Class', select([['', 'All classes'], ...grades.map((g) => [g.id, g.name])], p.grade || '', { name: 'grade' })),
+      ctx.isAdmin ? field('Subject', select([['', 'All subjects'], ...subjects.map((x) => [x.id, x.name])], p.subject || '', { name: 'subject' })) : null,
       h('fieldset', { class: 'fl', style: 'border: none; margin: 0; padding: 0' }, h('legend', { style: 'padding: 0 0 6px' }, 'Residential status'),
         checkbox('Hostler', res.includes('Hostler'), { name: 'res', value: 'Hostler' }), checkbox('Day scholar', res.includes('Day scholar'), { name: 'res', value: 'Day scholar' })),
       field('Attendance', select([['', 'Any'], ['90', 'Below 90%'], ['75', 'Below 75%']], p.att || '', { name: 'att' })),
@@ -70,6 +72,26 @@ export async function render(ctx) {
     flags.includes('docs') ? db.from('student_documents').select('student_id').eq('submitted', false).in('student_id', ids).then(must) : [],
     flags.includes('health') ? db.from('health_years').select('student_id, health_issues').eq('year_id', year.id).in('student_id', ids).then(must) : [],
   ]) : [[], [], []];
+  // Admins: the subject filter and each student's total percentage to date
+  // (the average of their academic subjects, as on the student page).
+  const total = new Map();
+  if (ctx.isAdmin && ids.length) {
+    const [classes, settings] = await Promise.all([getClasses(year.id), getSettings()]);
+    const enrol = classes.length ? must(await db.from('enrollments').select('class_id, student_id').in('class_id', classes.map((c) => c.id)).in('student_id', ids)) : [];
+    if (p.subject) {
+      const inSubject = new Set(enrol.filter((e) => classes.find((c) => c.id === e.class_id)?.subject_id === +p.subject).map((e) => e.student_id));
+      rows = rows.filter((r) => inSubject.has(r.id));
+    }
+    const academic = classes.filter((c) => c.subject.academic !== false);
+    const evals = academic.length ? must(await db.from('evaluations').select('id, class_id, max_marks, weight').in('class_id', academic.map((c) => c.id))) : [];
+    const marks = evals.length ? must(await db.from('marks').select('evaluation_id, student_id, marks, absent').in('evaluation_id', evals.map((e) => e.id)).in('student_id', ids)) : [];
+    rows.forEach((r) => {
+      const pcts = academic.filter((c) => enrol.some((e) => e.class_id === c.id && e.student_id === r.id))
+        .map((c) => subjectResult(c, evals, marks, settings, r.id).pct).filter((x) => x !== null);
+      total.set(r.id, pcts.length ? pcts.reduce((a, x) => a + x, 0) / pcts.length : null);
+    });
+  }
+  const totalText = (r) => (total.get(r.id) === null || total.get(r.id) === undefined ? '—' : `${pct(total.get(r.id))} · ${letterGrade(total.get(r.id))}`);
   const attPct = new Map();
   ids.forEach((id) => { const a = att.filter((x) => x.student_id === id); attPct.set(id, a.length ? (a.filter((x) => x.status !== 'A').length / a.length) * 100 : null); });
 
@@ -82,16 +104,21 @@ export async function render(ctx) {
   }
 
   const sort = p.sort || 'name';
+  const gradePos = (r) => grades.find((g) => g.id === r.grade_id)?.position ?? 999;
   rows.sort((a, b) => sort === 'adm' ? String(a.admission_no).localeCompare(String(b.admission_no), undefined, { numeric: true })
+    : sort === 'roll' ? gradePos(a) - gradePos(b) || (a.roll_no ?? 999) - (b.roll_no ?? 999)
+    : sort === 'total' ? (total.get(b.id) ?? -1) - (total.get(a.id) ?? -1)
     : sort === 'att' ? (attPct.get(a.id) ?? 101) - (attPct.get(b.id) ?? 101) : a.full_name.localeCompare(b.full_name));
-  const chips = [p.q && `“${p.q}”`, p.grade && `Class: ${grades.find((g) => g.id === +p.grade)?.name}`, ...res, p.att && `Attendance below ${p.att}%`,
+  const chips = [p.q && `“${p.q}”`, p.grade && `${ctx.isAdmin ? 'Grade' : 'Class'}: ${grades.find((g) => g.id === +p.grade)?.name}`,
+    p.subject && `Subject: ${subjects.find((x) => x.id === +p.subject)?.name}`, ...res, p.att && `Attendance below ${p.att}%`,
     p.promo && (p.promo === 'Promoted' ? 'Promoted' : 'Not decided'), flags.includes('docs') && 'Pending documents', flags.includes('health') && 'Health notes', p.former && 'Including former'].filter(Boolean);
   // Export the list as filtered and sorted on screen; the file name says which filters were on.
   const slug = (x) => String(x).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  exportRows = () => downloadCSV(['current-students', ...chips.map(slug)].filter(Boolean).join('_').slice(0, 120) + '.csv', [['Adm. No.', 'Student', 'Class', 'Roll No.', 'Residential', 'Attendance', 'Status'],
-    ...rows.map((r) => [r.admission_no, r.full_name, r.grade?.name, r.roll_no, r.residential, attPct.get(r.id) === null ? '' : pct(attPct.get(r.id)), r.status])]);
+  exportRows = () => downloadCSV(['current-students', ...chips.map(slug)].filter(Boolean).join('_').slice(0, 120) + '.csv', [['Adm. No.', 'Student', 'Grade', 'Roll No.', 'Residential', 'Attendance', 'Total %', 'Grade (letter)', 'Status'],
+    ...rows.map((r) => [r.admission_no, r.full_name, r.grade?.name, r.roll_no, r.residential, attPct.get(r.id) === null ? '' : pct(attPct.get(r.id)),
+      total.get(r.id) == null ? '' : pct(total.get(r.id)), total.get(r.id) == null ? '' : letterGrade(total.get(r.id)), r.status])]);
 
-  const sortSel = select([['name', 'Name (A–Z)'], ['adm', 'Adm. No.'], ['att', 'Attendance']], sort, {
+  const sortSel = select([['name', 'Name (A–Z)'], ['adm', 'Adm. No.'], ...(ctx.isAdmin ? [['roll', 'Roll No.'], ['total', 'Total %, high to low']] : []), ['att', 'Attendance']], sort, {
     style: 'width: auto; height: 32px', onchange: (e) => { const u = new URLSearchParams(location.search); u.set('sort', e.target.value); go(resultsPage + '?' + u); },
   });
 
@@ -103,10 +130,11 @@ export async function render(ctx) {
     table(ctx.isAdmin ? [
       { label: 'Adm. No.', th: true, render: (r) => r.admission_no || '—' },
       { label: 'Student', render: (r) => h('a', { href: ctx.link('Student', { id: r.id }) }, r.full_name) },
-      { label: 'Class', render: (r) => r.grade?.name || '—' },
+      { label: 'Grade', render: (r) => r.grade?.name || '—' },
       { label: 'Roll No.', cls: 'num', render: (r) => r.roll_no ?? '—' },
       { label: 'Residential', render: (r) => r.residential || '—' },
       { label: 'Attendance', cls: 'num', render: (r) => pct(attPct.get(r.id)) },
+      { label: 'Total %', cls: 'num', render: totalText },
       ...(p.former ? [{ label: 'Status', render: (r) => r.status }] : []),
     ] : [
       { label: 'Student', th: true, render: (r) => h('a', { href: ctx.link('Student', { id: r.id }) }, r.full_name) },

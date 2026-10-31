@@ -1,6 +1,6 @@
 // Student Profile: everything about one student. Admins edit each section with
 // its own Edit button; any staff member can add health notes.
-import { db, must, h, mount, param, getGrades, getYears, getCurrentYear, getClasses, getSettings, fmtDate, fmtDMY, ageOn, n1, pct, letterGrade, btn,
+import { db, must, h, mount, param, subjectResult, getGrades, getYears, getCurrentYear, getClasses, getSettings, fmtDate, fmtDMY, ageOn, n1, pct, letterGrade, btn,
   stat, tag, tabs, backLink, emptyState, studentName, input, select, field, textarea, checkbox, modal, toast, uploadDocument,
   openDocument, confirmBox } from '../lib.js';
 import { classSidebar } from './common.js';
@@ -29,27 +29,6 @@ function rowsField(columns, draft) {
   return list;
 }
 const filled = (rows) => rows.filter((r) => r.some((x) => String(x ?? '').trim()));
-
-// One student's marks in a class, with the subject percentage to date (weighted,
-// following School Settings for absences) and its letter grade.
-function classResult(cls, evals, marks, settings) {
-  const ev = evals.filter((e) => e.class_id === cls.id);
-  const mk = new Map(marks.map((m) => [m.evaluation_id, m]));
-  const excluded = settings?.absent_counts === 'excluded';
-  let raw = 0, max = 0, adj = 0, w = 0, entered = 0;
-  const cells = ev.map((e) => {
-    const m = mk.get(e.id);
-    if (!m || (!m.absent && m.marks === null)) return { e, state: 'none' };
-    entered++;
-    if (m.absent) { if (!excluded) { w += Number(e.weight || 0); max += Number(e.max_marks); } return { e, state: 'absent' }; }
-    const v = Number(m.marks);
-    raw += v; max += Number(e.max_marks);
-    adj += (v / Number(e.max_marks)) * Number(e.weight || 0); w += Number(e.weight || 0);
-    return { e, state: 'mark', value: v };
-  });
-  const p = !entered ? null : w ? (adj / w) * 100 : max ? (raw / max) * 100 : null;
-  return { ev, cells, raw: entered ? raw : null, max, pct: p };
-}
 
 // The gradebook layout for one student: a column per test, then total, % and grade.
 function marksTable(r, testHref) {
@@ -106,7 +85,7 @@ export async function render(ctx) {
   // Subjects (academic classes) and the overall percentage to date.
   const academic = classes.filter((c) => c.subject.academic !== false);
   const extras = classes.filter((c) => c.subject.academic === false);
-  const results = new Map(classes.map((c) => [c.id, classResult(c, evals, marks, settings)]));
+  const results = new Map(classes.map((c) => [c.id, subjectResult(c, evals, marks, settings)]));
   const scored = academic.map((c) => results.get(c.id).pct).filter((x) => x !== null);
   const overall = scored.length ? scored.reduce((a, x) => a + x, 0) / scored.length : null;
 
