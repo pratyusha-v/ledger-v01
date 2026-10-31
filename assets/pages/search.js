@@ -39,7 +39,7 @@ export async function render(ctx) {
     select(FIELDS, p.in || 'all', { name: 'in', style: 'width: 150px', 'aria-label': 'Search in' }),
     input({ name: 'q', value: p.q || '', placeholder: 'Search by name, admission no., APAAR ID or PEN', 'aria-label': 'Search students', style: 'flex: 1' }),
     btn('Search', { type: 'submit', primary: true, icon: 'search' }));
-  const actions = ctx.isAdmin ? [btn('Export', { icon: 'download', onclick: () => exportRows() })] : [];
+  const actions = ctx.isAdmin ? [btn('Export View', { icon: 'download', onclick: () => exportRows() })] : [];
   let exportRows = () => {};
 
   if (!hasQuery) {
@@ -51,7 +51,7 @@ export async function render(ctx) {
     return;
   }
 
-  let q = db.from('students').select('id, full_name, display_name, admission_no, apaar_id, pen, residential, status, grade_id, profile, grade:grade_levels(name)');
+  let q = db.from('students').select('id, full_name, display_name, admission_no, roll_no, apaar_id, pen, residential, status, grade_id, profile, grade:grade_levels(name)');
   if (!p.former) q = q.eq('status', 'active');
   if (p.grade) q = q.eq('grade_id', p.grade);
   if (res.length) q = q.in('residential', res);
@@ -88,8 +88,8 @@ export async function render(ctx) {
     p.promo && (p.promo === 'Promoted' ? 'Promoted' : 'Not decided'), flags.includes('docs') && 'Pending documents', flags.includes('health') && 'Health notes', p.former && 'Including former'].filter(Boolean);
   // Export the list as filtered and sorted on screen; the file name says which filters were on.
   const slug = (x) => String(x).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  exportRows = () => downloadCSV(['current-students', ...chips.map(slug)].filter(Boolean).join('_').slice(0, 120) + '.csv', [['Student', 'Adm. No.', 'Class', 'Residential', 'Attendance', 'Status'],
-    ...rows.map((r) => [r.full_name, r.admission_no, r.grade?.name, r.residential, attPct.get(r.id) === null ? '' : pct(attPct.get(r.id)), r.status])]);
+  exportRows = () => downloadCSV(['current-students', ...chips.map(slug)].filter(Boolean).join('_').slice(0, 120) + '.csv', [['Adm. No.', 'Student', 'Class', 'Roll No.', 'Residential', 'Attendance', 'Status'],
+    ...rows.map((r) => [r.admission_no, r.full_name, r.grade?.name, r.roll_no, r.residential, attPct.get(r.id) === null ? '' : pct(attPct.get(r.id)), r.status])]);
 
   const sortSel = select([['name', 'Name (A–Z)'], ['adm', 'Adm. No.'], ['att', 'Attendance']], sort, {
     style: 'width: auto; height: 32px', onchange: (e) => { const u = new URLSearchParams(location.search); u.set('sort', e.target.value); go(resultsPage + '?' + u); },
@@ -100,7 +100,15 @@ export async function render(ctx) {
       h('div', { class: 'row' }, h('b', {}, ctx.isAdmin && !filtered ? `${rows.length} current student${rows.length === 1 ? '' : 's'}` : `${rows.length} result${rows.length === 1 ? '' : 's'}`), chips.map((c) => h('span', { class: 'tag' }, c)),
         chips.length ? h('a', { href: ctx.link('SearchStart'), class: 'small', 'aria-label': 'Clear search' }, 'Clear') : null),
       h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'Sort by'), sortSel)),
-    table([
+    table(ctx.isAdmin ? [
+      { label: 'Adm. No.', th: true, render: (r) => r.admission_no || '—' },
+      { label: 'Student', render: (r) => h('a', { href: ctx.link('Student', { id: r.id }) }, r.full_name) },
+      { label: 'Class', render: (r) => r.grade?.name || '—' },
+      { label: 'Roll No.', cls: 'num', render: (r) => r.roll_no ?? '—' },
+      { label: 'Residential', render: (r) => r.residential || '—' },
+      { label: 'Attendance', cls: 'num', render: (r) => pct(attPct.get(r.id)) },
+      ...(p.former ? [{ label: 'Status', render: (r) => r.status }] : []),
+    ] : [
       { label: 'Student', th: true, render: (r) => h('a', { href: ctx.link('Student', { id: r.id }) }, r.full_name) },
       { label: 'Adm. No.', render: (r) => r.admission_no || '—' },
       { label: 'Class', render: (r) => r.grade?.name || '—' },
