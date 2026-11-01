@@ -1,6 +1,6 @@
 // Test details: the test's settings, its stats and every student's marks.
 import { db, must, h, mount, param, getClass, getRoster, className, testStats, n1, pct, fmtDMY, stat, btn, card,
-  pageHead, backLink, emptyState, studentName, select, field, tag } from '../lib.js';
+  pageHead, backLink, emptyState, studentName, select, field, tag, confirmBox, busy, redirect, clearCache } from '../lib.js';
 import { classSidebar } from './common.js';
 
 export const SORTS = [['roll', 'Roll number'], ['name', 'Student name'], ['high', 'Marks, high to low'], ['low', 'Marks, low to high']];
@@ -72,10 +72,17 @@ export async function render(ctx) {
   sortSel.addEventListener('change', draw);
   draw();
 
+  // Admins can remove a test outright, marks and all.
+  const gradebook = ctx.link(ctx.isAdmin || cls.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: cls.id });
+  const del = editable && ctx.isAdmin ? btn('Delete Test', { danger: true, onclick: async () => {
+    if (!(await confirmBox(`Delete ${test.name}?`, 'This removes the test and every mark entered for it. It can’t be undone.', 'Delete Test'))) return;
+    await busy(del, async () => { must(await db.from('evaluations').delete().eq('id', id)); clearCache(); redirect(gradebook); });
+  } }) : null;
+
   mount(ctx.main, h('div', { class: 'stack' },
     backLink('Back to gradebook', ctx.link(ctx.isAdmin || cls.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: cls.id })),
     pageHead(test.name, `${className(cls)} · ${fmtDMY(test.held_on)}`,
-      editable ? [btn(anyMarks ? 'Edit' : 'Enter Marks', { primary: true, icon: 'edit', href: ctx.link('Marks', { test: id }) })] : []),
+      editable ? [del, btn(anyMarks ? 'Edit' : 'Enter Marks', { primary: true, icon: 'edit', href: ctx.link('Marks', { test: id }) })] : []),
     h('div', { class: 'cols' },
       h('div', { class: 'stack' }, details, statsCard(s, max, roster.length), notes),
       card(h('span', {}, 'Student Marks'), h('div', { class: 'row', style: 'justify-content: flex-end' }, h('span', { class: 'muted small' }, 'Sorted by'), sortSel), tableBox))));
