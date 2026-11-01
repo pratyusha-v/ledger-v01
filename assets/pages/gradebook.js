@@ -34,7 +34,7 @@ export async function gradebookSection(ctx, cls, { compact = false } = {}) {
     stat(gb.scoredCount ? pct((gb.passed / gb.scoredCount) * 100) : '—', `Pass percentage · ${gb.passed} of ${gb.scoredCount} passed (pass mark ${gb.passMark})`));
 
   if (!roster.length) {
-    return h('div', { class: 'stack' }, emptyState('No students on this roster', ctx.isAdmin ? 'Students are added when they enrol in this class’s grade.' : editable ? 'Use Add Students to pick students for this class.' : 'The class teacher adds students to this roster.', null, 'users'));
+    return h('div', { class: 'stack' }, emptyState('No students on this roster', editable ? 'Use Add Students to pick students for this class.' : 'The class teacher adds students to this roster.', null, 'users'));
   }
 
   const head = h('tr', {},
@@ -64,7 +64,7 @@ export async function gradebookSection(ctx, cls, { compact = false } = {}) {
         editable ? btn('Add Test', { primary: true, icon: 'plus', href: ctx.link(addTestPage(cls), { class: cls.id }) }) : null));
 }
 
-// Teachers tick students from the class's grade to add them to the roster in one go.
+// Admins and the class's teacher tick students from the class's grade to add them to the roster in one go.
 async function addStudents(ctx, cls, roster) {
   const onRoster = new Set(roster.map((s) => s.id));
   const pool = must(await db.from('students').select('id, full_name, display_name, roll_no').eq('grade_id', cls.grade_id).eq('status', 'active')
@@ -131,7 +131,7 @@ export async function render(ctx) {
 
   const [roster, evalCount] = await Promise.all([getRoster(id), db.from('evaluations').select('id', { count: 'exact', head: true }).eq('class_id', id)]);
   const actions = [];
-  if (editable && !ctx.isAdmin) actions.push(btn('Add Students', { icon: 'plus', onclick: () => addStudents(ctx, cls, roster) }));
+  if (editable) actions.push(btn('Add Students', { icon: 'plus', onclick: () => addStudents(ctx, cls, roster) }));
   if (editable) actions.push(btn('Add Test', { primary: true, icon: 'plus', href: ctx.link(addTestPage(cls), { class: id }) }));
 
   const notice = cls.year?.closed
