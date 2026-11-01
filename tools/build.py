@@ -221,6 +221,8 @@ APP_SCRIPT = '<script type="module" src="assets/app.js"></script>'
 # Pages whose markup is the form itself; the app wires it up instead of redrawing it.
 KEEP_MAIN = {"Login.dc.html", "ForgotPassword.dc.html"}
 LOADING = '<div class="app-loading" role="status">Loading…</div>'
+# Useberry usability-testing snippet, last thing in the body of every teacher page.
+USEBERRY = '<script type="text/javascript" src="https://api.useberry.com/integrations/liveUrl/scripts/useberryScript.js"></script>'
 
 
 def build_page(src):
@@ -241,7 +243,8 @@ def build_page(src):
         body = re.sub(r"(<main\b[^>]*>).*?(</main>)", lambda m: m.group(1) + LOADING + m.group(2), body, count=1, flags=re.S)
         body = re.sub(r"(<aside\b[^>]*>).*?(</aside>)", r"\1\2", body, count=1, flags=re.S)
     assert "{{" not in body, f"unrendered template hole in {src.name}"
-    out = PAGE.format(title=title, css=map_stylesheet(css).strip(), body=body, script=APP_SCRIPT)
+    out = PAGE.format(title=title, css=map_stylesheet(css).strip(), body=body,
+                      script=APP_SCRIPT if src.name.startswith("Admin") else APP_SCRIPT + "\n" + USEBERRY)
     (OUT / src.name.replace(".dc.html", ".html")).write_text(out)
 
 
