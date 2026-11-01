@@ -103,7 +103,13 @@ export async function render(ctx) {
   // Daily register.
   const onDate = date >= year.starts_on && date <= year.ends_on ? yearRows.filter((r) => r.on_date === date)
     : ids.length ? must(await db.from('staff_attendance').select('staff_id, on_date, status, remark, leave_id').in('staff_id', ids).eq('on_date', date)) : [];
-  const state = new Map(staff.map((s) => { const r = onDate.find((x) => x.staff_id === s.id); return [s.id, { status: r?.status || '', remark: r?.remark || '', leave: !!r?.leave_id }]; }));
+  // Anyone with a leave covering this date is on leave, even on a day the leave didn't mark (a weekend or holiday).
+  const onLeave = ids.length ? new Set(must(await db.from('staff_leaves').select('staff_id').in('staff_id', ids).lte('starts_on', date).gte('ends_on', date)).map((l) => l.staff_id)) : new Set();
+  const state = new Map(staff.map((s) => {
+    const r = onDate.find((x) => x.staff_id === s.id);
+    const leave = !!r?.leave_id || onLeave.has(s.id);
+    return [s.id, { status: leave ? 'A' : r?.status || '', remark: leave ? 'On leave' : r?.remark || '', leave }];
+  }));
   const counts = h('div', { class: 'row small' });
   const drawCounts = () => {
     const v = [...state.values()];
