@@ -1,5 +1,5 @@
 // Sign in, first-time account setup, password reset.
-import { db, h, param, go, must } from '../lib.js';
+import { db, h, mount, param, go, must } from '../lib.js';
 
 function message(card, text, bad = false) {
   let box = card.querySelector('.auth-msg');
@@ -114,6 +114,13 @@ function renderForgot(main) {
 
 export async function render({ page, main }) {
   if (page === 'Login') {
+    // Sign-in is off for now: the Sign In page just links to each dashboard.
+    mount(main, h('section', { class: 'card', style: 'max-width: 420px; margin: 48px auto; display: flex; flex-direction: column; gap: 16px' },
+      h('h1', { style: 'margin: 0; font-size: 24px' }, 'Open Ledger'),
+      h('p', { class: 'muted', style: 'margin: 0' }, 'Sign-in is turned off for now. Choose a dashboard.'),
+      h('a', { class: 'btn p', href: 'Dashboard.html' }, 'Teacher dashboard'),
+      h('a', { class: 'btn', href: 'AdminDashboard.html' }, 'Admin dashboard')));
+    return;
     const { data: { session } } = await db.auth.getSession();
     const recovering = location.hash.includes('type=recovery');
     renderLogin(main);

@@ -3,7 +3,10 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm';
 import { SUPABASE_URL, SUPABASE_KEY } from './config.js';
 
-export const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+// Sign-in is off for now: without a session, Admin pages act as the demo admin and
+// every other page as the demo teacher (the database reads this header).
+export const DEMO_ROLE = /^Admin/.test(location.pathname.split('/').pop()) ? 'admin' : 'teacher';
+export const db = createClient(SUPABASE_URL, SUPABASE_KEY, { global: { headers: { 'x-ledger-demo': DEMO_ROLE } } });
 
 // ---------- Errors ----------
 // Unwraps a Supabase response, throwing its error so pages can show it.
@@ -52,7 +55,10 @@ let meCache;
 export async function currentStaff() {
   if (meCache !== undefined) return meCache;
   const { data: { session } } = await db.auth.getSession();
-  if (!session) return (meCache = null);
+  if (!session) {
+    const { data } = await db.rpc('claim_staff');
+    return (meCache = data?.id ? data : null);
+  }
   // "Keep me signed in" unticked: the session ends with the browser tab.
   if (localStorage.getItem('ledger-keep') === '0' && !sessionStorage.getItem('ledger-live')) {
     await db.auth.signOut();
