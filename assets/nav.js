@@ -19,8 +19,7 @@ const SECTIONS = {
   },
   timetable: { links: [['AdminTimetable', 'Timetable'], ['AdminTerms?view=times', 'Terms and Period Times'], ['AdminRooms', 'Rooms']] },
   staff: { links: [['AdminStaff', 'Staff Directory'], ['AdminStaffAttendance', 'Staff Attendance'], ['AdminRoles', 'Roles and Permissions']], pages: ['AdminStaffProfile'] },
-  reports: { pages: ['AdminReports'] },
-  archive: { links: [['AdminPastYears', 'Past Academic Years'], ['AdminFormerStudents', 'Former Students']] },
+  archive: { links: [['AdminPastYears', 'Past Academic Years'], ['AdminFormerStudents', 'Former Students'], ['AdminReports', 'Reports']] },
 };
 // Pages outside the main nav, reached from the profile menu.
 const OTHER = { AdminSettings: 'School Settings', AdminMyAccount: 'My Account' };
