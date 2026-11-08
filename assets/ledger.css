@@ -632,3 +632,6 @@ main .segnav a:not([aria-current]) { color: var(--ink) !important; text-decorati
   body:has(.ad-head) div:has(> aside) > main { min-width: 0; }
 }
 @media (max-width: 768px) { body:has(.ad-head) .page-head > .row { flex-shrink: 1 !important; min-width: 0; } }
+/* The header (logo, search, profile) and main nav stay on screen while the page scrolls. */
+.ad-top { position: sticky; top: 0; z-index: 60; }
+@media (max-width: 768px) { .ad-top { position: static; } }

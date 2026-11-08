@@ -58,8 +58,10 @@ a{color:#2E2430}a:hover{color:#2E2430}
   <!-- Top bar -->
   <!-- Shared header and navigation for every admin page. tools/build.py puts this in
      place of each wireframe's own header and nav; assets/nav.js marks the current
-     section, fills the section links and breadcrumbs, and runs the search. -->
+     section, fills the section links and breadcrumbs, and runs the search. The header
+     and main nav stay pinned to the top while the page scrolls. -->
   <a class="skip" href="#main">Skip to content</a>
+  <div class="ad-top">
   <header class="ad-head">
     <a class="ad-brand" href="AdminDashboard.html" aria-label="Ledger admin home">
       <img class="brand-logo" src="assets/logo.svg" alt="" width="36" height="36">
@@ -88,6 +90,7 @@ a{color:#2E2430}a:hover{color:#2E2430}
     <a data-section="reports" href="AdminReports.html">Reports</a>
     <a data-section="archive" href="AdminPastYears.html">Archive</a>
   </nav>
+  </div>
   <nav aria-label="Section" class="ad-sub" hidden></nav>
 
   <div style="flex: 1;display: flex;min-height: 0">
