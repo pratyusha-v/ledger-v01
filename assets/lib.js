@@ -210,6 +210,20 @@ export function recordVisit() {
   else trail.push({ url, title });
   try { sessionStorage.setItem(TRAIL, JSON.stringify(trail.slice(-30))); } catch { /* storage off */ }
 }
+// "Recently opened" for the admin dashboard's Recent activity card: when an
+// application, transfer or class gradebook is opened, remember when (per browser,
+// in localStorage). The dashboard lists what was opened last first.
+const OPENED = 'ledger-opened';
+const OPENS = { AdminApplication: ['app', 'id'], AdminTransfers: ['transfer', 'id'], AdminNewTransfer: ['transfer', 'id'], AdminMain: ['class', 'class'] };
+export function readOpened() { try { return JSON.parse(localStorage.getItem(OPENED)) || {}; } catch { return {}; } }
+export function noteOpened() {
+  const [kind, key] = OPENS[pageName()] || [];
+  const id = kind && new URLSearchParams(location.search).get(key);
+  if (!id) return;
+  const opened = readOpened();
+  opened[`${kind}:${id}`] = Date.now();
+  try { localStorage.setItem(OPENED, JSON.stringify(opened)); } catch { /* storage off */ }
+}
 // Pages that update their filters in place (history.replaceState) keep the trail's entry current.
 const replaceState = history.replaceState.bind(history);
 history.replaceState = (...args) => {
