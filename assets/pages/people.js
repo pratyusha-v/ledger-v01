@@ -59,7 +59,7 @@ async function staffPage(ctx) {
     ] : null);
 
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead('Staff Directory', 'Teachers and admins. Click a name to see their details, classes and attendance.', [
+    pageHead('Staff', 'Teachers and admins. Click a name to see their details, classes and attendance.', [
       btn('Invite Staff', { primary: true, icon: 'plus', onclick: invite })]),
     tabs([['all', 'All', staff.length], ['teachers', 'Teachers', staff.filter((s) => s.role === 'teacher').length], ['admins', 'Admins', staff.filter((s) => s.role === 'admin').length]], tab, null, { hrefFor: (k) => 'AdminStaff.html?tab=' + k }),
     filterRow,
@@ -85,7 +85,7 @@ async function rolesPage(ctx) {
   mount(ctx.main, h('div', { class: 'stack' },
     pageHead('Roles and Permissions', 'What each role can see and edit. Edit controls only appear where a role has edit rights.', [save]),
     h('div', { class: 'row' }, tag(`Teacher · ${people('teacher')} people`), tag(`Admin · ${people('admin')} people`),
-      h('span', { class: 'muted small' }, 'Class teachers are Teachers with a homeroom assigned in Staff Directory.')),
+      h('span', { class: 'muted small' }, 'Class teachers are Teachers with a homeroom assigned in the Staff directory.')),
     table([
       { label: 'Area', th: true, render: (a) => a },
       ...['teacher', 'admin'].map((r) => ({ label: r === 'teacher' ? 'Teacher' : 'Admin', render: (a) => {

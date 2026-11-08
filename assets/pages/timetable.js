@@ -1,28 +1,39 @@
-// Timetable (admin): the whole school's week at a glance, filterable by grade,
-// teacher or room. Edit mode drags subjects between periods and from the
-// unplaced tray, flags clashes, and publishes to every teacher's My Schedule.
-import { db, must, h, mount, param, go, getCurrentYear, getTerms, getPeriods, getGrades, getSubjects, getStaff, getSettings,
+// Timetable (admin): one grade's, teacher's or room's week (or the whole school's).
+// "Arrange classes" mode drags subjects between periods and from the unplaced
+// tray, flags clashes, and publishes to every teacher's timetable.
+import { db, must, h, mount, param, go, getCurrentYear, getTerms, getPeriods, getGrades, getSubjects, getStaff, getSettings, getClasses,
   fmtDMY, btn, card, tag, pageHead, emptyState, input, select, field, modal, toast, busy, confirmBox } from '../lib.js';
 import { DAYS, currentTerm, openSubjectForm } from './scheduling.js';
 
 const short = (name) => (name || '').replace(/^(Ms|Mr|Mrs|Dr)\.?\s+/i, '');
-const gradeShort = (g) => (g ? g.name.replace('Grade ', 'G') : '?');
+const VIEWS = [['school', 'Whole school'], ['grade', 'Grade'], ['teacher', 'Teacher'], ['room', 'Room']];
+const VIEW_KEY = 'ledger-timetable-view';
+const recallView = () => { try { return JSON.parse(localStorage.getItem(VIEW_KEY)) || {}; } catch { return {}; } };
+const rememberView = (v) => { try { localStorage.setItem(VIEW_KEY, JSON.stringify(v)); } catch { /* storage off */ } };
 
 export async function render(ctx) {
   const year = await getCurrentYear();
   const [terms, periods, grades, subjects, staff, settings, rooms] = await Promise.all([
     getTerms(year.id), getPeriods(), getGrades(), getSubjects(), getStaff(), getSettings(),
     db.from('rooms').select('*').order('name').then(must)]);
-  if (!terms.length) { mount(ctx.main, emptyState('No terms set up', 'Add the academic year’s terms before building the timetable.', btn('Edit Times', { href: 'AdminTerms.html?view=times' }), 'cal')); return; }
+  if (!terms.length) { mount(ctx.main, emptyState('No terms set up', 'Add the academic year’s terms before building the timetable.', btn('Change period times', { href: 'AdminTerms.html?view=times' }), 'cal')); return; }
 
   const def = await currentTerm(year);
   const termId = Number(param('term')) || def.id;
-  const by = ['grade', 'teacher', 'room'].includes(param('by')) ? param('by') : 'school';
+  // Opens on the last view used (or Grade, first grade), not the dense whole-school grid.
+  const saved = recallView();
+  const views = VIEWS.map(([k]) => k);
+  const by = views.includes(param('by')) ? param('by') : views.includes(saved.by) ? saved.by : 'grade';
   const teachers = staff.filter((s) => s.role === 'teacher');
-  const target = by === 'school' ? null : param('id') || (by === 'grade' ? String(grades[0].id) : by === 'teacher' ? teachers[0]?.id : String(rooms[0]?.id || ''));
+  const options = by === 'grade' ? grades.map((g) => String(g.id)) : by === 'teacher' ? teachers.map((t) => t.id) : by === 'room' ? rooms.map((r) => String(r.id)) : [];
+  const wanted = param('id') || (saved.by === by ? saved.id : null);
+  const target = by === 'school' ? null : options.includes(wanted) ? wanted : options[0] || '';
+  rememberView({ by, id: target });
   const editing = param('edit') === '1';
   const days = DAYS.slice(0, settings.week_days === 'Mon–Fri' ? 5 : 6);
-  const url = (q) => 'AdminTimetable.html?' + new URLSearchParams(Object.entries({ by: by === 'school' ? '' : by, id: target, term: termId, edit: editing ? '1' : '', ...q }).filter(([, v]) => v));
+  const url = (q) => 'AdminTimetable.html?' + new URLSearchParams(Object.entries({ by, id: target, term: termId, edit: editing ? '1' : '', ...q }).filter(([, v]) => v));
+  const classes = await getClasses(year.id);
+  const classFor = (s) => terms.some((t) => t.id === termId) && classes.find((c) => c.grade_id === s.grade_id && c.subject_id === s.subject_id);
 
   const [original, status] = await Promise.all([
     db.from('timetable_slots').select('*').eq('term_id', termId).then(must),
@@ -86,26 +97,36 @@ export async function render(ctx) {
     el.addEventListener('dragend', () => el.classList.remove('dragging'));
   };
 
+  // Full names, never codes; a period with no teacher says so as a warning.
   const chipText = (s) => {
-    const subj = subjectOf(s.subject_id);
-    const name = subj?.short_name && by === 'school' ? subj.short_name : subj?.name;
-    const top = by === 'grade' ? name : `${gradeShort(gradeOf(s.grade_id))} · ${name}`;
-    const bottom = by === 'teacher' ? roomOf(s.room_id)?.name || 'No room' : short(staffOf(s.teacher_id)?.name) || 'No teacher';
-    return [h('b', {}, top), h('small', {}, bottom)];
+    const name = subjectOf(s.subject_id)?.name || 'Subject';
+    const top = by === 'grade' ? name : `${gradeOf(s.grade_id)?.name} · ${name}`;
+    const teacher = staffOf(s.teacher_id);
+    const bottom = by === 'teacher' ? h('small', {}, roomOf(s.room_id)?.name || 'No room')
+      : teacher ? h('small', {}, short(teacher.name)) : h('small', { class: 'unassigned' }, 'Unassigned');
+    return [h('b', {}, top), bottom];
   };
 
   const gridBox = h('div', {});
   const trayBox = h('div', {});
   const conflictBox = h('div', {});
   const changes = h('span', {});
+  const statusBox = h('div', {});
 
   function chip(s, bad) {
-    const label = `${gradeOf(s.grade_id)?.name} ${subjectOf(s.subject_id)?.name}, ${staffOf(s.teacher_id)?.name || 'no teacher'}, ${roomOf(s.room_id)?.name || 'no room'}`;
-    if (!editing) return h('div', { class: `tchip ${colour(s)}${bad ? ' clash' : ''}`, title: label }, chipText(s), bad ? h('span', { class: 'flag', 'aria-label': 'Clash' }, '!') : null);
+    const label = `${gradeOf(s.grade_id)?.name} · ${subjectOf(s.subject_id)?.name} · ${staffOf(s.teacher_id)?.name || 'Unassigned'} · ${roomOf(s.room_id)?.name || 'No room'}${bad ? ' · Clash' : ''}`;
+    const flag = bad ? h('span', { class: 'flag' }, h('span', { 'aria-hidden': 'true' }, '⚠'), ' Clash') : null;
+    if (!editing) {
+      // Each class opens its gradebook; the full details show on hover and keyboard focus.
+      const c = classFor(s);
+      const kids = [chipText(s), flag];
+      const props = { class: `tchip ${colour(s)}${bad ? ' clash' : ''}`, title: label, 'data-tip': label };
+      return c ? h('a', { ...props, href: `AdminMain.html?class=${c.id}`, 'aria-label': `${label}. Open class` }, kids) : h('div', { ...props, tabindex: '0', 'aria-label': label }, kids);
+    }
     const el = h('div', { class: `tchip ${colour(s)}${bad ? ' clash' : ''}${picked?.kind === 'slot' && picked.uid === s.uid ? ' picked' : ''}`, title: label },
       h('button', { type: 'button', class: 'tchip-body', 'aria-label': `Move ${label}`, onclick: (e) => { e.stopPropagation(); picked = picked?.uid === s.uid ? null : { kind: 'slot', uid: s.uid }; draw(); } }, chipText(s)),
       h('button', { type: 'button', class: 'tchip-x', 'aria-label': `Unplace ${label}`, onclick: (e) => { e.stopPropagation(); unplace(s.uid); } }, '×'),
-      bad ? h('span', { class: 'flag', 'aria-label': 'Clash' }, '!') : null);
+      flag);
     draggable(el, { kind: 'slot', uid: s.uid });
     return el;
   }
@@ -115,13 +136,14 @@ export async function render(ctx) {
     const table = h('table', { class: 'tg ttg' },
       h('thead', {}, h('tr', {}, h('th', {}), days.map((d) => h('th', {}, d)))),
       h('tbody', {}, periods.map((p) => (p.kind === 'break'
-        ? h('tr', { class: 'lunch' }, h('th', {}, p.name), h('td', { colspan: days.length }, `${p.name} · ${String(p.starts_at).slice(0, 5)}`))
-        : h('tr', {}, h('th', {}, p.name, h('small', {}, String(p.starts_at || '').slice(0, 5))),
+        ? h('tr', { class: 'lunch' }, h('th', {}, p.name), h('td', { colspan: days.length }, `${p.name} · ${String(p.starts_at).slice(0, 5)}–${String(p.ends_at || '').slice(0, 5)}`))
+        : h('tr', {}, h('th', {}, p.name, h('small', {}, `${String(p.starts_at || '').slice(0, 5)}–${String(p.ends_at || '').slice(0, 5)}`)),
           days.map((_, i) => {
             const day = i + 1;
             const items = visible.filter((s) => s.day === day && s.period_id === p.id)
               .sort((a, b) => gradeOf(a.grade_id).position - gradeOf(b.grade_id).position);
-            const cell = h('td', { class: editing ? 'tcell edit' : 'tcell', 'aria-label': `${DAYS[i]} ${p.name}` }, h('div', { class: 'tstack' }, items.map((s) => chip(s, bad.has(s.uid)))));
+            const cell = h('td', { class: (editing ? 'tcell edit' : 'tcell') + (items.length ? '' : ' free'), 'aria-label': `${DAYS[i]} ${p.name}${items.length ? '' : ', free'}` },
+              h('div', { class: 'tstack' }, items.length ? items.map((s) => chip(s, bad.has(s.uid))) : !editing && by !== 'school' ? h('span', { class: 'free-label' }, 'Free') : null));
             if (editing) {
               dropTarget(cell, (what) => place(what, day, p.id));
               cell.addEventListener('click', () => { if (picked) place(picked, day, p.id); });
@@ -165,17 +187,13 @@ export async function render(ctx) {
   function drawTray() {
     const items = unplaced();
     const total = items.reduce((a, x) => a + x.left, 0);
-    if (!editing) {
-      mount(trayBox, total ? h('div', { class: 'note' }, `${total} period${total === 1 ? '' : 's'} still to place${by === 'school' ? ' across the school' : ''}. `,
-        h('a', { href: url({ edit: '1' }) }, 'Edit the timetable'), ' to drag them into the week.') : null);
-      return;
-    }
+    if (!editing) return;
     const tray = h('div', { class: 'ttray', 'aria-label': 'Unplaced subjects' },
       items.length ? items.map(({ p, left }) => {
         const s = { grade_id: p.grade_id, subject_id: p.subject_id, teacher_id: p.teacher_id, room_id: p.room_id };
         const el = h('div', { class: `tchip ${colour(s)}${picked?.kind === 'plan' && picked.id === p.id ? ' picked' : ''}` },
           h('button', { type: 'button', class: 'tchip-body', 'aria-label': `Place ${gradeOf(p.grade_id).name} ${subjectOf(p.subject_id).name}`, onclick: () => { picked = picked?.id === p.id ? null : { kind: 'plan', id: p.id }; draw(); } },
-            h('b', {}, `${gradeShort(gradeOf(p.grade_id))} · ${subjectOf(p.subject_id).name}`), h('small', {}, `${short(staffOf(p.teacher_id)?.name) || 'No teacher'} · ${left} left`)),
+            h('b', {}, `${gradeOf(p.grade_id).name} · ${subjectOf(p.subject_id).name}`), h('small', {}, `${short(staffOf(p.teacher_id)?.name) || 'Unassigned'} · ${left} left`)),
           h('button', { type: 'button', class: 'tchip-x', 'aria-label': 'Edit subject', title: 'Edit teacher, room or periods', onclick: () => editPlan(p) }, '✎'));
         draggable(el, { kind: 'plan', id: p.id });
         return el;
@@ -189,27 +207,46 @@ export async function render(ctx) {
 
   function drawConflicts(list) {
     const periodName = (id) => periods.find((p) => p.id === id)?.name;
-    mount(conflictBox, card(h('span', {}, 'Conflicts ', h('span', { class: 'count tag' + (list.length ? ' bad' : '') }, list.length)),
+    mount(conflictBox, card(h('span', { id: 'conflicts' }, 'Conflicts ', h('span', { class: 'count tag' + (list.length ? ' bad' : '') }, list.length)),
       list.length ? list.map((c) => h('div', { class: 'item' }, h('div', { class: 'it' }, h('b', {}, c.label),
         h('span', {}, `${DAYS[c.list[0].day - 1]}, ${periodName(c.list[0].period_id)} · ${c.list.map((s) => `${gradeOf(s.grade_id)?.name} ${subjectOf(s.subject_id)?.name}`).join(' and ')}`)),
         by !== 'grade' || +target !== c.list[0].grade_id ? btn('Show', { small: true, href: url({ by: 'grade', id: c.list[0].grade_id }) }) : null))
         : h('p', { class: 'muted small', style: 'margin: 0' }, 'No clashes: no teacher, room or grade is in two places at once.')));
   }
 
+  // Status bar under the title: what's left to place, clashes, and whether it's published.
+  function drawStatus(clashes) {
+    const left = unplaced().reduce((a, x) => a + x.left, 0);
+    const where = by === 'school' ? ' across the school' : ' in this view';
+    mount(statusBox, h('div', { class: 'tt-status', role: 'status' },
+      h('div', { class: 'tt-stat' }, status?.published ? tag(`Published ${fmtDMY(status.published_at)}`, 'ok') : tag('Draft · not published', 'warn'), changes),
+      h('div', { class: 'tt-stat' }, left ? [h('b', {}, `${left} period${left === 1 ? '' : 's'} still to place`), h('span', { class: 'muted small' }, where),
+        editing ? h('span', { class: 'muted small' }, '· drag them from Unplaced subjects below') : btn('Place them', { small: true, href: url({ edit: '1' }) })]
+        : h('span', {}, '✓ Every period is placed')),
+      h('div', { class: 'tt-stat' }, clashes ? [h('b', { class: 'bad-text' }, h('span', { 'aria-hidden': 'true' }, '⚠ '), `${clashes} clash${clashes === 1 ? '' : 'es'}`),
+        btn('Review clashes', { small: true, href: '#conflicts' })] : h('span', {}, '✓ No clashes'))));
+  }
+
   function draw() {
     const { out, bad } = conflicts();
+    const shown = out.filter((c) => c.list.some(inView));
     drawGrid(bad);
     drawTray();
-    drawConflicts(out.filter((c) => c.list.some(inView)));
+    drawConflicts(shown);
+    drawStatus(shown.length);
     mount(changes, dirty ? tag('Unsaved changes', 'warn') : null);
   }
 
   // Controls.
-  const bySel = select([['school', 'Whole school'], ['grade', 'Grade'], ['teacher', 'Teacher'], ['room', 'Room']], by, { style: 'width: auto', 'aria-label': 'View by',
-    onchange: (e) => go('AdminTimetable.html?' + new URLSearchParams({ by: e.target.value, term: termId, ...(editing ? { edit: '1' } : {}) })) });
-  const targetSel = by === 'school' ? null : select(by === 'grade' ? grades.map((g) => [g.id, g.name]) : by === 'teacher' ? teachers.map((s) => [s.id, s.name]) : rooms.map((r) => [r.id, r.name]),
-    target, { style: 'width: auto', 'aria-label': by, onchange: (e) => go(url({ id: e.target.value })) });
-  const termSel = select(terms.map((t) => [t.id, t.name]), termId, { style: 'width: auto', 'aria-label': 'Term', onchange: (e) => go(url({ term: e.target.value })) });
+  // Filters: segmented links for view, grade and term; a picker for the long teacher and room lists.
+  const segment = (label, items, current, hrefFor) => h('div', { class: 'segnav', role: 'group', 'aria-label': label },
+    items.map(([k, text]) => h('a', { href: hrefFor(k), 'aria-current': String(k) === String(current) ? 'true' : null }, text)));
+  const viewSeg = segment('View', VIEWS, by, (k) => url({ by: k, id: '' }));
+  const targetSel = by === 'school' ? null : by === 'grade'
+    ? segment('Grade', grades.map((g) => [g.id, g.name]), target, (k) => url({ id: k }))
+    : select(by === 'teacher' ? teachers.map((s) => [s.id, s.name]) : rooms.map((r) => [r.id, r.name]), target,
+      { style: 'width: auto; min-width: 200px', 'aria-label': by === 'teacher' ? 'Teacher' : 'Room', onchange: (e) => go(url({ id: e.target.value })) });
+  const termSel = segment('Term', terms.map((t) => [t.id, t.name]), termId, (k) => url({ term: k }));
 
   const save = btn('Save & Publish', { primary: true, onclick: () => busy(save, async () => {
     const { out } = conflicts();
@@ -239,9 +276,9 @@ export async function render(ctx) {
     const fillOf = (sl) => (colour(sl) === 'extra' ? '#EFEDE9' : FILL[+colour(sl).slice(1)]);
     const lineFor = (sl) => {
       const subj = subjectOf(sl.subject_id);
-      const teacher = short(staffOf(sl.teacher_id)?.name) || 'No teacher';
+      const teacher = short(staffOf(sl.teacher_id)?.name) || 'Unassigned';
       const room = roomOf(sl.room_id)?.name || 'No room';
-      if (by === 'school') return `${gradeShort(gradeOf(sl.grade_id))} ${subj?.short_name || subj?.name} · ${teacher}`;
+      if (by === 'school') return `${gradeOf(sl.grade_id)?.name} · ${subj?.name} · ${teacher}`;
       if (by === 'grade') return `${subj?.name}\n${teacher} · ${room}`;
       if (by === 'teacher') return `${gradeOf(sl.grade_id)?.name} ${subj?.name}\n${room}`;
       return `${gradeOf(sl.grade_id)?.name} ${subj?.name}\n${teacher}`;
@@ -291,20 +328,28 @@ export async function render(ctx) {
 
   addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
-  const legend = h('div', { class: 'row small muted' }, grades.map((g, i) => h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: `swatch g${i % 7}` }), g.name)),
+  // Grade colours are only a hint next to the written grade name; clashes carry an icon and the word.
+  const legend = h('div', { class: 'row small muted tt-legend' }, by === 'grade' ? null : grades.map((g, i) => h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: `swatch g${i % 7}` }), g.name)),
     h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: 'swatch extra' }), 'Extra-curricular'),
-    h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: 'swatch clash' }), 'Clash'));
+    h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: 'flag', style: 'position: static' }, h('span', { 'aria-hidden': 'true' }, '⚠'), ' Clash'), 'Teacher, room or grade booked twice'),
+    h('span', { class: 'row', style: 'gap: 6px' }, h('span', { class: 'unassigned' }, 'Unassigned'), 'No teacher yet'),
+    editing ? null : h('span', {}, 'Click a class to open its gradebook.'));
+  const describe = { school: 'Every grade’s week. Each period lists the classes on at that time.', grade: 'One grade’s week. Click a class to open its gradebook.',
+    teacher: 'One teacher’s week, with the room for each class.', room: 'Everything booked in one room this week.' };
 
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead(editing ? 'Edit Timetable' : 'Timetable',
-      editing ? 'Drag subjects into periods. Publishing updates every teacher’s My Schedule.' : 'The whole school’s week. Filter to see one grade, teacher or room.',
-      editing ? [discard, save] : [exportBtn, btn('Edit Times', { icon: 'cal', href: 'AdminTerms.html?view=times' }), btn('Edit Timetable', { primary: true, icon: 'edit', href: url({ edit: '1' }) })]),
-    h('div', { class: 'row' }, h('span', { class: 'muted small' }, 'View'), bySel, targetSel, h('span', { class: 'muted small' }, 'Term'), termSel,
-      status?.published ? tag(`Published ${fmtDMY(status.published_at)}`, 'ok') : tag('Draft · not published', 'warn'), changes),
+    pageHead(editing ? 'Arrange classes' : 'Timetable',
+      editing ? 'Drag subjects into periods. Publishing updates every teacher’s timetable.' : describe[by],
+      editing ? [discard, save] : [btn('Change period times', { icon: 'cal', href: 'AdminTerms.html?view=times' }), btn('Arrange classes', { primary: true, icon: 'edit', href: url({ edit: '1' }) })]),
+    statusBox,
+    h('div', { class: 'tt-filters' },
+      h('div', { class: 'tt-filter' }, h('span', { class: 'tt-flabel' }, 'View'), viewSeg),
+      targetSel ? h('div', { class: 'tt-filter' }, h('span', { class: 'tt-flabel' }, by === 'grade' ? 'Grade' : by === 'teacher' ? 'Teacher' : 'Room'), targetSel) : null,
+      h('div', { class: 'tt-filter' }, h('span', { class: 'tt-flabel' }, 'Term'), termSel),
+      editing ? null : h('div', { class: 'tt-filter tt-export' }, exportBtn)),
     legend,
     editing ? trayBox : null,
     gridBox,
-    editing ? null : trayBox,
     conflictBox));
   draw();
 }

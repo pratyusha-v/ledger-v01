@@ -1,4 +1,4 @@
-// Scheduling (admin): subjects per grade, terms and periods (Edit Times on the timetable), rooms.
+// Subjects, terms and period times (Change period times on the timetable), and rooms (admin).
 import { db, must, h, mount, param, go, getCurrentYear, getTerms, getPeriods, getGrades, getSubjects, getStaff, getClasses, getSettings,
   isoDate, fmtDMY, backLink, btn, card, table, tag, pageHead, emptyState, input, select, field, checkbox, modal, toast, busy, confirmBox } from '../lib.js';
 import { teacherPicker } from './assign.js';
@@ -43,8 +43,7 @@ export function grid({ periods, days, cellFor }) {
 }
 
 async function termsPage(ctx) {
-  document.title = 'Ledger Admin – Terms and Periods';
-  const year = await getCurrentYear();
+    const year = await getCurrentYear();
   const terms = must(await db.from('terms').select('*').eq('year_id', year.id).order('position'));
   const periods = must(await db.from('periods').select('*').order('position'));
   const termRows = terms.map((t) => ({ ...t }));
@@ -84,7 +83,7 @@ async function termsPage(ctx) {
 
   mount(ctx.main, h('div', { class: 'stack' },
     backLink('Back to Timetable', 'AdminTimetable.html'),
-    pageHead('Terms and Periods', 'Set the academic year’s terms and the daily bell schedule used by the timetable.', [save]),
+    pageHead('Terms and Period Times', 'Set the academic year’s terms and the daily bell schedule used by the timetable.', [save]),
     card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, `Academic Year ${year.name}`,
       btn('Add Term', { small: true, icon: 'plus', onclick: () => { termRows.push({ name: `Term ${termRows.length + 1}` }); drawTerms(); } })), termBox),
     card(h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, 'Daily periods',
@@ -155,7 +154,7 @@ export function subjectForm(s, { year, grades, subjects, classes, teachers, plan
       for (const r of rows.filter((x) => x.c && x.offered.checked && (x.c.mandatory !== x.mandatory.checked || (x.c.teacher_id || '') !== teacherOf.get(x)))) {
         must(await db.from('classes').update({ mandatory: r.mandatory.checked, teacher_id: teacherOf.get(r) || null }).eq('id', r.c.id));
       }
-      // The timetable plan follows: Edit Timetable offers this many periods a week to place, with this teacher.
+      // The timetable plan follows: Arrange classes offers this many periods a week to place, with this teacher.
       const offeredRows = rows.filter((r) => r.offered.checked);
       if (offeredRows.length) {
         must(await db.from('timetable_plan').upsert(offeredRows.map((r) => ({ year_id: year.id, grade_id: r.g.id, subject_id: saved.id,

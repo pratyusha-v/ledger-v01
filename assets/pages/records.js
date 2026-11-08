@@ -1,11 +1,11 @@
-// Past Records (admin): closed academic years and former students.
+// Archive (admin): closed academic years and former students.
 import { db, must, h, mount, param, go, getYears, getGrades, getSubjects, getClasses, className, fmtDMY, pct, btn, table, tabs, tag,
   pageHead, emptyState, select, downloadCSV } from '../lib.js';
 
 async function pastYears(ctx) {
   const [years, grades, subjects] = await Promise.all([getYears(), getGrades(), getSubjects()]);
   const closed = years.filter((y) => y.closed);
-  if (!closed.length) { mount(ctx.main, h('div', { class: 'stack' }, pageHead('Past Academic Years', 'Read-only archive of classes, gradebooks and attendance from previous years.'), emptyState('No records yet', 'Records appear here once an academic year is closed.', null, 'cal'))); return; }
+  if (!closed.length) { mount(ctx.main, h('div', { class: 'stack' }, pageHead('Archive', 'Past academic years: read-only classes, gradebooks and attendance from previous years.'), emptyState('No records yet', 'Records appear here once an academic year is closed.', null, 'cal'))); return; }
   const year = closed.find((y) => y.id === Number(param('year'))) || closed[0];
   const grade = param('grade') || '', subject = param('subject') || '', view = param('view') || 'classes';
   const url = (q) => 'AdminPastYears.html?' + new URLSearchParams({ year: year.id, grade, subject, view, ...q });
@@ -42,7 +42,7 @@ async function pastYears(ctx) {
   }
 
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead('Past Academic Years', 'Read-only archive of classes, gradebooks and attendance from previous years.', [btn('Export Year', { icon: 'download', onclick: () => downloadCSV(`classes-${year.name}.csv`,
+    pageHead('Archive', 'Past academic years: read-only classes, gradebooks and attendance from previous years.', [btn('Export Year', { icon: 'download', onclick: () => downloadCSV(`classes-${year.name}.csv`,
       [['Class', 'Teacher', 'Students', 'Evaluations'], ...classes.map((c) => [className(c), c.teacher?.name, enrol.filter((e) => e.class_id === c.id).length, evals.filter((e) => e.class_id === c.id).length])]) })]),
     h('div', { class: 'note' }, 'Archive. Past years are read-only. Reopen a year in School Settings to change it.'),
     filters, tabs([['classes', 'Classes'], ['gradebooks', 'Gradebooks'], ['attendance', 'Attendance']], view, null, { hrefFor: (k) => url({ view: k }) }), body));

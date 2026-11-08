@@ -50,7 +50,7 @@ document.addEventListener('click', (e) => {
 function noAccess(main, email) {
   mount(main, h('section', { class: 'empty', style: 'margin-top: 24px' },
     h('h2', {}, 'No Ledger access for this account'),
-    h('p', {}, `${email} is signed in, but isn't on the staff list, or the account is inactive. Ask the school admin to add you under Staff Services › Staff Directory.`),
+    h('p', {}, `${email} is signed in, but isn't on the staff list, or the account is inactive. Ask the school admin to add you under Staff › Staff directory.`),
     h('button', { type: 'button', class: 'btn', onclick: signOut }, 'Sign out')));
 }
 
@@ -77,6 +77,7 @@ async function start() {
   if (other && other !== page) { redirect(other + '.html' + location.search); return; }
 
   fillHeader(me);
+  if (isAdmin && page.startsWith('Admin')) (await import('./nav.js')).initNav();
   const ctx = { page, me, isAdmin, db, main, aside, link: makeLinker(isAdmin) };
   try {
     await (await import(`./pages/${mod}.js`)).render(ctx);

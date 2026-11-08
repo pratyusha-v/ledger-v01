@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ledger Admin – Staff Directory</title>
+<title>Ledger Admin – Staff</title>
 <link rel="icon" href="assets/logo.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -70,24 +70,41 @@ a{color:#2E2430}a:hover{color:#2E2430}
 <body>
 <div style="width: 100%;min-height: 100vh;box-sizing: border-box;display: flex;flex-direction: column;background: #FAF7F4;font-family: 'Lato', system-ui, sans-serif;color: #2E2430">
 
-  <header style="height: 56px;flex-shrink: 0;display: flex;align-items: center;justify-content: space-between;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 55">
-    <div style="display: flex;align-items: center;gap: 12px">
-      <img class="brand-logo" src="assets/logo.svg" alt="Sai Seva Sangh" width="36" height="36">
-      <span style="display: flex;flex-direction: column;line-height: 1.1"><span style="font-size: 18px;font-weight: 700;letter-spacing: 0.01em">Ledger</span><span class="brand-sub">sai seva sangh</span></span><span style="font-size: 11px;font-weight: 600;letter-spacing: 0.08em;text-transform: uppercase;color: #FFFFFF;background: #2E2430;border-radius: 4px;padding: 2px 6px">Admin</span>
+  <!-- Shared header and navigation for every admin page. tools/build.py puts this in
+     place of each wireframe's own header and nav; assets/nav.js marks the current
+     section, fills the section links and breadcrumbs, and runs the search. -->
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="ad-head">
+    <a class="ad-brand" href="AdminDashboard.html" aria-label="Ledger admin home">
+      <img class="brand-logo" src="assets/logo.svg" alt="" width="36" height="36">
+      <span class="ad-word"><span>Ledger</span><span class="brand-sub">sai seva sangh</span></span>
+      <span class="ad-badge">Admin</span>
+    </a>
+    <div class="gsearch" role="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="gsearch" type="search" placeholder="Search students, staff, classes" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="gsearch-list" aria-autocomplete="list" aria-label="Search students, staff and classes">
+      <div id="gsearch-list" class="gsearch-list" role="listbox" aria-label="Search results" hidden></div>
     </div>
-    <div class="nv"><button aria-label="Profile menu – [Admin name]" aria-haspopup="true" style="width: 36px;height: 36px;border-radius: 50%;border: 1.5px solid #7C7C7A;background: #2E2430;color: #FFFFFF;font: 600 14px 'Lato', sans-serif;cursor: pointer;padding: 0">A</button><div class="dd" role="menu" style="left: auto;right: 0;top: 44px"><div class="who"><b>[Admin name]</b>School admin</div><a href="AdminMyAccount.html">My Account</a><a href="Login.html">Log out</a></div></div>
+    <div class="ad-right">
+      <button type="button" class="ad-menu" aria-expanded="false" aria-controls="primary-nav">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu
+      </button>
+      <div class="nv"><button aria-label="Profile menu" aria-haspopup="true" class="ad-avatar">A</button><div class="dd" role="menu" style="left: auto; right: 0; top: 44px"><div class="who"><b>Admin</b>School admin</div><a href="AdminSettings.html">School Settings</a><a href="AdminMyAccount.html">My Account</a><a href="Login.html">Log out</a></div></div>
+    </div>
   </header>
-
-  <nav aria-label="Primary" style="height: 46px;flex-shrink: 0;display: flex;align-items: stretch;gap: 8px;padding: 0 24px;background: #FFFFFF;border-bottom: 1px solid #E6E2DE;position: relative;z-index: 50">
-    <a href="AdminDashboard.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Dashboard</a>
-    <a href="AdminEnrollment.html" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Student Enrollment</a>
-    <div class="nv"><a href="AdminSearchStart.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Current Records<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminSearchStart.html">Current Students</a><a href="AdminAllClassesStart.html">Current Classes</a></div></div>
-    <div class="nv"><a href="AdminPastYears.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Past Records<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminPastYears.html">Past Academic Years</a><a href="AdminFormerStudents.html">Former Students</a><a href="AdminReports.html">Reports</a></div></div>
-    <div class="nv"><a href="AdminTimetable.html" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;color: #666664;text-decoration: none;border-bottom: 3px solid transparent">Scheduling<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminTimetable.html">Timetable</a><a href="AdminTerms.html">Subjects</a><a href="AdminRooms.html">Rooms</a></div></div>
-    <div class="nv"><a href="AdminStaff.html" aria-current="page" aria-haspopup="true" style="display: flex;align-items: center;gap: 6px;padding: 0 14px;font-size: 14px;font-weight: 600;color: #2E2430;text-decoration: none;border-bottom: 3px solid #6E5A70">Staff Services<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></a><div class="dd" role="menu"><a href="AdminStaff.html">Staff Directory</a><a href="AdminStaffAttendance.html">Staff Attendance</a><a href="AdminRoles.html">Roles and Permissions</a><a href="AdminSettings.html">School Settings</a></div></div>
+  <nav aria-label="Primary" id="primary-nav" class="ad-nav">
+    <a data-section="dashboard" href="AdminDashboard.html">Dashboard</a>
+    <a data-section="admissions" href="AdminAdmissions.html">Admissions</a>
+    <a data-section="students" href="AdminSearchStart.html">Students</a>
+    <a data-section="classes" href="AdminAllClassesStart.html">Classes &amp; Grades</a>
+    <a data-section="timetable" href="AdminTimetable.html">Timetable</a>
+    <a data-section="staff" href="AdminStaff.html">Staff</a>
+    <a data-section="reports" href="AdminReports.html">Reports</a>
+    <a data-section="archive" href="AdminPastYears.html">Archive</a>
   </nav>
+  <nav aria-label="Section" class="ad-sub" hidden></nav>
 
-  <main style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
+  <main id="main" style="flex: 1;min-height: 0;padding: 28px 40px;box-sizing: border-box;display: flex;flex-direction: column;gap: 18px"><div class="app-loading" role="status">Loading…</div></main>
 </div>
 <script type="module" src="assets/app.js"></script>
 </body>

@@ -22,7 +22,7 @@ export async function render(ctx) {
     h('div', { class: 'spread', style: 'align-items: center; margin-top: auto' }, h('a', { href, class: 'small' }, seeAll), newBtn));
 
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead('Student Enrollment', `Admissions, transfers and withdrawals in progress · Academic Year ${year.name}`),
+    pageHead('Enrollment Overview', `Every admission, transfer and withdrawal in progress, in one place · Academic Year ${year.name}`),
     h('div', { class: 'grid3' },
       block('Admissions in progress', apps.length, 'AdminAdmissions.html', apps.slice(0, 5).map((a) => item(a.full_name, appTag(a.status),
         `${a.grade?.name || '—'} · ${a.status === 'accepted' ? 'Ready to enroll' : Object.values(a.documents || {}).includes('missing') ? 'Documents missing' : `Applied ${fmtDMY(a.applied_on)}`}`,

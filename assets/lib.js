@@ -224,6 +224,13 @@ export function noteOpened() {
   opened[`${kind}:${id}`] = Date.now();
   try { localStorage.setItem(OPENED, JSON.stringify(opened)); } catch { /* storage off */ }
 }
+// Pages that retitle themselves once loaded keep their trail entry's title in step, so back links name them right.
+export function retitleVisit(title) {
+  const trail = readTrail();
+  if (!trail.length || trail.at(-1).url !== here() || trail.at(-1).title === title) return;
+  trail[trail.length - 1].title = title;
+  try { sessionStorage.setItem(TRAIL, JSON.stringify(trail)); } catch { /* storage off */ }
+}
 // Pages that update their filters in place (history.replaceState) keep the trail's entry current.
 const replaceState = history.replaceState.bind(history);
 history.replaceState = (...args) => {

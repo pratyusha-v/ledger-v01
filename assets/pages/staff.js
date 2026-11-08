@@ -79,7 +79,7 @@ function recordAttendance(s, reload) {
 export async function render(ctx) {
   const id = param('id');
   const s = id ? must(await db.from('staff').select('*').eq('id', id).maybeSingle()) : null;
-  if (!s) { mount(ctx.main, emptyState('Staff member not found', null, btn('Staff Directory', { href: 'AdminStaff.html' }), 'users')); return; }
+  if (!s) { mount(ctx.main, emptyState('Staff member not found', null, btn('Staff', { href: 'AdminStaff.html' }), 'users')); return; }
   const reload = () => { clearCache(); render(ctx); };
   const teacher = s.role === 'teacher';
   const year = await getCurrentYear();
@@ -128,7 +128,7 @@ export async function render(ctx) {
   const service = yearsSince(s.joined_on);
 
   const sections = [
-    backLink('Back to Staff Directory', `AdminStaff.html?tab=${teacher ? 'teachers' : 'admins'}`),
+    backLink('Back to Staff', `AdminStaff.html?tab=${teacher ? 'teachers' : 'admins'}`),
     h('div', { class: 'spread', style: 'align-items: flex-start' },
       h('div', { class: 'row', style: 'align-items: flex-start; gap: 18px' }, photoBox,
         h('div', { class: 'stack', style: 'gap: 10px' }, h('h1', { style: 'margin: 0; font-size: 26px' }, s.name), h('div', { class: 'row' }, roleTags),
@@ -197,7 +197,7 @@ export async function render(ctx) {
     h('thead', {}, h('tr', {}, h('th', {}, 'Month'), MONTH_ORDER.map((m) => h('th', { class: 'num' }, MONTH_NAMES[m])), h('th', { class: 'num' }, 'Total'))),
     h('tbody', {}, [['Working days', 'days'], ['Present', 'P'], ['Late', 'L'], ['Absent', 'A'], ['On leave', 'Leave']].map(([label, k]) => h('tr', {}, h('th', { scope: 'row' }, label),
       MONTH_ORDER.map((m) => h('td', { class: 'num' }, byMonth.get(m).days ? byMonth.get(m)[k] : '—')), h('td', { class: 'num' }, h('b', {}, tot[k])))))))
-    : h('p', { class: 'muted small', style: 'margin: 0' }, 'No attendance recorded this year. Record it under Staff Services › Staff Attendance.')));
+    : h('p', { class: 'muted small', style: 'margin: 0' }, 'No attendance recorded this year. Record it under Staff › Staff attendance.')));
 
   mount(ctx.main, h('div', { class: 'stack' }, sections));
 }

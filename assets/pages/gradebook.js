@@ -118,7 +118,7 @@ export async function render(ctx) {
     return;
   }
   const cls = await getClass(id);
-  if (!cls) { mount(ctx.main, emptyState('Class not found', 'It may have been removed.', btn(ctx.isAdmin ? 'Current Classes' : 'All Classes', { href: ctx.link('AllClassesStart') }))); return; }
+  if (!cls) { mount(ctx.main, emptyState('Class not found', 'It may have been removed.', btn(ctx.isAdmin ? 'Classes & Grades' : 'All Classes', { href: ctx.link('AllClassesStart') }))); return; }
 
   const own = cls.teacher_id === ctx.me.id;
   if (!ctx.isAdmin) {
