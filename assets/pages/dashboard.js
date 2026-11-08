@@ -94,6 +94,7 @@ const recall = (key) => { try { return localStorage.getItem(key); } catch { retu
 const dateOf = (iso) => new Date(iso + 'T00:00');
 const plusDays = (iso, n) => { const d = dateOf(iso); d.setDate(d.getDate() + n); return isoDate(d); };
 const empty = (text, kind) => h('p', { class: 'dash-empty' + (kind ? ' ' + kind : ''), role: 'status' }, text);
+const more = (text, href) => h('a', { href, style: 'font-size: 13px; font-weight: 400' }, text);
 const titled = (title, extra) => h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, h('span', {}, title), extra);
 
 // Tabs with the ARIA tab pattern: arrow keys, Home and End move between tabs.
@@ -170,7 +171,7 @@ async function admin(ctx) {
   const timetableHref = (gradeId) => `AdminTimetable.html?${new URLSearchParams({ by: 'grade', id: gradeId, ...(term ? { term: term.id } : {}) })}`;
 
   // 2a. Missing attendance: homeroom attendance for each grade with students.
-  const attendanceCard = lazyCard('Missing attendance', async () => {
+  const attendanceCard = lazyCard(titled('Missing attendance', more('Open attendance', 'AdminAttendance.html')), async () => {
     if (!schoolToday) return empty(`No school today. Attendance is next due on ${DAY_NAMES[dateOf(shown).getDay()]}, ${fmtDate(shown)}.`, 'ok');
     const [students, att] = await Promise.all([
       db.from('students').select('grade_id').eq('status', 'active').not('roll_no', 'is', null).then(must),
@@ -190,35 +191,47 @@ async function admin(ctx) {
     ];
   });
 
-  // 2b. Staff absences today, with the periods they would have taught.
-  const absenceCard = lazyCard('Staff absences', async () => {
-    const [absent, staff, slots] = await Promise.all([absentTodayP, staffP, slotsP]);
+  // 2b. Staff absences: once today's staff register is taken, who is away and the periods they'd teach.
+  const registerHref = `AdminStaffAttendance.html?date=${today}`;
+  const absenceCard = lazyCard(titled('Staff absences', more('Open staff register', registerHref)), async () => {
+    if (!schoolToday) return empty('No school today.', 'ok');
+    const [absent, staff, slots, taken] = await Promise.all([absentTodayP, staffP, slotsP,
+      db.from('staff_attendance').select('staff_id', { count: 'exact', head: true }).eq('on_date', today).is('leave_id', null)]);
     const away = staff.filter((s) => absent.has(s.id));
-    if (!away.length) return empty('All staff present today.', 'ok');
     const dow = dateOf(today).getDay();
+    const entry = (s) => {
+      const subjects = [...new Set(classes.filter((c) => c.teacher_id === s.id).map((c) => c.subject.name))];
+      const hit = slots.filter((x) => x.teacher_id === s.id && x.day === dow)
+        .sort((a, b) => periods.findIndex((p) => p.id === a.period_id) - periods.findIndex((p) => p.id === b.period_id));
+      return h('li', {},
+        h('a', { href: `AdminStaffProfile.html?id=${s.id}` }, h('b', {}, s.name),
+          h('span', {}, [s.role === 'admin' ? 'Admin' : 'Teacher', subjects.join(', '), absent.get(s.id)].filter(Boolean).join(' · '))),
+        hit.length ? h('ul', { class: 'dash-sub' }, hit.map((x) => {
+          const p = periods.find((q) => q.id === x.period_id);
+          const cover = covered(today, x);
+          return h('li', {}, h('a', { href: timetableHref(x.grade_id) }, `${gradeName(x.grade_id)} – ${x.subject.name}, ${p?.name || 'Period'}: `,
+            cover ? h('span', { class: 'tag ok' }, `Cover: ${cover.teacher_name}`) : h('span', { class: 'tag bad' }, 'No cover')));
+        })) : h('span', { class: 'muted small' }, 'No periods today.'));
+    };
+    // Staff on leave are marked automatically; anything else means the register was taken.
+    if (!taken.count) {
+      return [
+        h('p', { style: 'margin: 0; font-size: 14px' }, 'Today’s staff attendance hasn’t been taken yet.'),
+        btn('Take Attendance', { primary: true, href: registerHref }),
+        away.length ? [h('p', { class: 'muted small', style: 'margin: 12px 0 0' }, 'Already on leave today'), h('ul', { class: 'dash-list' }, away.map(entry))] : null,
+      ];
+    }
+    if (!away.length) return empty('Everyone is present today.', 'ok');
     return [
-      h('a', { class: 'dash-headline', href: `AdminStaffAttendance.html?date=${today}` }, `${away.length} staff member${away.length === 1 ? '' : 's'} absent today`),
-      h('ul', { class: 'dash-list' }, away.map((s) => {
-        const subjects = [...new Set(classes.filter((c) => c.teacher_id === s.id).map((c) => c.subject.name))];
-        const hit = schoolToday ? slots.filter((x) => x.teacher_id === s.id && x.day === dow)
-          .sort((a, b) => periods.findIndex((p) => p.id === a.period_id) - periods.findIndex((p) => p.id === b.period_id)) : [];
-        return h('li', {},
-          h('a', { href: `AdminStaffProfile.html?id=${s.id}` }, h('b', {}, s.name),
-            h('span', {}, [s.role === 'admin' ? 'Admin' : 'Teacher', subjects.join(', '), absent.get(s.id)].filter(Boolean).join(' · '))),
-          hit.length ? h('ul', { class: 'dash-sub' }, hit.map((x) => {
-            const p = periods.find((q) => q.id === x.period_id);
-            const cover = covered(today, x);
-            return h('li', {}, h('a', { href: timetableHref(x.grade_id) }, `${gradeName(x.grade_id)} – ${x.subject.name}, ${p?.name || 'Period'}: `,
-              cover ? h('span', { class: 'tag ok' }, `Cover: ${cover.teacher_name}`) : h('span', { class: 'tag bad' }, 'No cover')));
-          })) : h('span', { class: 'muted small' }, schoolToday ? 'No periods today.' : ''));
-      })),
+      h('a', { class: 'dash-headline', href: registerHref }, `${away.length} staff member${away.length === 1 ? '' : 's'} absent today`),
+      h('ul', { class: 'dash-list' }, away.map(entry)),
     ];
   });
 
   // 3. Today's timetable (or the next school day's), one tab per grade.
   const dayLabel = schoolToday ? `Today · ${DAY_NAMES[dateOf(shown).getDay()]}, ${fmtDate(shown)}` : `No school today · showing ${DAY_NAMES[dateOf(shown).getDay()]}, ${fmtDate(shown)}`;
   let ttGrade = null;
-  const ttLink = h('a', { href: 'AdminTimetable.html', style: 'font-size: 13px; font-weight: 400' }, 'Open full timetable');
+  const ttLink = more('Open full timetable', 'AdminTimetable.html');
   const timetableCard = lazyCard(titled('Today’s timetable', ttLink), async () => {
     const [slots, absent] = await Promise.all([slotsP, absentShownP]);
     const dow = dateOf(shown).getDay();
@@ -249,70 +262,51 @@ async function admin(ctx) {
       tabset('Grades', tabsFor.map((g) => ({ key: g.id, label: g.name })), saved, panelFor, 'ledger-dash-grade')];
   });
 
-  // 4. Recent activity: admissions, transfers and missing grades in one tabbed card.
-  const activityCard = lazyCard('Recent activity', async () => {
-    const opened = readOpened();
-    const ids = classes.map((c) => c.id);
-    const [apps, transfers, evals, enrol] = await Promise.all([
-      db.from('applications').select('id, full_name, status, documents, created_at, grade:grade_levels(name)').in('status', ['new', 'in_review', 'accepted']).then(must),
-      db.from('transfers').select('*').eq('status', 'pending').then(must),
-      ids.length ? db.from('evaluations').select('id, name, class_id, held_on').in('class_id', ids).lte('held_on', today).then(must) : [],
-      ids.length ? db.from('enrollments').select('class_id, student_id').in('class_id', ids).then(must) : [],
-    ]);
-    const marks = evals.length ? must(await db.from('marks').select('evaluation_id, student_id').in('evaluation_id', evals.map((e) => e.id))) : [];
-    // Most recently opened first, then most recently created or tested.
-    const byRecent = (key, when) => (a, b) => (opened[key(b)] || 0) - (opened[key(a)] || 0) || String(when(b)).localeCompare(String(when(a)));
-    const same = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  // 4. Pending admissions and transfers, most recently opened (then newest) first.
+  const opened = readOpened();
+  const byRecent = (key) => (a, b) => (opened[key(b)] || 0) - (opened[key(a)] || 0) || String(b.created_at).localeCompare(String(a.created_at));
+  const same = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const appsP = db.from('applications').select('id, full_name, status, documents, created_at, grade:grade_levels(name)').in('status', ['new', 'in_review', 'accepted']).then(must)
+    .then((rows) => rows.sort(byRecent((a) => 'app:' + a.id)));
+  const transfersP = db.from('transfers').select('*').eq('status', 'pending').then(must).then((rows) => rows.sort(byRecent((t) => 'transfer:' + t.id)));
+  const row = (title, sub, status, action) => h('div', { class: 'item dash-item' },
+    h('div', { class: 'it' }, h('b', {}, title, status ? [' ', h('span', { class: 'tag' + (status[1] ? ' ' + status[1] : '') }, status[0])] : null), h('span', {}, sub)), action);
+  const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const countTag = (p) => { const t = h('span', { class: 'count tag' }, '…'); p.then((rows) => { t.textContent = rows.length; }).catch(() => {}); return t; };
+  const heading = (title, p, href, what) => {
+    const link = more('View all', href);
+    p.then((rows) => { link.textContent = `View all ${plural(rows.length, what, what + 's')}`; }).catch(() => {});
+    return titled(h('span', { class: 'row' }, title, countTag(p)), link);
+  };
 
-    const appStatus = (a) => (Object.values(a.documents || {}).includes('missing') ? ['Documents missing', 'warn']
-      : a.status === 'accepted' ? ['Ready to enroll', 'ok'] : a.status === 'in_review' ? ['In review', ''] : ['New application', '']);
-    apps.sort(byRecent((a) => 'app:' + a.id, (a) => a.created_at));
-    transfers.sort(byRecent((t) => 'transfer:' + t.id, (t) => t.created_at));
-    const missing = classes.map((c) => {
-      const roster = enrol.filter((e) => e.class_id === c.id).length;
-      const pending = evals.filter((e) => e.class_id === c.id && marks.filter((m) => m.evaluation_id === e.id).length < roster);
-      return { c, pending, last: pending.map((e) => e.held_on).sort().at(-1) || '' };
-    }).filter((x) => x.pending.length).sort(byRecent((x) => 'class:' + x.c.id, (x) => x.last));
+  const appStatus = (a) => (Object.values(a.documents || {}).includes('missing') ? ['Documents missing', 'warn']
+    : a.status === 'accepted' ? ['Ready to enroll', 'ok'] : a.status === 'in_review' ? ['In review', ''] : ['New application', '']);
+  const admissionsCard = lazyCard(heading('Admissions', appsP, 'AdminAdmissions.html', 'admission'), async () => {
+    const [apps, transfers] = await Promise.all([appsP, transfersP]);
+    if (!apps.length) return empty('No applications waiting.', 'ok');
+    return apps.slice(0, 5).map((a) => {
+      const st = appStatus(a);
+      const tr = transfers.find((t) => t.kind === 'incoming' && same(t.student_name, a.full_name));
+      return row(a.full_name, [a.grade?.name || 'Grade not set', tr ? [' · Also an incoming transfer from ', tr.from_place || '—', ' · ', h('a', { href: `AdminTransfers.html?id=${tr.id}` }, 'Open transfer')] : null], st,
+        btn(st[0] === 'Ready to enroll' ? 'Enroll' : 'Review', { small: true, primary: st[0] === 'Ready to enroll', href: `AdminApplication.html?id=${a.id}` }));
+    });
+  });
 
-    const KIND = { incoming: 'Incoming', outgoing: 'Outgoing', internal: 'Internal' };
-    const row = (title, sub, status, action) => h('div', { class: 'item dash-item' },
-      h('div', { class: 'it' }, h('b', {}, title, status ? [' ', h('span', { class: 'tag' + (status[1] ? ' ' + status[1] : '') }, status[0])] : null), h('span', {}, sub)), action);
-    const viewAll = (text, href) => h('a', { class: 'dash-all', href }, text);
-    const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
-
-    const panels = {
-      admissions: () => apps.length ? [apps.slice(0, 5).map((a) => {
-        const st = appStatus(a);
-        const tr = transfers.find((t) => t.kind === 'incoming' && same(t.student_name, a.full_name));
-        return row(a.full_name, [a.grade?.name || 'Grade not set', tr ? [' · Also an incoming transfer from ', tr.from_place || '—', ' · ', h('a', { href: `AdminTransfers.html?id=${tr.id}` }, 'Open transfer')] : null], st,
-          btn(a.status === 'accepted' && st[0] !== 'Documents missing' ? 'Enroll' : 'Review', { small: true, primary: st[0] === 'Ready to enroll', href: `AdminApplication.html?id=${a.id}` }));
-      }), viewAll(`View all ${plural(apps.length, 'admission', 'admissions')}`, 'AdminAdmissions.html')] : [empty('No applications waiting.', 'ok'), viewAll('View all admissions', 'AdminAdmissions.html')],
-      transfers: () => transfers.length ? [transfers.slice(0, 5).map((t) => {
-        const app = t.kind === 'incoming' && apps.find((a) => same(a.full_name, t.student_name));
-        return row(t.student_name, [`${t.from_place || '—'} → ${t.to_place || '—'}`, app ? [' · Same student as the admission · ', h('a', { href: `AdminApplication.html?id=${app.id}` }, 'Review application')] : null],
-          [KIND[t.kind], ''], btn('Open', { small: true, href: `AdminTransfers.html?id=${t.id}` }));
-      }), viewAll(`View all ${plural(transfers.length, 'transfer', 'transfers')}`, 'AdminTransfers.html')] : [empty('No transfers in progress.', 'ok'), viewAll('View all transfers', 'AdminTransfers.html')],
-      grades: () => missing.length ? [missing.slice(0, 5).map(({ c, pending }) => row(className(c),
-        `Not entered: ${pending.map((e) => e.name).slice(0, 3).join(', ')}${pending.length > 3 ? ` and ${pending.length - 3} more` : ''}`, null,
-        btn('Open', { small: true, href: `AdminMain.html?class=${c.id}` }))), viewAll(`View all classes (${plural(missing.length, 'class', 'classes')} missing grades)`, 'AdminAllClassesStart.html')]
-        : [empty('Every class has its marks entered.', 'ok'), viewAll('View all classes', 'AdminAllClassesStart.html')],
-    };
-    const items = [
-      { key: 'admissions', label: `Admissions (${apps.length})`, n: apps.length },
-      { key: 'transfers', label: `Transfers (${transfers.length})`, n: transfers.length },
-      { key: 'grades', label: `Missing grades (${missing.length})`, n: missing.length },
-    ];
-    // The tab picked last time; otherwise the one with the most waiting.
-    const most = [...items].sort((a, b) => b.n - a.n)[0].key;
-    return tabset('Recent activity', items, recall('ledger-dash-activity') || most, (k) => panels[k](), 'ledger-dash-activity');
+  const KIND = { incoming: 'Incoming', outgoing: 'Outgoing', internal: 'Internal' };
+  const transfersCard = lazyCard(heading('Transfers', transfersP, 'AdminTransfers.html', 'transfer'), async () => {
+    const [apps, transfers] = await Promise.all([appsP, transfersP]);
+    if (!transfers.length) return empty('No transfers in progress.', 'ok');
+    return transfers.slice(0, 5).map((t) => {
+      const app = t.kind === 'incoming' && apps.find((a) => same(a.full_name, t.student_name));
+      return row(t.student_name, [`${t.from_place || '—'} → ${t.to_place || '—'}`, app ? [' · Same student as the admission · ', h('a', { href: `AdminApplication.html?id=${app.id}` }, 'Review application')] : null],
+        [KIND[t.kind], ''], btn('Open', { small: true, href: `AdminTransfers.html?id=${t.id}` }));
+    });
   });
 
   mount(ctx.main, h('div', { class: 'stack' },
     pageHead(`${greeting()}, ${ctx.me.name}`, `${DAY_NAMES[new Date().getDay()]}, ${fmtDate(today)} · Academic Year ${year.name}`),
-    h('div', { class: 'cols dash-top' },
-      h('section', { class: 'stack', 'aria-labelledby': 'needs-attention' }, h('h2', { id: 'needs-attention', class: 'dash-h2' }, 'Needs attention today'), attendanceCard, absenceCard),
-      h('section', { class: 'stack', 'aria-label': 'Timetable' }, h('h2', { class: 'dash-h2' }, 'Schedule'), timetableCard)),
-    activityCard));
+    h('div', { class: 'cols' }, h('div', { class: 'stack' }, attendanceCard, absenceCard), timetableCard),
+    h('div', { class: 'cols' }, admissionsCard, transfersCard)));
 }
 
 export function render(ctx) {

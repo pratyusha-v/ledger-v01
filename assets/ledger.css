@@ -487,8 +487,6 @@ div.tchip:not(:has(.tchip-body)) { flex-direction: column; }
 .count.bad { background: #FDECEA !important; color: var(--debit) !important; }
 
 /* ---------- Admin dashboard ---------- */
-.dash-h2 { margin: 0; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.dash-top > .stack { gap: 12px; }
 .dash-headline { display: block; font-size: 18px; font-weight: 800; color: var(--ink); text-decoration: none; margin-bottom: 4px; }
 .dash-headline:hover { text-decoration: underline; }
 .dash-empty { margin: 0; padding: 12px 14px; font-size: 14px; border-radius: var(--r-card); background: var(--paper, #FAF8F6); border: 1px solid var(--hairline); }
@@ -517,7 +515,6 @@ div.tchip:not(:has(.tchip-body)) { flex-direction: column; }
 .dash-day li.hit { border-left-color: var(--debit); }
 .dash-panel:focus-visible { outline: 2px solid var(--saffron); outline-offset: 4px; }
 .dash-item .it span { overflow-wrap: anywhere; }
-.dash-all { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; }
 @media (max-width: 640px) {
   .dash-day li { grid-template-columns: 84px minmax(0, 1fr); padding-left: 8px; padding-right: 8px; }
   .dash-item { flex-wrap: wrap; }
