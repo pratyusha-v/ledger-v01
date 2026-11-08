@@ -12,7 +12,7 @@ export async function render(ctx) {
   const filtered = ['q', 'grade', 'subject'].some((k) => p[k]) || res.length || flags.length || p.former;
   // Admins see every current student until they search or filter.
   const hasQuery = filtered || ctx.isAdmin;
-  const title = ctx.isAdmin ? 'Students' : 'Student Search';
+  const title = 'Students';
   const resultsPage = ctx.link('Search').split('?')[0];
   if (!ctx.isAdmin && hasQuery && ctx.page.endsWith('SearchStart')) return redirect(resultsPage + location.search);
   if (!ctx.isAdmin && !hasQuery && ctx.page.endsWith('Search') && !ctx.page.endsWith('SearchStart')) return redirect(ctx.link('SearchStart'));

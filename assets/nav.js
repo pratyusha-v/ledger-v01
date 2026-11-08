@@ -1,11 +1,14 @@
-// Admin navigation: which section each page belongs to, the section's own links,
-// breadcrumbs, page titles, and the header search. The header markup itself is
-// shared by every admin page (tools/admin-header.html).
+// Site navigation for admins and teachers: which section each page belongs to,
+// the section's own links, breadcrumbs, page titles, and the header search. The
+// header markup is shared per role (tools/admin-header.html, tools/teacher-header.html).
 import { db, must, h, mount, pageName, getCurrentYear, getClasses, backLink, studentName, retitleVisit } from './lib.js';
+
+const page = pageName();
+const admin = page.startsWith('Admin');
 
 // Section -> its pages. `links` are shown as the section's tabs under the main nav;
 // `pages` are the deeper pages that belong to it. The first link is the landing page.
-const SECTIONS = {
+const ADMIN_SECTIONS = {
   dashboard: { pages: ['AdminDashboard'] },
   admissions: {
     links: [['AdminAdmissions', 'Applications'], ['AdminNewApplication', 'New Application'], ['AdminTransfers', 'Transfers'],
@@ -21,19 +24,33 @@ const SECTIONS = {
   staff: { links: [['AdminStaff', 'Staff Directory'], ['AdminStaffAttendance', 'Staff Attendance'], ['AdminRoles', 'Roles and Permissions']], pages: ['AdminStaffProfile'] },
   archive: { links: [['AdminPastYears', 'Past Academic Years'], ['AdminFormerStudents', 'Former Students'], ['AdminReports', 'Reports']] },
 };
+// Teachers: their own classes (gradebooks, tests, marks, attendance), every other
+// class view only, and student profiles. Their timetable is on the Dashboard.
+const TEACHER_SECTIONS = {
+  dashboard: { pages: ['Dashboard'] },
+  classes: { pages: ['Main', 'TestDetail', 'NewTest', 'AddTest', 'AddExtraTest', 'Marks', 'Attendance'] },
+  all: { pages: ['AllClassesStart', 'AllClassesResults', 'AllClasses', 'AttendanceView'] },
+  students: { pages: ['SearchStart', 'Search', 'Student'] },
+};
+const SECTIONS = admin ? ADMIN_SECTIONS : TEACHER_SECTIONS;
 // Pages outside the main nav, reached from the profile menu.
-const OTHER = { AdminSettings: 'School Settings', AdminMyAccount: 'My Account' };
+const OTHER = { AdminSettings: 'School Settings', AdminMyAccount: 'My Account', MyAccount: 'My Account' };
+const HOME = admin ? 'AdminDashboard' : 'Dashboard';
+const TITLE = admin ? 'Ledger Admin – ' : 'Ledger – ';
 // One-line descriptions for pages whose heading doesn't carry one.
 const DESCRIPTIONS = {
+  SearchStart: 'Find a student in the school and open their profile.',
+  Search: 'Find a student in the school and open their profile.',
+  Student: 'Everything on record for this student. Edit the notes for subjects you teach.',
   AdminSearchStart: 'Find any current student and open their profile.',
   AdminSearch: 'Find any current student and open their profile.',
   AdminStudent: 'Everything on record for this student. Each section has its own Edit button.',
   AdminStaffProfile: 'This staff member’s details, classes, timetable and attendance.',
 };
 // The last breadcrumb, where the heading would just repeat the section's name.
-const CRUMB = { AdminSearch: 'Search results', AdminAllClassesResults: 'Search results' };
+const CRUMB = { AdminSearch: 'Search results', AdminAllClassesResults: 'Search results', Search: 'Search results', AllClassesResults: 'Search results',
+  Attendance: 'Attendance', AttendanceView: 'Attendance' };
 
-const page = pageName();
 const query = new URLSearchParams(location.search);
 const linkPage = (target) => target.split('?')[0];
 const matches = (target) => {
@@ -43,23 +60,33 @@ const matches = (target) => {
   if (p === 'AdminTerms') return (query.get('view') === 'times') === (q === 'view=times');
   return true;
 };
-const sectionKey = Object.keys(SECTIONS).find((k) => {
-  const s = SECTIONS[k];
-  return (s.links || []).some(([t]) => matches(t)) || (s.pages || []).includes(page);
-});
-const section = SECTIONS[sectionKey];
-const navLink = document.querySelector(`.site-nav a[data-section="${sectionKey}"]`);
-const sectionLabel = navLink?.textContent.trim();
-const landing = section ? linkPage(section.links?.[0][0] || section.pages[0]) : null;
-const isLanding = page === landing && !(page === 'AdminTerms' && query.get('view') === 'times');
-const tab = section?.links?.find(([t]) => matches(t));
+let sectionKey, section, navLink, sectionLabel, landing, isLanding, tab;
+function placeIn(key) {
+  sectionKey = key || Object.keys(SECTIONS).find((k) => {
+    const s = SECTIONS[k];
+    return (s.links || []).some(([t]) => matches(t)) || (s.pages || []).includes(page);
+  });
+  section = SECTIONS[sectionKey];
+  navLink = document.querySelector(`.site-nav a[data-section="${sectionKey}"]`);
+  sectionLabel = navLink?.textContent.trim();
+  landing = section ? linkPage(section.links?.[0][0] || section.pages[0]) : null;
+  isLanding = page === landing && !(page === 'AdminTerms' && query.get('view') === 'times');
+  tab = section?.links?.find(([t]) => matches(t));
+}
+placeIn();
 
-// Modules can name the pages between the section and this one (e.g. a test's gradebook).
+// Modules can name the pages between the section and this one (e.g. a test's gradebook),
+// and move the page to another section (a test in someone else's class is under All Classes).
 let parents = [];
-let on = false; // only admin pages run the nav (teacher pages share some modules)
-export function setParents(list) { parents = list; if (on) decorate(); }
+let on = false;
+export function setParents(list, key) {
+  parents = list;
+  if (key && key !== sectionKey && SECTIONS[key]) { placeIn(key); if (on) markNav(); }
+  if (on) decorate();
+}
 
 function markNav() {
+  document.querySelectorAll('.site-nav a[aria-current]').forEach((a) => a.removeAttribute('aria-current'));
   if (navLink) navLink.setAttribute('aria-current', isLanding ? 'page' : 'true');
   const sub = document.querySelector('.site-sub');
   if (!sub || !section?.links) return;
@@ -78,15 +105,16 @@ function decorate() {
   const heading = h1.cloneNode(true);
   heading.querySelectorAll('.tag').forEach((t) => t.remove());
   const named = heading.textContent.trim();
-  const title = page === 'AdminDashboard' ? sectionLabel : tab && tab[1] !== named && !isLanding ? `${tab[1]} – ${named}` : named;
-  document.title = `Ledger Admin – ${title}`;
+  const title = page === HOME ? sectionLabel : tab && tab[1] !== named && !isLanding ? `${tab[1]} – ${named}`
+    : CRUMB[page] === 'Attendance' && parents.length ? `Attendance – ${parents.at(-1)[0]}` : named;
+  document.title = TITLE + title;
   retitleVisit(title);
 
   if (DESCRIPTIONS[page] && !h1.parentElement.querySelector('p')) h1.after(h('p', { class: 'page-desc' }, DESCRIPTIONS[page]));
 
   const trail = [];
   if (section && !isLanding) trail.push([sectionLabel, `${landing}.html`]);
-  if (!section && OTHER[page]) trail.push(['Dashboard', 'AdminDashboard.html']);
+  if (!section && OTHER[page]) trail.push(['Dashboard', `${HOME}.html`]);
   parents.forEach((p) => trail.push(p));
   const crumbs = trail.length ? h('nav', { class: 'crumbs', 'aria-label': 'Breadcrumb' }, h('ol', {},
     trail.map(([label, href]) => h('li', {}, h('a', { href }, label))),
@@ -107,16 +135,18 @@ let index = null;
 async function loadIndex() {
   if (index) return index;
   const year = await getCurrentYear();
+  // Teachers search students and classes; admins also search staff.
   const [students, staff, classes] = await Promise.all([
     db.from('students').select('id, full_name, display_name, admission_no, grade:grade_levels(name)').eq('status', 'active').order('full_name').then(must),
-    db.from('staff').select('id, name, role').eq('status', 'active').order('name').then(must),
+    admin ? db.from('staff').select('id, name, role').eq('status', 'active').order('name').then(must) : [],
     getClasses(year.id),
   ]);
+  const pre = admin ? 'Admin' : '';
   index = [
     ...students.map((s) => ({ type: 'Students', label: studentName(s), sub: [s.grade?.name, s.admission_no && `Adm. ${s.admission_no}`].filter(Boolean).join(' · '),
-      href: `AdminStudent.html?id=${s.id}`, text: `${s.full_name} ${s.display_name || ''} ${s.admission_no || ''}` })),
+      href: `${pre}Student.html?id=${s.id}`, text: `${s.full_name} ${s.display_name || ''} ${s.admission_no || ''}` })),
     ...staff.map((s) => ({ type: 'Staff', label: s.name, sub: s.role === 'admin' ? 'Admin' : 'Teacher', href: `AdminStaffProfile.html?id=${s.id}`, text: s.name })),
-    ...classes.map((c) => ({ type: 'Classes', label: `${c.grade.name} – ${c.subject.name}`, sub: c.teacher?.name || 'No teacher', href: `AdminMain.html?class=${c.id}`, text: `${c.grade.name} ${c.subject.name} ${c.teacher?.name || ''}` })),
+    ...classes.map((c) => ({ type: 'Classes', label: `${c.grade.name} – ${c.subject.name}`, sub: c.teacher?.name || 'No teacher', href: `${pre}Main.html?class=${c.id}`, text: `${c.grade.name} ${c.subject.name} ${c.teacher?.name || ''}` })),
   ];
   return index;
 }
@@ -146,7 +176,7 @@ function initSearch() {
     mount(list, groups.length ? groups.map(([type, xs]) => h('div', { role: 'group', 'aria-label': type },
       h('div', { class: 'gs-type', 'aria-hidden': 'true' }, type),
       xs.map((x) => h('a', { id: `gs-${n++}`, role: 'option', href: x.href, tabindex: '-1', 'aria-selected': 'false' }, h('b', {}, x.label), h('span', {}, x.sub)))))
-      : h('p', { class: 'gs-none', role: 'status' }, `No students, staff or classes match “${box.value.trim()}”.`));
+      : h('p', { class: 'gs-none', role: 'status' }, `No ${admin ? 'students, staff or classes' : 'students or classes'} match “${box.value.trim()}”.`));
     options = [...list.querySelectorAll('[role=option]')];
     active = -1;
     list.hidden = false;

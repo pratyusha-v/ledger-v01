@@ -77,7 +77,7 @@ async function start() {
   if (other && other !== page) { redirect(other + '.html' + location.search); return; }
 
   fillHeader(me);
-  if (isAdmin && page.startsWith('Admin')) (await import('./nav.js')).initNav();
+  (await import('./nav.js')).initNav();
   const ctx = { page, me, isAdmin, db, main, aside, link: makeLinker(isAdmin) };
   try {
     await (await import(`./pages/${mod}.js`)).render(ctx);

@@ -2,6 +2,7 @@
 import { db, must, h, mount, param, go, redirect, guardUnsaved, getGrades, getCurrentYear, getClass, getClasses, className, isoDate, fmtDate, pct, btn, card,
   pageHead, emptyState, studentName, input, select, tabs, toast, busy } from '../lib.js';
 import { classSidebar, classTabs, searchBack } from './common.js';
+import { setParents } from '../nav.js';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -33,6 +34,8 @@ export async function render(ctx) {
     }
   }
   await classSidebar(ctx, { classId: cls?.id, gradeId: grade.id, browse: !ctx.isAdmin && !!cls && cls.teacher_id !== ctx.me.id });
+  // Teachers reach attendance from a class, so the breadcrumb goes through its gradebook.
+  if (!ctx.isAdmin && cls) setParents([[className(cls), ctx.link(cls.teacher_id === ctx.me.id ? 'Main' : 'AllClasses', { class: cls.id })]]);
 
   const year = await getCurrentYear();
   const roster = await gradeRoster(grade.id);

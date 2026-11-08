@@ -50,7 +50,7 @@ export async function render(ctx) {
   const id = Number(param('id'));
   const s = id ? must(await db.from('students').select('*, grade:grade_levels(id, name)').eq('id', id).maybeSingle()) : null;
   await classSidebar(ctx, {});
-  if (!s) { mount(ctx.main, emptyState('Student not found', 'Search for the student by name or admission number.', btn(ctx.isAdmin ? 'Students' : 'Student Search', { href: ctx.link('SearchStart') }), 'search')); return; }
+  if (!s) { mount(ctx.main, emptyState('Student not found', 'Search for the student by name or admission number.', btn('Students', { href: ctx.link('SearchStart') }), 'search')); return; }
 
   const [year, years, settings] = await Promise.all([getCurrentYear(), getYears(), getSettings()]);
   const profile = s.profile || {};
@@ -185,7 +185,7 @@ export async function render(ctx) {
       : admin ? h('label', { class: 'btn s', style: 'cursor: pointer' }, 'Upload', uploadInput(d)) : h('span', { class: 'muted small' }, 'Not uploaded')];
 
   mount(ctx.main, h('div', { class: 'stack' },
-    backLink(ctx.isAdmin ? 'Back to Students' : 'Back to student search', ctx.link('SearchStart')),
+    backLink('Back to Students', ctx.link('SearchStart')),
     h('div', { class: 'spread', style: 'align-items: flex-start' },
       h('div', { class: 'row', style: 'align-items: flex-start; gap: 18px' },
         h('div', { style: 'width: 96px; height: 112px; border-radius: 12px; background: var(--mauve-light); display: flex; align-items: center; justify-content: center; color: var(--mauve); font-size: 36px; font-weight: 900', 'aria-label': 'Student photo' }, studentName(s).charAt(0)),

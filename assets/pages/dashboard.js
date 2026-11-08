@@ -1,6 +1,6 @@
 // Dashboard: what needs attention today, for a teacher or for the whole school.
 import { db, must, h, mount, getCurrentYear, getClasses, getGrades, getSettings, getPeriods, className, gradebook, isoDate, fmtDate, fmtDMY,
-  greeting, n1, btn, card, stat, pageHead, studentName, input, emptyState, loading, errorBox, readOpened } from '../lib.js';
+  greeting, n1, btn, card, stat, pageHead, studentName, emptyState, loading, errorBox, readOpened } from '../lib.js';
 import { currentTerm } from './scheduling.js';
 import { scheduleCard } from './schedule.js';
 
@@ -51,10 +51,6 @@ async function teacher(ctx) {
     if (noNotes) tasks.push(item('Add remarks to evaluations', `${className(c)} · ${noNotes} evaluation${noNotes > 1 ? 's' : ''} without notes`, btn('Open', { small: true, href: ctx.link('Main', { class: c.id }) })));
   });
 
-  const search = h('form', { action: ctx.link('Search').split('?')[0], method: 'get', class: 'row', style: 'flex-wrap: nowrap' },
-    input({ name: 'q', placeholder: 'Search students by name or adm. no.', 'aria-label': 'Search students', style: 'width: 300px' }),
-    btn('Search', { type: 'submit', icon: 'search' }));
-
   const classCards = own.map((c) => {
     const roster = rosterOf(c.id);
     const ev = evals.filter((e) => e.class_id === c.id);
@@ -66,7 +62,7 @@ async function teacher(ctx) {
 
   const announcements = must(await db.from('announcements').select('*').order('posted_at', { ascending: false }).limit(3));
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead(`${greeting()}, ${ctx.me.name}`, `Here’s what needs your attention · Academic Year ${year.name}`, [search]),
+    pageHead(`${greeting()}, ${ctx.me.name}`, `Here’s what needs your attention · Academic Year ${year.name}`),
     h('div', { class: 'grid3' },
       section('Grades Due', due.length, null, due.map(({ e, missing }) => {
         const c = own.find((x) => x.id === e.class_id);

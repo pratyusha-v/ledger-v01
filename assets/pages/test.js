@@ -34,7 +34,9 @@ export async function render(ctx) {
   const test = id ? must(await db.from('evaluations').select('*').eq('id', id).maybeSingle()) : null;
   if (!test) { await classSidebar(ctx, {}); mount(ctx.main, emptyState('Test not found', 'Open a test from a class gradebook.', btn('My Classes', { href: ctx.link('Main') }))); return; }
   const cls = await getClass(test.class_id);
-  setParents([[className(cls), `AdminMain.html?class=${cls.id}`]]);
+  // A test in someone else's class sits under All Classes for a teacher.
+  const ownClass = ctx.isAdmin || cls.teacher_id === ctx.me.id;
+  setParents([[className(cls), ctx.link(ownClass ? 'Main' : 'AllClasses', { class: cls.id })]], ownClass ? undefined : 'all');
   const editable = (ctx.isAdmin || cls.teacher_id === ctx.me.id) && !cls.year?.closed;
   await classSidebar(ctx, { classId: cls.id, browse: !ctx.isAdmin && cls.teacher_id !== ctx.me.id });
 

@@ -1,0 +1,31 @@
+<!-- Shared header and navigation for every teacher page. tools/build.py puts this in
+     place of each wireframe's own header and nav; assets/nav.js marks the current
+     section, fills the section links and breadcrumbs, and runs the search. The header
+     and main nav stay pinned to the top while the page scrolls. -->
+  <a class="skip" href="#main">Skip to content</a>
+  <div class="site-top">
+  <header class="site-head">
+    <a class="site-brand" href="Dashboard.html" aria-label="Ledger home">
+      <img class="brand-logo" src="assets/logo.svg" alt="" width="36" height="36">
+      <span class="site-word"><span>Ledger</span><span class="brand-sub">sai seva sangh</span></span>
+    </a>
+    <div class="gsearch" role="search">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="gsearch" type="search" placeholder="Search students and classes" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="gsearch-list" aria-autocomplete="list" aria-label="Search students and classes">
+      <div id="gsearch-list" class="gsearch-list" role="listbox" aria-label="Search results" hidden></div>
+    </div>
+    <div class="site-right">
+      <button type="button" class="site-menu" aria-expanded="false" aria-controls="primary-nav">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Menu
+      </button>
+      <div class="nv"><button aria-label="Profile menu" aria-haspopup="true" class="site-avatar">T</button><div class="dd" role="menu" style="left: auto; right: 0; top: 44px"><div class="who"><b>Teacher</b>Teacher</div><a href="MyAccount.html">My Account</a><a href="Login.html">Log out</a></div></div>
+    </div>
+  </header>
+  <nav aria-label="Primary" id="primary-nav" class="site-nav">
+    <a data-section="dashboard" href="Dashboard.html">Dashboard</a>
+    <a data-section="classes" href="Main.html">My Classes</a>
+    <a data-section="all" href="AllClassesStart.html">All Classes</a>
+    <a data-section="students" href="SearchStart.html">Students</a>
+  </nav>
+  </div>
+  <nav aria-label="Section" class="site-sub" hidden></nav>

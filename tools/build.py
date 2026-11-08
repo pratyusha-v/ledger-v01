@@ -222,9 +222,11 @@ APP_SCRIPT = '<script type="module" src="assets/app.js"></script>'
 KEEP_MAIN = {"Login.dc.html", "ForgotPassword.dc.html"}
 LOADING = '<div class="app-loading" role="status">Loading…</div>'
 # Useberry usability-testing snippet, last thing in the body of every teacher page.
-# Every admin page shares one header and navigation (tools/admin-header.html).
+# Every admin page shares one header and navigation (tools/admin-header.html), and
+# every teacher page another (tools/teacher-header.html).
 ADMIN_HEADER = (ROOT / "tools" / "admin-header.html").read_text().strip()
-ADMIN_CHROME = re.compile(r'<header\b.*?<nav aria-label="Primary".*?</nav>', re.S)
+TEACHER_HEADER = (ROOT / "tools" / "teacher-header.html").read_text().strip()
+CHROME = re.compile(r'<header\b.*?<nav aria-label="Primary".*?</nav>', re.S)
 USEBERRY = '<script type="text/javascript" src="https://api.useberry.com/integrations/liveUrl/scripts/useberryScript.js"></script>'
 
 
@@ -245,8 +247,9 @@ def build_page(src):
     if src.name not in KEEP_MAIN:
         body = re.sub(r"(<main\b[^>]*>).*?(</main>)", lambda m: m.group(1) + LOADING + m.group(2), body, count=1, flags=re.S)
         body = re.sub(r"(<aside\b[^>]*>).*?(</aside>)", r"\1\2", body, count=1, flags=re.S)
-    if src.name.startswith("Admin"):
-        body, n = ADMIN_CHROME.subn(lambda m: ADMIN_HEADER, body, count=1)
+    if src.name not in KEEP_MAIN:
+        header = ADMIN_HEADER if src.name.startswith("Admin") else TEACHER_HEADER
+        body, n = CHROME.subn(lambda m: header, body, count=1)
         assert n == 1, f"no header/nav to replace in {src.name}"
         body = re.sub(r"<main\b(?![^>]*\bid=)", '<main id="main"', body, count=1)
     assert "{{" not in body, f"unrendered template hole in {src.name}"

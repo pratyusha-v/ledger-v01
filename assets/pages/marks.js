@@ -14,7 +14,7 @@ export async function render(ctx) {
   if (!classId) { await classSidebar(ctx, {}); mount(ctx.main, emptyState(adding ? 'Pick a class first' : 'Test not found', 'Open a class gradebook, then choose Add Test.', btn('My Classes', { href: ctx.link('Main') }))); return; }
 
   const cls = await getClass(classId);
-  if (cls) setParents([[className(cls), `AdminMain.html?class=${cls.id}`], ...(test ? [[test.name, `AdminTestDetail.html?test=${test.id}`]] : [])]);
+  if (cls) setParents([[className(cls), ctx.link('Main', { class: cls.id })], ...(test ? [[test.name, ctx.link('TestDetail', { test: test.id })]] : [])]);
   const editable = (ctx.isAdmin || cls.teacher_id === ctx.me.id) && !cls.year?.closed;
   if (!editable) return redirect(test ? ctx.link('TestDetail', { test: test.id }) : ctx.link('AllClasses', { class: classId }));
   await classSidebar(ctx, { classId });
