@@ -49,7 +49,7 @@ const sectionKey = Object.keys(SECTIONS).find((k) => {
   return (s.links || []).some(([t]) => matches(t)) || (s.pages || []).includes(page);
 });
 const section = SECTIONS[sectionKey];
-const navLink = document.querySelector(`.ad-nav a[data-section="${sectionKey}"]`);
+const navLink = document.querySelector(`.site-nav a[data-section="${sectionKey}"]`);
 const sectionLabel = navLink?.textContent.trim();
 const landing = section ? linkPage(section.links?.[0][0] || section.pages[0]) : null;
 const isLanding = page === landing && !(page === 'AdminTerms' && query.get('view') === 'times');
@@ -62,7 +62,7 @@ export function setParents(list) { parents = list; if (on) decorate(); }
 
 function markNav() {
   if (navLink) navLink.setAttribute('aria-current', isLanding ? 'page' : 'true');
-  const sub = document.querySelector('.ad-sub');
+  const sub = document.querySelector('.site-sub');
   if (!sub || !section?.links) return;
   mount(sub, section.links.map(([t, label]) => h('a', { href: t.includes('?') ? `${linkPage(t)}.html?${t.split('?')[1]}` : `${t}.html`, 'aria-current': matches(t) ? 'page' : null }, label)));
   sub.setAttribute('aria-label', `${sectionLabel} pages`);
@@ -166,7 +166,7 @@ function initSearch() {
 }
 
 function initMenu() {
-  const button = document.querySelector('.ad-menu');
+  const button = document.querySelector('.site-menu');
   const nav = document.getElementById('primary-nav');
   if (!button || !nav) return;
   const set = (open) => { nav.classList.toggle('open', open); button.setAttribute('aria-expanded', open ? 'true' : 'false'); };
