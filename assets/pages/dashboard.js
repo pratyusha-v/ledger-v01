@@ -1,15 +1,10 @@
 // Dashboard: what needs attention today, for a teacher or for the whole school.
 import { db, must, h, mount, getCurrentYear, getClasses, getGrades, getSettings, getPeriods, className, gradebook, isoDate, fmtDate, fmtDMY,
-  greeting, n1, btn, card, stat, pageHead, studentName, emptyState, loading, errorBox, readOpened } from '../lib.js';
+  greeting, n1, btn, card, stat, pageHead, emptyState, loading, errorBox, readOpened } from '../lib.js';
 import { currentTerm } from './scheduling.js';
 import { scheduleCard } from './schedule.js';
 
 const item = (title, sub, action) => h('div', { class: 'item' }, h('div', { class: 'it' }, h('b', {}, title), h('span', {}, sub)), action);
-const count = (n) => h('span', { class: 'count tag' }, n);
-const section = (title, n, href, items, emptyText) => card(
-  h('span', { class: 'row', style: 'width: 100%; justify-content: space-between' }, h('span', {}, title),
-    h('span', { class: 'row' }, n !== null ? count(n) : null, href ? h('a', { href, style: 'font-size: 13px; font-weight: 400' }, 'View all') : null)),
-  h('div', {}, items.length ? items : h('p', { class: 'muted small', style: 'margin: 0' }, emptyText)));
 
 async function teacher(ctx) {
   const year = await getCurrentYear();
@@ -26,30 +21,17 @@ async function teacher(ctx) {
   const marks = evals.length ? must(await db.from('marks').select('evaluation_id, student_id, marks, absent').in('evaluation_id', evals.map((e) => e.id))) : [];
   const rosterOf = (cid) => enrol.filter((e) => e.class_id === cid).map((e) => e.student);
 
-  // Grades due: tests on or before today with marks missing for someone on the roster.
-  const due = evals.filter((e) => !e.held_on || e.held_on <= today).map((e) => {
-    const roster = rosterOf(e.class_id);
-    const got = new Set(marks.filter((m) => m.evaluation_id === e.id && (m.absent || m.marks !== null)).map((m) => m.student_id));
-    return { e, missing: roster.filter((s) => !got.has(s.id)).length };
-  }).filter((x) => x.missing > 0);
-
-  // Tasks: today's attendance, pending documents, tests without notes.
-  const tasks = [];
-  for (const g of homeroom) {
-    const { count: n } = await db.from('attendance').select('student_id', { count: 'exact', head: true }).eq('grade_id', g.id).eq('on_date', today);
-    if (!n) tasks.push(item('Take today’s attendance', `${g.name} · Class teacher`, btn('Open', { small: true, href: ctx.link('Attendance', { grade: g.id }) })));
-  }
-  const studentIds = [...new Set(enrol.map((e) => e.student.id))];
-  const docs = studentIds.length ? must(await db.from('student_documents').select('student_id, name').eq('submitted', false).in('student_id', studentIds)) : [];
-  const docsBy = docs.reduce((m, d) => m.set(d.student_id, (m.get(d.student_id) || 0) + 1), new Map());
-  docsBy.forEach((n, sid) => {
-    const s = enrol.find((e) => e.student.id === sid).student;
-    tasks.push(item('Pending documents', `${studentName(s)} · ${n} certificate${n > 1 ? 's' : ''} not submitted`, btn('View', { small: true, href: ctx.link('Student', { id: sid }) + '#documents' })));
-  });
-  own.forEach((c) => {
-    const noNotes = evals.filter((e) => e.class_id === c.id && !e.notes).length;
-    if (noNotes) tasks.push(item('Add remarks to evaluations', `${className(c)} · ${noNotes} evaluation${noNotes > 1 ? 's' : ''} without notes`, btn('Open', { small: true, href: ctx.link('Main', { class: c.id }) })));
-  });
+  // Today's attendance for each grade this teacher is class teacher of.
+  const attendance = await Promise.all(homeroom.map(async (g) => {
+    const [{ count: marked }, { count: total }] = await Promise.all([
+      db.from('attendance').select('student_id', { count: 'exact', head: true }).eq('grade_id', g.id).eq('on_date', today),
+      db.from('students').select('id', { count: 'exact', head: true }).eq('grade_id', g.id).eq('status', 'active').not('roll_no', 'is', null),
+    ]);
+    const open = (label) => btn(label, { small: true, primary: true, href: ctx.link('Attendance', { grade: g.id }) });
+    if (!marked) return item(g.name, 'Attendance hasn’t been taken yet today.', open('Take attendance'));
+    if (marked < total) return item(g.name, `Attendance is incomplete: ${marked} of ${total} students marked.`, open('Finish attendance'));
+    return item(g.name, 'Attendance has been taken today. You’re all set.', h('span', { class: 'tag ok' }, 'Done'));
+  }));
 
   const classCards = own.map((c) => {
     const roster = rosterOf(c.id);
@@ -60,16 +42,9 @@ async function teacher(ctx) {
       h('div', { class: 'stats' }, stat(roster.length, 'Students'), stat(ev.length, 'Evaluations'), stat(n1(gb.avg), 'Class avg (adjusted)')));
   });
 
-  const announcements = must(await db.from('announcements').select('*').order('posted_at', { ascending: false }).limit(3));
   mount(ctx.main, h('div', { class: 'stack' },
-    pageHead(`${greeting()}, ${ctx.me.name}`, `Here’s what needs your attention · Academic Year ${year.name}`),
-    h('div', { class: 'grid3' },
-      section('Grades Due', due.length, null, due.map(({ e, missing }) => {
-        const c = own.find((x) => x.id === e.class_id);
-        return item(e.name, `${className(c)} · Max ${n1(Number(e.max_marks))} · ${missing} student${missing > 1 ? 's' : ''} without marks`, btn('Enter marks', { small: true, href: ctx.link('Marks', { test: e.id }) }));
-      }), 'All marks are entered.'),
-      section('Tasks', tasks.length, null, tasks, 'Nothing pending.'),
-      section('Announcements', null, null, announcements.map((a) => item(a.title, `${a.body} · Posted ${fmtDMY(a.posted_at)}`)), 'No announcements.')),
+    pageHead(`${greeting()}, ${ctx.me.name}`, `Academic Year ${year.name}`),
+    attendance.length ? card(`Today’s Attendance · ${fmtDMY(today)}`, h('div', {}, attendance)) : null,
     await scheduleCard(ctx),
     h('div', { class: 'spread' }, h('h2', { style: 'margin: 0; font-size: 18px' }, 'My Classes'), h('a', { href: ctx.link('AllClassesStart'), style: 'font-size: 13px' }, 'Browse all classes')),
     classCards.length ? h('div', { class: 'grid3' }, classCards) : emptyState('No classes assigned', 'The school office assigns classes to teachers.', null, 'users')));
